@@ -33,6 +33,8 @@ import ProjectComms from '../components/projects/ProjectComms'
 import ProjectRisk from '../components/projects/ProjectRisk'
 import ProjectApprovals from '../components/projects/ProjectApprovals'
 import ProjectTailgate from '../components/projects/ProjectTailgate'
+import ProjectForms from '../components/projects/ProjectForms'
+import ProjectExport from '../components/projects/ProjectExport'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: FolderKanban },
@@ -326,11 +328,11 @@ export default function ProjectView() {
         )}
         
         {activeTab === 'forms' && (
-          <PlaceholderSection title="Forms" description="Field forms linked to this project." />
+          <ProjectForms project={project} onUpdate={handleUpdate} />
         )}
         
         {activeTab === 'export' && (
-          <PlaceholderSection title="Export" description="Generate PDFs and project packages." />
+          <ProjectExport project={project} onUpdate={handleUpdate} />
         )}
       </div>
     </div>
