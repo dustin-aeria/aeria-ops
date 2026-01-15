@@ -29,6 +29,7 @@ import ProjectFlightPlan from '../components/projects/ProjectFlightPlan'
 import ProjectSiteSurvey from '../components/projects/ProjectSiteSurvey'
 import ProjectEmergency from '../components/projects/ProjectEmergency'
 import ProjectPPE from '../components/projects/ProjectPPE'
+import ProjectComms from '../components/projects/ProjectComms'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: FolderKanban },
@@ -310,7 +311,7 @@ export default function ProjectView() {
         )}
         
         {activeTab === 'comms' && (
-          <PlaceholderSection title="Communications" description="Communication methods and protocols." />
+          <ProjectComms project={project} onUpdate={handleUpdate} />
         )}
         
         {activeTab === 'approvals' && (
