@@ -1,9 +1,102 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, FolderKanban, Filter } from 'lucide-react'
+import { 
+  Plus, 
+  Search, 
+  FolderKanban, 
+  Filter,
+  Calendar,
+  Building2,
+  ChevronRight,
+  MoreVertical,
+  Trash2,
+  Copy
+} from 'lucide-react'
+import { getProjects, deleteProject } from '../lib/firestore'
+import NewProjectModal from '../components/NewProjectModal'
+import { format } from 'date-fns'
+
+const statusColors = {
+  draft: 'bg-gray-100 text-gray-700',
+  planning: 'bg-blue-100 text-blue-700',
+  active: 'bg-green-100 text-green-700',
+  completed: 'bg-purple-100 text-purple-700',
+  archived: 'bg-gray-100 text-gray-500'
+}
+
+const statusLabels = {
+  draft: 'Draft',
+  planning: 'Planning',
+  active: 'Active',
+  completed: 'Completed',
+  archived: 'Archived'
+}
 
 export default function Projects() {
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(null)
+
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    setLoading(true)
+    try {
+      const data = await getProjects()
+      setProjects(data)
+    } catch (err) {
+      console.error('Error loading projects:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (projectId, projectName) => {
+    if (!confirm(`Are you sure you want to delete "${projectName}"? This cannot be undone.`)) {
+      return
+    }
+    
+    try {
+      await deleteProject(projectId)
+      setProjects(prev => prev.filter(p => p.id !== projectId))
+    } catch (err) {
+      console.error('Error deleting project:', err)
+      alert('Failed to delete project')
+    }
+    setMenuOpen(null)
+  }
+
+  // Filter projects
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = 
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.projectCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
+
+  const formatDate = (dates) => {
+    if (!dates?.startDate) return 'No date set'
+    
+    try {
+      const start = format(new Date(dates.startDate), 'MMM d, yyyy')
+      if (dates.type === 'range' && dates.endDate && dates.endDate !== dates.startDate) {
+        const end = format(new Date(dates.endDate), 'MMM d, yyyy')
+        return `${start} - ${end}`
+      }
+      return start
+    } catch {
+      return 'Invalid date'
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -13,7 +106,10 @@ export default function Projects() {
           <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
           <p className="text-gray-600 mt-1">Manage your operations plans</p>
         </div>
-        <button className="btn-primary inline-flex items-center gap-2">
+        <button 
+          onClick={() => setShowNewModal(true)}
+          className="btn-primary inline-flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           New Project
         </button>
@@ -31,24 +127,159 @@ export default function Projects() {
             className="input pl-9"
           />
         </div>
-        <button className="btn-secondary inline-flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          Filters
-        </button>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="input w-full sm:w-40"
+        >
+          <option value="all">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="planning">Planning</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="archived">Archived</option>
+        </select>
       </div>
 
-      {/* Empty state */}
-      <div className="card text-center py-12">
-        <FolderKanban className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <h3 className="text-lg font-medium text-gray-900 mb-1">No projects yet</h3>
-        <p className="text-gray-500 mb-4">
-          Create your first project to get started with operations planning.
-        </p>
-        <button className="btn-primary inline-flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Create Project
-        </button>
-      </div>
+      {/* Projects list */}
+      {loading ? (
+        <div className="card text-center py-12">
+          <div className="w-8 h-8 border-4 border-aeria-navy border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading projects...</p>
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="card text-center py-12">
+          <FolderKanban className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          {projects.length === 0 ? (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No projects yet</h3>
+              <p className="text-gray-500 mb-4">
+                Create your first project to get started with operations planning.
+              </p>
+              <button 
+                onClick={() => setShowNewModal(true)}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Create Project
+              </button>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No matching projects</h3>
+              <p className="text-gray-500">
+                Try adjusting your search or filters.
+              </p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredProjects.map((project) => (
+            <div 
+              key={project.id} 
+              className="card hover:shadow-md transition-shadow group"
+            >
+              <div className="flex items-center gap-4">
+                {/* Project icon */}
+                <div className="w-10 h-10 bg-aeria-sky rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FolderKanban className="w-5 h-5 text-aeria-navy" />
+                </div>
+                
+                {/* Project info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link 
+                      to={`/projects/${project.id}`}
+                      className="font-semibold text-gray-900 hover:text-aeria-blue truncate"
+                    >
+                      {project.name}
+                    </Link>
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
+                      {statusLabels[project.status]}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatDate(project.dates)}
+                    </span>
+                    {project.clientName && (
+                      <span className="inline-flex items-center gap-1">
+                        <Building2 className="w-3.5 h-3.5" />
+                        {project.clientName}
+                      </span>
+                    )}
+                    {project.projectCode && (
+                      <span className="text-gray-400 font-mono text-xs">
+                        {project.projectCode}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/projects/${project.id}`}
+                    className="p-2 text-gray-400 hover:text-aeria-blue rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
+                  
+                  {/* More menu */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setMenuOpen(menuOpen === project.id ? null : project.id)}
+                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    
+                    {menuOpen === project.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10"
+                          onClick={() => setMenuOpen(null)}
+                        />
+                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                          <button
+                            onClick={() => {
+                              // TODO: Implement duplicate
+                              alert('Duplicate feature coming soon')
+                              setMenuOpen(null)
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Duplicate
+                          </button>
+                          <button
+                            onClick={() => handleDelete(project.id, project.name)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* New Project Modal */}
+      <NewProjectModal 
+        isOpen={showNewModal} 
+        onClose={() => {
+          setShowNewModal(false)
+          loadProjects() // Refresh list after creating
+        }} 
+      />
     </div>
   )
 }
