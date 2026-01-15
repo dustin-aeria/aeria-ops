@@ -32,6 +32,7 @@ import ProjectPPE from '../components/projects/ProjectPPE'
 import ProjectComms from '../components/projects/ProjectComms'
 import ProjectRisk from '../components/projects/ProjectRisk'
 import ProjectApprovals from '../components/projects/ProjectApprovals'
+import ProjectTailgate from '../components/projects/ProjectTailgate'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: FolderKanban },
@@ -321,7 +322,7 @@ export default function ProjectView() {
         )}
         
         {activeTab === 'tailgate' && (
-          <PlaceholderSection title="Tailgate Briefing" description="AI-generated field briefing from operations plan." />
+          <ProjectTailgate project={project} onUpdate={handleUpdate} />
         )}
         
         {activeTab === 'forms' && (
