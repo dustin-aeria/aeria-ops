@@ -20,47 +20,54 @@ import {
 } from 'lucide-react'
 
 // Population categories for SORA integration
-// Defined inline for reliability - matches soraConfig.js
+// FIXED: Using object format with Object.entries() for consistency with soraConfig.js
 const populationCategories = {
   controlled: { 
     label: 'Controlled Ground Area', 
     description: 'No uninvolved people present, area fully controlled',
+    examples: 'Closed industrial sites, secured perimeters, active construction zones with access control',
     density: 0,
     grcColumn: 0
   },
   remote: { 
     label: 'Remote/Sparsely Populated', 
     description: 'Very low density, < 5 people/km²',
+    examples: 'Wilderness areas, remote mining sites, unpopulated farmland',
     density: 5,
     grcColumn: 1
   },
   lightly: { 
     label: 'Lightly Populated', 
     description: 'Rural areas, 5-50 people/km²',
+    examples: 'Rural farmland with scattered houses, forest service roads',
     density: 50,
     grcColumn: 2
   },
   sparsely: { 
     label: 'Sparsely Populated', 
     description: 'Scattered houses, 50-500 people/km²',
+    examples: 'Rural residential areas, small villages, acreages',
     density: 500,
     grcColumn: 3
   },
   suburban: { 
     label: 'Suburban/Populated', 
     description: 'Residential areas, 500-5000 people/km²',
+    examples: 'Suburban neighborhoods, small towns, industrial parks during work hours',
     density: 5000,
     grcColumn: 4
   },
   highdensity: { 
     label: 'High Density Urban', 
     description: 'Urban centers, > 5000 people/km²',
+    examples: 'City centers, downtown areas, apartment complexes',
     density: 10000,
     grcColumn: 5
   },
   assembly: { 
     label: 'Gatherings/Assembly', 
     description: 'Crowds, events, high concentration of people',
+    examples: 'Concerts, sporting events, festivals, protests',
     density: 50000,
     grcColumn: 6
   }
@@ -101,7 +108,7 @@ const groundConditions = [
 export default function ProjectSiteSurvey({ project, onUpdate }) {
   const [expandedSections, setExpandedSections] = useState({
     location: true,
-    population: true,  // NEW: Population section expanded by default
+    population: true,
     airspace: true,
     obstacles: true,
     access: true,
@@ -109,10 +116,14 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     notes: false
   })
   const [copiedCoords, setCopiedCoords] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
-  // Initialize site survey if not present
+  // Initialize site survey if not present - using safer pattern
   useEffect(() => {
+    if (initialized || !project) return
+
     if (!project.siteSurvey) {
+      setInitialized(true)
       onUpdate({
         siteSurvey: {
           location: {
@@ -122,12 +133,11 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             elevation: '',
             description: ''
           },
-          // NEW: Population density for SORA integration
           population: {
-            category: 'sparsely',  // Default to sparsely populated
+            category: 'sparsely',
             justification: '',
-            source: 'visual',  // visual | statscan | map | other
-            adjacentCategory: 'sparsely',  // For containment calculations
+            source: 'visual',
+            adjacentCategory: 'sparsely',
             adjacentJustification: ''
           },
           airspace: {
@@ -170,9 +180,9 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
           notes: ''
         }
       })
-    }
-    // Migration: Add population field if missing from existing surveys
-    else if (!project.siteSurvey.population) {
+    } else if (!project.siteSurvey.population) {
+      // Migration: Add population field if missing from existing surveys
+      setInitialized(true)
       onUpdate({
         siteSurvey: {
           ...project.siteSurvey,
@@ -185,8 +195,13 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
           }
         }
       })
+    } else {
+      setInitialized(true)
     }
-  }, [project.siteSurvey])
+  }, [initialized, project, onUpdate])
+
+  // Guard clause for loading state
+  if (!project) return <div className="p-4 text-gray-500">Loading...</div>
 
   const siteSurvey = project.siteSurvey || {}
 
@@ -214,7 +229,6 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     })
   }
 
-  // NEW: Update population data
   const updatePopulation = (field, value) => {
     updateSiteSurvey({
       population: { ...(siteSurvey.population || {}), [field]: value }
@@ -316,6 +330,11 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     if (lat && lng) {
       window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank')
     }
+  }
+
+  // Helper to get population category details
+  const getPopulationCategory = (categoryValue) => {
+    return populationCategories[categoryValue]
   }
 
   return (
@@ -426,7 +445,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         )}
       </div>
 
-      {/* NEW: Population Density Section */}
+      {/* Population Density Section */}
       <div className="card">
         <button
           onClick={() => toggleSection('population')}
@@ -461,19 +480,19 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                     onChange={(e) => updatePopulation('category', e.target.value)}
                     className="input"
                   >
-                    {populationCategories.map(pop => (
-                      <option key={pop.value} value={pop.value}>
-                        {pop.label} ({pop.density})
+                    {Object.entries(populationCategories).map(([key, pop]) => (
+                      <option key={key} value={key}>
+                        {pop.label} ({pop.density} people/km²)
                       </option>
                     ))}
                   </select>
                   {siteSurvey.population?.category && (
                     <div className="mt-2 p-2 bg-white rounded border border-gray-200">
                       <p className="text-xs text-gray-600">
-                        <strong>Description:</strong> {populationCategories.find(p => p.value === siteSurvey.population?.category)?.description}
+                        <strong>Description:</strong> {getPopulationCategory(siteSurvey.population?.category)?.description}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        <strong>Examples:</strong> {populationCategories.find(p => p.value === siteSurvey.population?.category)?.examples}
+                        <strong>Examples:</strong> {getPopulationCategory(siteSurvey.population?.category)?.examples}
                       </p>
                     </div>
                   )}
@@ -522,9 +541,9 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                     onChange={(e) => updatePopulation('adjacentCategory', e.target.value)}
                     className="input"
                   >
-                    {populationCategories.map(pop => (
-                      <option key={pop.value} value={pop.value}>
-                        {pop.label} ({pop.density})
+                    {Object.entries(populationCategories).map(([key, pop]) => (
+                      <option key={key} value={key}>
+                        {pop.label} ({pop.density} people/km²)
                       </option>
                     ))}
                   </select>
@@ -656,18 +675,18 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                   onChange={(e) => updateAirspace('classification', e.target.value)}
                   className="input"
                 >
-                  <option value="A">Class A</option>
-                  <option value="B">Class B</option>
-                  <option value="C">Class C</option>
-                  <option value="D">Class D</option>
-                  <option value="E">Class E</option>
-                  <option value="F">Class F (Restricted/Advisory)</option>
+                  <option value="A">Class A (IFR only)</option>
+                  <option value="B">Class B (Controlled)</option>
+                  <option value="C">Class C (Controlled)</option>
+                  <option value="D">Class D (Controlled)</option>
+                  <option value="E">Class E (Controlled)</option>
+                  <option value="F">Class F (Special Use)</option>
                   <option value="G">Class G (Uncontrolled)</option>
                 </select>
               </div>
 
-              <div>
-                <label className="flex items-center gap-3 cursor-pointer mt-6">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={siteSurvey.airspace?.navCanadaAuth || false}
@@ -677,97 +696,82 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                   <span className="text-sm text-gray-700">NAV CANADA Authorization Required</span>
                 </label>
               </div>
-
-              {siteSurvey.airspace?.navCanadaAuth && (
-                <div className="sm:col-span-2">
-                  <label className="label">Authorization Number</label>
-                  <input
-                    type="text"
-                    value={siteSurvey.airspace?.authNumber || ''}
-                    onChange={(e) => updateAirspace('authNumber', e.target.value)}
-                    className="input"
-                    placeholder="e.g., RPAS-2026-001234"
-                  />
-                </div>
-              )}
             </div>
+
+            {siteSurvey.airspace?.navCanadaAuth && (
+              <div>
+                <label className="label">Authorization Number / Reference</label>
+                <input
+                  type="text"
+                  value={siteSurvey.airspace?.authNumber || ''}
+                  onChange={(e) => updateAirspace('authNumber', e.target.value)}
+                  className="input"
+                  placeholder="e.g., NAV-2024-12345"
+                />
+              </div>
+            )}
 
             {/* Nearby Aerodromes */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="label mb-0">Nearby Aerodromes (within 10km)</label>
-                <button
-                  onClick={addAerodrome}
-                  className="text-sm text-aeria-blue hover:text-aeria-navy inline-flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </button>
-              </div>
-
-              {(siteSurvey.airspace?.nearbyAerodromes || []).length === 0 ? (
-                <p className="text-sm text-gray-500 italic">No nearby aerodromes identified.</p>
-              ) : (
-                <div className="space-y-2">
-                  {(siteSurvey.airspace?.nearbyAerodromes || []).map((aerodrome, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                      <input
-                        type="text"
-                        value={aerodrome.name}
-                        onChange={(e) => updateAerodrome(index, 'name', e.target.value)}
-                        className="input text-sm flex-1"
-                        placeholder="Name"
-                      />
+              <label className="label">Nearby Aerodromes (within 5 NM)</label>
+              <div className="space-y-2">
+                {(siteSurvey.airspace?.nearbyAerodromes || []).map((aerodrome, index) => (
+                  <div key={index} className="flex gap-2 items-start p-2 bg-gray-50 rounded-lg">
+                    <div className="flex-1 grid grid-cols-4 gap-2">
                       <input
                         type="text"
                         value={aerodrome.identifier}
                         onChange={(e) => updateAerodrome(index, 'identifier', e.target.value)}
-                        className="input text-sm w-24 font-mono"
-                        placeholder="ICAO"
+                        className="input text-sm"
+                        placeholder="ID (e.g., CYYC)"
+                      />
+                      <input
+                        type="text"
+                        value={aerodrome.name}
+                        onChange={(e) => updateAerodrome(index, 'name', e.target.value)}
+                        className="input text-sm"
+                        placeholder="Name"
                       />
                       <input
                         type="text"
                         value={aerodrome.distance}
                         onChange={(e) => updateAerodrome(index, 'distance', e.target.value)}
-                        className="input text-sm w-20"
-                        placeholder="km"
+                        className="input text-sm"
+                        placeholder="Distance (NM)"
                       />
                       <input
                         type="text"
                         value={aerodrome.bearing}
                         onChange={(e) => updateAerodrome(index, 'bearing', e.target.value)}
-                        className="input text-sm w-20"
-                        placeholder="°"
+                        className="input text-sm"
+                        placeholder="Bearing (°)"
                       />
-                      <button
-                        onClick={() => removeAerodrome(index)}
-                        className="p-1.5 text-gray-400 hover:text-red-500"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <button
+                      onClick={() => removeAerodrome(index)}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={addAerodrome}
+                  className="text-sm text-aeria-blue hover:text-aeria-navy inline-flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Aerodrome
+                </button>
+              </div>
             </div>
 
             <div>
-              <label className="label">NOTAMs / TFRs</label>
-              <textarea
-                value={siteSurvey.airspace?.notams || ''}
-                onChange={(e) => updateAirspace('notams', e.target.value)}
-                className="input min-h-[60px]"
-                placeholder="Note any relevant NOTAMs or temporary flight restrictions..."
-              />
-            </div>
-
-            <div>
-              <label className="label">Additional Restrictions</label>
+              <label className="label">NOTAMs / Airspace Restrictions</label>
               <textarea
                 value={siteSurvey.airspace?.restrictions || ''}
                 onChange={(e) => updateAirspace('restrictions', e.target.value)}
-                className="input min-h-[60px]"
-                placeholder="Any other airspace restrictions or considerations..."
+                className="input min-h-[80px]"
+                placeholder="Active NOTAMs, TFRs, or other airspace restrictions..."
               />
             </div>
           </div>
@@ -782,23 +786,28 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         >
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-aeria-blue" />
-            Obstacles
+            Obstacles & Hazards
+            {(siteSurvey.obstacles || []).length > 0 && (
+              <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                {(siteSurvey.obstacles || []).length} identified
+              </span>
+            )}
           </h2>
           {expandedSections.obstacles ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
         </button>
 
         {expandedSections.obstacles && (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {(siteSurvey.obstacles || []).length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No obstacles documented.</p>
+              <p className="text-sm text-gray-500 italic">No obstacles identified. Add any obstacles or hazards within the operational area.</p>
             ) : (
               (siteSurvey.obstacles || []).map((obstacle, index) => (
-                <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-start justify-between gap-3 mb-2">
+                <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                  <div className="flex justify-between items-start">
                     <select
                       value={obstacle.type}
                       onChange={(e) => updateObstacle(index, 'type', e.target.value)}
-                      className="input text-sm w-40"
+                      className="input text-sm w-48"
                     >
                       {obstacleTypes.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -806,18 +815,18 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                     </select>
                     <button
                       onClick={() => removeObstacle(index)}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="grid sm:grid-cols-4 gap-2 mb-2">
+                  <div className="grid grid-cols-4 gap-2">
                     <input
                       type="text"
                       value={obstacle.height}
                       onChange={(e) => updateObstacle(index, 'height', e.target.value)}
                       className="input text-sm"
-                      placeholder="Height (m)"
+                      placeholder="Height (m AGL)"
                     />
                     <input
                       type="text"
