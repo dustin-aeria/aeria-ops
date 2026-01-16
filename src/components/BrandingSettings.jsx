@@ -18,8 +18,8 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
-import { useAuth } from '../../contexts/AuthContext'
+import { db } from '../lib/firebase'
+import { useAuth } from '../contexts/AuthContext'
 
 // ============================================
 // DEFAULT BRANDING CONFIGURATION
