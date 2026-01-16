@@ -32,7 +32,7 @@ import {
   Wind,
   Ruler
 } from 'lucide-react'
-import { BrandedPDF } from '../../lib/pdfExportService'
+import { BrandedPDF } from '../lib/pdfExportService'
 
 // ============================================
 // STATUS CONFIGURATION
