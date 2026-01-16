@@ -206,7 +206,7 @@ export default function ProjectView() {
               )}
               {project.clientName && (
                 <>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>{project.clientName}</span>
                 </>
               )}
