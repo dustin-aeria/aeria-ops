@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { User, Building, Shield, Bell, Palette, ChevronRight } from 'lucide-react'
-import BrandingSettings from './components/BrandingSettings'
+import BrandingSettings from '../components/BrandingSettings'
 
 export default function Settings() {
   const { userProfile } = useAuth()
