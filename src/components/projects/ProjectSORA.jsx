@@ -37,6 +37,7 @@ import {
   osoCategories,
   getIntrinsicGRC,
   calculateFinalGRC,
+  isWithinSORAScope,
   calculateResidualARC,
   getSAIL,
   calculateAdjacentAreaDistance,
@@ -45,33 +46,26 @@ import {
 } from '../../lib/soraConfig'
 
 // ============================================
-// OSO SAIL-LEVEL GUIDANCE
+// OSO SAIL-LEVEL GUIDANCE (SORA 2.5 - 17 OSOs)
 // ============================================
 const osoGuidance = {
-  'OSO-01': { L: 'Procedures documented and reviewed', M: 'Procedures validated through exercises', H: 'Procedures validated through flight tests with audit trail' },
+  'OSO-01': { L: 'Operator demonstrates basic competency', M: 'Formal competency assessment', H: 'Third-party competency verification' },
   'OSO-02': { L: 'Manufacturer has quality procedures', M: 'Conformance evidence maintained', H: 'Third-party manufacturing audit' },
   'OSO-03': { L: 'Maintenance per manufacturer instructions', M: 'Trained personnel with documented program', H: 'Quality system with independent inspections' },
   'OSO-04': { L: 'Design follows industry practices', M: 'Recognized standard (e.g., ASTM F3298)', H: 'Airworthiness design standard compliance' },
   'OSO-05': { L: 'Basic failure mode analysis', M: 'System safety assessment (FHA/FMEA)', H: 'Full safety assessment per ARP4761' },
   'OSO-06': { L: 'C2 link tested for environment', M: 'Link budget and interference assessment', H: 'Performance validated in all conditions' },
   'OSO-07': { L: 'Pre-flight checklist used', M: 'Documented inspection procedures', H: 'Formal program with independent verification' },
-  'OSO-08': { L: 'Lost link procedure defined', M: 'Lost link tested with multiple options', H: 'Automated response validated in flight test' },
-  'OSO-09': { L: 'Crew roles defined', M: 'Detailed procedures with handover protocols', H: 'CRM training with formal qualification' },
-  'OSO-10': { L: 'Emergency procedures documented', M: 'Flight termination available and validated', H: 'Automated recovery with redundant termination' },
-  'OSO-11': { L: 'Communication procedures documented', M: 'Standardized phraseology with backup', H: 'Formal agreements with recorded comms' },
-  'OSO-12': { L: 'Basic flight training', M: 'Formal training with proficiency checks', H: 'Certified training organization' },
-  'OSO-13': { L: 'Emergency procedures briefed', M: 'Hands-on emergency training', H: 'Regular drills with recurrent testing' },
-  'OSO-14': { L: 'Roles defined', M: 'CRM principles applied', H: 'Formal CRM with team evaluation' },
-  'OSO-15': { L: 'Self-declaration of fitness', M: 'Fatigue risk management', H: 'Medical certification with duty limits' },
-  'OSO-16': { L: 'Basic GCS suitable', M: 'HMI per standards', H: 'Human factors validated' },
-  'OSO-17': { L: 'Environmental limits documented', M: 'Detailed envelope with monitoring', H: 'Limits validated in test' },
-  'OSO-18': { L: 'Basic geofencing', M: 'Automatic envelope protection', H: 'Redundant protection with independent monitoring' },
-  'OSO-19': { L: 'Adverse weather procedures', M: 'Automatic response validated', H: 'Demonstrated recovery with redundancy' },
-  'OSO-20': { L: 'Basic airspace assessment', M: 'Formal airspace agreement', H: 'Segregated airspace with ATC coordination' },
-  'OSO-21': { L: 'Basic energy absorption', M: 'Parachute or autorotation', H: 'Validated impact attenuation' },
-  'OSO-22': { L: 'Basic ERP with contacts', M: 'Detailed ERP with regular review', H: 'Validated ERP with integrated response' },
-  'OSO-23': { L: 'Basic weather limits', M: 'Detailed envelope with monitoring', H: 'All conditions tested' },
-  'OSO-24': { L: 'Basic environmental protection', M: 'Designed for extremes', H: 'Full environmental qualification' }
+  'OSO-08': { L: 'Procedures documented and reviewed', M: 'Procedures validated through exercises', H: 'Procedures validated with audit trail' },
+  'OSO-09': { L: 'Basic crew training', M: 'Formal training with proficiency checks', H: 'Certified training with recurrent testing' },
+  'OSO-13': { L: 'External services identified', M: 'Service agreements in place', H: 'Validated service level agreements' },
+  'OSO-16': { L: 'Crew roles defined', M: 'CRM principles applied', H: 'Formal CRM with team evaluation' },
+  'OSO-17': { L: 'Self-declaration of fitness', M: 'Fatigue risk management', H: 'Medical certification with duty limits' },
+  'OSO-18': { L: 'Basic envelope protection', M: 'Automatic envelope protection', H: 'Redundant protection with independent monitoring' },
+  'OSO-19': { L: 'Recovery procedures documented', M: 'Recovery validated in simulation', H: 'Recovery validated in flight test' },
+  'OSO-20': { L: 'Basic HMI suitable', M: 'HMI per human factors standards', H: 'Human factors evaluation completed' },
+  'OSO-23': { L: 'Basic weather limits', M: 'Detailed envelope with monitoring', H: 'All conditions tested and validated' },
+  'OSO-24': { L: 'Basic environmental protection', M: 'Designed for adverse conditions', H: 'Full environmental qualification' }
 }
 
 // ============================================
@@ -429,13 +423,12 @@ export default function ProjectSORA({ project, onUpdate }) {
           populationSource: ssPopulation ? 'siteSurvey' : 'manual',
           aircraftSource: fpAircraft.length > 0 ? 'flightPlan' : 'manual',
           
-          // Step 3: Mitigations
+          // Step 3: Mitigations (SORA 2.5 - M3/ERP removed)
           mitigations: {
             M1A: { enabled: false, robustness: 'none', evidence: '' },
             M1B: { enabled: false, robustness: 'none', evidence: '' },
             M1C: { enabled: false, robustness: 'none', evidence: '' },
-            M2: { enabled: false, robustness: 'none', evidence: '' },
-            M3: { enabled: true, robustness: 'low', evidence: 'ERP documented' }
+            M2: { enabled: false, robustness: 'none', evidence: '' }
           },
           
           // Steps 4-6: Air Risk
@@ -792,16 +785,16 @@ export default function ProjectSORA({ project, onUpdate }) {
               <span className="text-xl font-bold text-gray-900">{intrinsicGRC ?? 'N/A'}</span>
             </div>
 
-            {/* Step 3: Mitigations */}
+            {/* Step 3: Mitigations (SORA 2.5 Annex B Table 11) */}
             <div className="border-t pt-4">
               <h4 className="font-medium text-gray-900 mb-3">Ground Risk Mitigations</h4>
               
               {['M1A', 'M1B', 'M1C', 'M2'].map(mitId => {
                 const mitLabels = {
-                  M1A: { name: 'M1(A) - Sheltering', desc: 'People on ground are sheltered', options: ['low', 'medium'] },
-                  M1B: { name: 'M1(B) - Operational Restrictions', desc: 'Temporal/spatial restrictions', options: ['medium', 'high'] },
-                  M1C: { name: 'M1(C) - Ground Observers', desc: 'Observers warn people', options: ['low'] },
-                  M2: { name: 'M2 - Impact Dynamics', desc: 'Parachute, frangibility', options: ['low', 'medium', 'high'] }
+                  M1A: { name: 'M1(A) - Sheltering', desc: 'People on ground are sheltered by structures', options: ['low', 'medium'] },
+                  M1B: { name: 'M1(B) - Operational Restrictions', desc: 'Spacetime-based restrictions reduce exposure', options: ['medium', 'high'] },
+                  M1C: { name: 'M1(C) - Ground Observers', desc: 'Observers can warn people in operational area', options: ['low'] },
+                  M2: { name: 'M2 - Impact Dynamics Reduced', desc: 'Parachute, autorotation, or frangibility', options: ['medium', 'high'] }
                 }
                 const mit = mitLabels[mitId]
                 
@@ -834,21 +827,8 @@ export default function ProjectSORA({ project, onUpdate }) {
                   </div>
                 )
               })}
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sora.mitigations?.M3?.enabled ?? true}
-                    onChange={(e) => updateMitigation('M3', 'enabled', e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <div>
-                    <span className="font-medium text-gray-900">M3 - Emergency Response Plan</span>
-                    <p className="text-xs text-gray-500">NOT enabled = +1 GRC penalty</p>
-                  </div>
-                </label>
-              </div>
+              
+              {/* Note: M3 (ERP) removed in SORA 2.5 - no longer a mitigation */}
             </div>
 
             <div className="p-3 bg-blue-900 text-white rounded-lg flex items-center justify-between">
