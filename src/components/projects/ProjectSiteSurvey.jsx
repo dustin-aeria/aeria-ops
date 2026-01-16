@@ -19,8 +19,52 @@ import {
   CheckCircle2
 } from 'lucide-react'
 
-// Import population categories from SORA config for consistency
-import { populationCategories } from '../../lib/soraConfig'
+// Population categories for SORA integration
+// Defined inline for reliability - matches soraConfig.js
+const populationCategories = {
+  controlled: { 
+    label: 'Controlled Ground Area', 
+    description: 'No uninvolved people present, area fully controlled',
+    density: 0,
+    grcColumn: 0
+  },
+  remote: { 
+    label: 'Remote/Sparsely Populated', 
+    description: 'Very low density, < 5 people/km²',
+    density: 5,
+    grcColumn: 1
+  },
+  lightly: { 
+    label: 'Lightly Populated', 
+    description: 'Rural areas, 5-50 people/km²',
+    density: 50,
+    grcColumn: 2
+  },
+  sparsely: { 
+    label: 'Sparsely Populated', 
+    description: 'Scattered houses, 50-500 people/km²',
+    density: 500,
+    grcColumn: 3
+  },
+  suburban: { 
+    label: 'Suburban/Populated', 
+    description: 'Residential areas, 500-5000 people/km²',
+    density: 5000,
+    grcColumn: 4
+  },
+  highdensity: { 
+    label: 'High Density Urban', 
+    description: 'Urban centers, > 5000 people/km²',
+    density: 10000,
+    grcColumn: 5
+  },
+  assembly: { 
+    label: 'Gatherings/Assembly', 
+    description: 'Crowds, events, high concentration of people',
+    density: 50000,
+    grcColumn: 6
+  }
+}
 
 const obstacleTypes = [
   { value: 'tower', label: 'Tower/Mast', icon: Radio },
