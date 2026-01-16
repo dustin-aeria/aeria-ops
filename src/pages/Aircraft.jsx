@@ -1,3 +1,8 @@
+// ============================================
+// AIRCRAFT PAGE
+// Fleet management with spec sheet viewing
+// ============================================
+
 import { useState, useEffect } from 'react'
 import { 
   Plus, 
@@ -14,11 +19,19 @@ import {
   Battery,
   Gauge,
   Weight,
-  Clock
+  Clock,
+  Eye,
+  Download,
+  FileText
 } from 'lucide-react'
 import { getAircraft, deleteAircraft } from '../lib/firestore'
 import AircraftModal from '../components/AircraftModal'
+import AircraftSpecSheet, { generateAircraftSpecPDF } from '../components/AircraftSpecSheet'
+import { useBranding } from '../components/BrandingSettings'
 
+// ============================================
+// STATUS CONFIGURATION
+// ============================================
 const statusConfig = {
   airworthy: { 
     label: 'Airworthy', 
@@ -50,6 +63,9 @@ const categoryLabels = {
   other: 'Other'
 }
 
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function Aircraft() {
   const [aircraft, setAircraft] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +74,9 @@ export default function Aircraft() {
   const [showModal, setShowModal] = useState(false)
   const [editingAircraft, setEditingAircraft] = useState(null)
   const [menuOpen, setMenuOpen] = useState(null)
+  const [selectedSpec, setSelectedSpec] = useState(null)
+  
+  const { branding } = useBranding()
 
   useEffect(() => {
     loadAircraft()
@@ -96,6 +115,21 @@ export default function Aircraft() {
     setMenuOpen(null)
   }
 
+  const handleViewSpec = (ac) => {
+    setSelectedSpec(ac)
+    setMenuOpen(null)
+  }
+
+  const handleExportSpec = (ac) => {
+    try {
+      const pdf = generateAircraftSpecPDF(ac, branding)
+      pdf.save(`spec-sheet_${ac.nickname || ac.serialNumber || 'aircraft'}_${new Date().toISOString().split('T')[0]}.pdf`)
+    } catch (err) {
+      console.error('Failed to export spec:', err)
+    }
+    setMenuOpen(null)
+  }
+
   const handleModalClose = () => {
     setShowModal(false)
     setEditingAircraft(null)
@@ -115,6 +149,14 @@ export default function Aircraft() {
     return matchesSearch && matchesStatus
   })
 
+  // Fleet stats
+  const fleetStats = {
+    total: aircraft.length,
+    airworthy: aircraft.filter(a => a.status === 'airworthy').length,
+    maintenance: aircraft.filter(a => a.status === 'maintenance').length,
+    grounded: aircraft.filter(a => a.status === 'grounded').length
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -130,6 +172,26 @@ export default function Aircraft() {
           <Plus className="w-4 h-4" />
           Add Aircraft
         </button>
+      </div>
+
+      {/* Fleet Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="card bg-gray-50">
+          <p className="text-sm text-gray-500">Total Fleet</p>
+          <p className="text-2xl font-bold text-gray-900">{fleetStats.total}</p>
+        </div>
+        <div className="card bg-green-50">
+          <p className="text-sm text-green-600">Airworthy</p>
+          <p className="text-2xl font-bold text-green-700">{fleetStats.airworthy}</p>
+        </div>
+        <div className="card bg-amber-50">
+          <p className="text-sm text-amber-600">In Maintenance</p>
+          <p className="text-2xl font-bold text-amber-700">{fleetStats.maintenance}</p>
+        </div>
+        <div className="card bg-red-50">
+          <p className="text-sm text-red-600">Grounded</p>
+          <p className="text-2xl font-bold text-red-700">{fleetStats.grounded}</p>
+        </div>
       </div>
 
       {/* Filters and search */}
@@ -222,7 +284,22 @@ export default function Aircraft() {
                           className="fixed inset-0 z-10"
                           onClick={() => setMenuOpen(null)}
                         />
-                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                        <div className="absolute right-0 mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                          <button
+                            onClick={() => handleViewSpec(ac)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Spec Sheet
+                          </button>
+                          <button
+                            onClick={() => handleExportSpec(ac)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            Export Spec PDF
+                          </button>
+                          <hr className="my-1 border-gray-200" />
                           <button
                             onClick={() => handleEdit(ac)}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -285,6 +362,15 @@ export default function Aircraft() {
                     S/N: {ac.serialNumber}
                   </p>
                 )}
+                
+                {/* Quick action */}
+                <button
+                  onClick={() => handleViewSpec(ac)}
+                  className="w-full mt-3 pt-3 border-t border-gray-100 text-sm text-aeria-blue hover:text-aeria-navy flex items-center justify-center gap-1"
+                >
+                  <FileText className="w-4 h-4" />
+                  View Full Specifications
+                </button>
               </div>
             )
           })}
@@ -296,6 +382,14 @@ export default function Aircraft() {
         isOpen={showModal} 
         onClose={handleModalClose}
         aircraft={editingAircraft}
+      />
+      
+      {/* Spec Sheet Modal */}
+      <AircraftSpecSheet
+        aircraft={selectedSpec}
+        isOpen={!!selectedSpec}
+        onClose={() => setSelectedSpec(null)}
+        branding={branding}
       />
     </div>
   )
