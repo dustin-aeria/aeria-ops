@@ -174,15 +174,15 @@ const ValidationStatus = ({ sail, osoCompliance, containmentCompliant, outsideSc
           {!allCompliant && (
             <div className="mt-2 space-y-1">
               {!containmentCompliant && (
-                <p className="text-sm text-red-700">• Containment robustness insufficient</p>
+                <p className="text-sm text-red-700">â€¢ Containment robustness insufficient</p>
               )}
               {criticalGaps.slice(0, 3).map(oso => (
                 <p key={oso.id} className="text-sm text-red-700">
-                  • {oso.id}: {oso.name} (requires {oso.requirements[sail]})
+                  â€¢ {oso.id}: {oso.name} (requires {oso.requirements[sail]})
                 </p>
               ))}
               {criticalGaps.length > 3 && (
-                <p className="text-sm text-red-700">• ...and {criticalGaps.length - 3} more</p>
+                <p className="text-sm text-red-700">â€¢ ...and {criticalGaps.length - 3} more</p>
               )}
             </div>
           )}
@@ -352,7 +352,7 @@ STEP 9: OSO COMPLIANCE
     const required = oso.requirements[sail]
     if (required === 'O') return
     const compliance = checkOSOCompliance(oso, sail, osoData.robustness || 'none')
-    report += `\n${oso.id}: ${compliance.compliant ? '✓' : '✗'} (Req: ${required}, Actual: ${osoData.robustness || 'none'})`
+    report += `\n${oso.id}: ${compliance.compliant ? 'âœ“' : 'âœ—'} (Req: ${required}, Actual: ${osoData.robustness || 'none'})`
   })
 
   report += `\n\n================================\nEND OF REPORT`
@@ -371,6 +371,10 @@ export default function ProjectSORA({ project, onUpdate }) {
     oso: false
   })
   const [expandedOsos, setExpandedOsos] = useState({})
+  const [initialized, setInitialized] = useState(false)
+
+  // Guard clause for loading state
+  if (!project) return <div className="p-4 text-gray-500">Loading...</div>
 
   // ============================================
   // DATA FROM FLIGHT PLAN AND SITE SURVEY
@@ -398,10 +402,13 @@ export default function ProjectSORA({ project, onUpdate }) {
   const derivedUACharacteristic = getUACharacteristicFromAircraft(fpAircraft)
 
   // ============================================
-  // INITIALIZE SORA DATA
+  // INITIALIZE SORA DATA - Using safer pattern
   // ============================================
   useEffect(() => {
+    if (initialized) return
+
     if (!project.soraAssessment) {
+      setInitialized(true)
       const initialOsoCompliance = {}
       osoDefinitions.forEach(oso => {
         initialOsoCompliance[oso.id] = { robustness: 'none', evidence: '' }
@@ -447,8 +454,10 @@ export default function ProjectSORA({ project, onUpdate }) {
           version: '2.5'
         }
       })
+    } else {
+      setInitialized(true)
     }
-  }, [project.soraAssessment, onUpdate, fpOperationType, fpMaxAltitude, derivedPopulation, derivedUACharacteristic, fpMaxSpeed, derivedAdjacentPopulation, ssPopulation, fpAircraft.length])
+  }, [initialized, project.soraAssessment, onUpdate, fpOperationType, fpMaxAltitude, derivedPopulation, derivedUACharacteristic, fpMaxSpeed, derivedAdjacentPopulation, ssPopulation, fpAircraft.length])
 
   const sora = project.soraAssessment || {}
 
@@ -720,8 +729,8 @@ export default function ProjectSORA({ project, onUpdate }) {
             {primaryAircraft && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  <strong>Aircraft:</strong> {primaryAircraft.make} {primaryAircraft.model} • 
-                  Max Speed: {primaryAircraft.maxSpeed || 25} m/s • 
+                  <strong>Aircraft:</strong> {primaryAircraft.make} {primaryAircraft.model} â€¢ 
+                  Max Speed: {primaryAircraft.maxSpeed || 25} m/s â€¢ 
                   MTOW: {primaryAircraft.mtow || 'N/A'} kg
                 </p>
               </div>
@@ -950,7 +959,7 @@ export default function ProjectSORA({ project, onUpdate }) {
                   <div className="p-3 bg-white rounded border">
                     <p className="text-xs text-gray-500 mb-1">Adjacent Distance</p>
                     <p className="text-lg font-semibold">{(adjacentDistance / 1000).toFixed(1)} km</p>
-                    <p className="text-xs text-gray-400">3 min × {sora.maxSpeed || 25} m/s</p>
+                    <p className="text-xs text-gray-400">3 min Ã— {sora.maxSpeed || 25} m/s</p>
                   </div>
                   <div className="p-3 bg-white rounded border">
                     <p className="text-xs text-gray-500 mb-1">Required Robustness</p>
