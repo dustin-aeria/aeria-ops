@@ -19,7 +19,8 @@ import {
   Zap,
   Globe,
   Brain,
-  Box
+  Box,
+  RefreshCw
 } from 'lucide-react'
 
 // Import SORA configuration
@@ -85,6 +86,26 @@ const getRiskLevel = (likelihood, severity) => {
 }
 
 // ============================================
+// HELPER: Determine UA characteristic from aircraft data
+// ============================================
+const getUACharacteristicFromAircraft = (aircraft) => {
+  if (!aircraft || aircraft.length === 0) return null
+  
+  // Use primary aircraft, or first aircraft
+  const primary = aircraft.find(a => a.isPrimary) || aircraft[0]
+  
+  // If we have maxSpeed from the aircraft library
+  const speed = primary.maxSpeed || 25
+  
+  // Determine category based on speed (simplified - ideally would also check dimension)
+  if (speed <= 25) return '1m_25ms'
+  if (speed <= 35) return '3m_35ms'
+  if (speed <= 75) return '8m_75ms'
+  if (speed <= 120) return '20m_120ms'
+  return '40m_200ms'
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 export default function ProjectRisk({ project, onUpdate }) {
@@ -97,6 +118,16 @@ export default function ProjectRisk({ project, onUpdate }) {
   })
 
   const flightPlanEnabled = project.sections?.flightPlan
+  const siteSurveyEnabled = project.sections?.siteSurvey
+
+  // ============================================
+  // Get data from Site Survey and Flight Plan
+  // ============================================
+  const siteSurveyPopulation = project.siteSurvey?.population?.category
+  const siteSurveyAdjacentPopulation = project.siteSurvey?.population?.adjacentCategory
+  const flightPlanAircraft = project.flightPlan?.aircraft
+  const flightPlanMaxSpeed = flightPlanAircraft?.find(a => a.isPrimary)?.maxSpeed || 
+                             flightPlanAircraft?.[0]?.maxSpeed || 25
 
   // Initialize risk assessment if not present
   useEffect(() => {
@@ -109,16 +140,24 @@ export default function ProjectRisk({ project, onUpdate }) {
         }
       })
 
+      // Auto-populate from Site Survey if available
+      const initialPopulation = siteSurveyPopulation || 'sparsely'
+      const initialAdjacentPopulation = siteSurveyAdjacentPopulation || 'sparsely'
+      const initialUACharacteristic = getUACharacteristicFromAircraft(flightPlanAircraft) || '1m_25ms'
+
       onUpdate({
         riskAssessment: {
           sora: {
             enabled: flightPlanEnabled,
-            // UA Characteristics
-            uaCharacteristic: '1m_25ms',
-            maxSpeed: 25, // m/s for containment calculation
-            // Population
-            populationCategory: 'sparsely',
-            adjacentAreaPopulation: 'sparsely',
+            // UA Characteristics - try to get from Flight Plan aircraft
+            uaCharacteristic: initialUACharacteristic,
+            maxSpeed: flightPlanMaxSpeed,
+            // Population - pull from Site Survey if available
+            populationCategory: initialPopulation,
+            adjacentAreaPopulation: initialAdjacentPopulation,
+            // Track if values came from Site Survey
+            populationFromSiteSurvey: !!siteSurveyPopulation,
+            adjacentFromSiteSurvey: !!siteSurveyAdjacentPopulation,
             // Mitigations (separated M1A, M1B, M1C)
             mitigations: {
               M1A: { enabled: false, robustness: 'none', evidence: '' },
@@ -153,7 +192,7 @@ export default function ProjectRisk({ project, onUpdate }) {
         }
       })
     }
-  }, [project.riskAssessment, flightPlanEnabled, onUpdate])
+  }, [project.riskAssessment, flightPlanEnabled, onUpdate, siteSurveyPopulation, siteSurveyAdjacentPopulation, flightPlanAircraft, flightPlanMaxSpeed])
 
   const riskAssessment = project.riskAssessment || { sora: {}, hazards: [] }
   const sora = riskAssessment.sora || {}
@@ -215,6 +254,31 @@ export default function ProjectRisk({ project, onUpdate }) {
   }
 
   // ============================================
+  // SYNC FROM SITE SURVEY
+  // ============================================
+  const syncFromSiteSurvey = () => {
+    if (siteSurveyPopulation) {
+      updateSora('populationCategory', siteSurveyPopulation)
+      updateSora('populationFromSiteSurvey', true)
+    }
+    if (siteSurveyAdjacentPopulation) {
+      updateSora('adjacentAreaPopulation', siteSurveyAdjacentPopulation)
+      updateSora('adjacentFromSiteSurvey', true)
+    }
+  }
+
+  // Sync max speed from flight plan aircraft
+  const syncFromFlightPlan = () => {
+    if (flightPlanMaxSpeed) {
+      updateSora('maxSpeed', flightPlanMaxSpeed)
+    }
+    const uaChar = getUACharacteristicFromAircraft(flightPlanAircraft)
+    if (uaChar) {
+      updateSora('uaCharacteristic', uaChar)
+    }
+  }
+
+  // ============================================
   // CALCULATIONS
   // ============================================
   
@@ -259,6 +323,10 @@ export default function ProjectRisk({ project, onUpdate }) {
     return actual >= required
   })()
 
+  // Check if Site Survey data differs from current SORA values
+  const siteSurveyMismatch = siteSurveyPopulation && siteSurveyPopulation !== sora.populationCategory
+  const adjacentMismatch = siteSurveyAdjacentPopulation && siteSurveyAdjacentPopulation !== sora.adjacentAreaPopulation
+
   // ============================================
   // HAZARDS MANAGEMENT
   // ============================================
@@ -287,6 +355,7 @@ export default function ProjectRisk({ project, onUpdate }) {
     const newHazards = (riskAssessment.hazards || []).filter((_, i) => i !== index)
     updateRiskAssessment({ hazards: newHazards })
   }
+
   // ============================================
   // RENDER
   // ============================================
@@ -351,6 +420,26 @@ export default function ProjectRisk({ project, onUpdate }) {
                     </span>
                   </div>
                 )}
+                {/* NEW: Site Survey sync alert */}
+                {(siteSurveyMismatch || adjacentMismatch) && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm text-blue-800">
+                        Site Survey has different population data. 
+                        {siteSurveyMismatch && ` Operational: ${populationCategories.find(p => p.value === siteSurveyPopulation)?.label}`}
+                        {adjacentMismatch && ` Adjacent: ${populationCategories.find(p => p.value === siteSurveyAdjacentPopulation)?.label}`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={syncFromSiteSurvey}
+                      className="text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Sync
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -376,10 +465,22 @@ export default function ProjectRisk({ project, onUpdate }) {
             <div className="mt-4 space-y-6">
               {/* UA Characteristics */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  UA Characteristics
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    UA Characteristics
+                  </h3>
+                  {/* NEW: Sync from Flight Plan button */}
+                  {flightPlanAircraft && flightPlanAircraft.length > 0 && (
+                    <button
+                      onClick={syncFromFlightPlan}
+                      className="text-xs text-aeria-blue hover:text-aeria-navy flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Sync from Flight Plan
+                    </button>
+                  )}
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="label">UA Size & Speed Category</label>
@@ -421,15 +522,41 @@ export default function ProjectRisk({ project, onUpdate }) {
 
               {/* Population Density */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Operational Area Population
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Operational Area Population
+                  </h3>
+                  {/* NEW: Sync from Site Survey button */}
+                  {siteSurveyEnabled && siteSurveyPopulation && (
+                    <button
+                      onClick={syncFromSiteSurvey}
+                      className="text-xs text-aeria-blue hover:text-aeria-navy flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Sync from Site Survey
+                    </button>
+                  )}
+                </div>
+
+                {/* NEW: Show Site Survey source indicator */}
+                {sora.populationFromSiteSurvey && (
+                  <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-xs text-green-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Population data imported from Site Survey
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="label">Population Density Category</label>
                   <select
                     value={sora.populationCategory || 'sparsely'}
-                    onChange={(e) => updateSora('populationCategory', e.target.value)}
+                    onChange={(e) => {
+                      updateSora('populationCategory', e.target.value)
+                      updateSora('populationFromSiteSurvey', false) // Mark as manually changed
+                    }}
                     className="input"
                   >
                     {populationCategories.map(pop => (
@@ -687,10 +814,32 @@ export default function ProjectRisk({ project, onUpdate }) {
 
               {/* Adjacent Area Calculation */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Adjacent Area Assessment
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Adjacent Area Assessment
+                  </h3>
+                  {/* NEW: Sync from Site Survey button */}
+                  {siteSurveyEnabled && siteSurveyAdjacentPopulation && (
+                    <button
+                      onClick={syncFromSiteSurvey}
+                      className="text-xs text-aeria-blue hover:text-aeria-navy flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Sync from Site Survey
+                    </button>
+                  )}
+                </div>
+
+                {/* NEW: Show Site Survey source indicator */}
+                {sora.adjacentFromSiteSurvey && (
+                  <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-xs text-green-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Adjacent area data imported from Site Survey
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid sm:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -708,7 +857,10 @@ export default function ProjectRisk({ project, onUpdate }) {
                     <label className="label">Adjacent Area Population</label>
                     <select
                       value={sora.adjacentAreaPopulation || 'sparsely'}
-                      onChange={(e) => updateSora('adjacentAreaPopulation', e.target.value)}
+                      onChange={(e) => {
+                        updateSora('adjacentAreaPopulation', e.target.value)
+                        updateSora('adjacentFromSiteSurvey', false) // Mark as manually changed
+                      }}
                       className="input"
                     >
                       {populationCategories.map(pop => (
@@ -796,6 +948,7 @@ export default function ProjectRisk({ project, onUpdate }) {
           )}
         </div>
       )}
+
       {/* OSO Compliance Section */}
       {flightPlanEnabled && (
         <div className="card">
