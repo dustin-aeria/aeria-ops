@@ -4,8 +4,6 @@ import {
   Plus,
   Trash2,
   Shield,
-  Plane,
-  Users,
   ChevronDown,
   ChevronUp,
   Info,
@@ -15,329 +13,51 @@ import {
   FileCheck,
   Wrench,
   GraduationCap,
-  Settings,
-  Eye
+  Users,
+  Eye,
+  MapPin,
+  Zap,
+  Globe,
+  Brain,
+  Box
 } from 'lucide-react'
 
-// ============================================
-// SORA 2.5 CONFIGURATION DATA
-// ============================================
-
-// Intrinsic Ground Risk Class (Table 1 from SORA 2.5)
-const intrinsicGRC = {
-  'VLOS_controlled': 1,
-  'VLOS_sparsely': 2,
-  'VLOS_populated': 3,
-  'VLOS_gathering': 4,
-  'BVLOS_sparsely': 3,
-  'BVLOS_populated': 4,
-  'BVLOS_gathering': 5
-}
-
-// Characteristic dimension categories
-const maxDimensions = [
-  { value: '1m', label: '≤1m', modifier: 0 },
-  { value: '3m', label: '1m to 3m', modifier: 1 },
-  { value: '8m', label: '3m to 8m', modifier: 2 },
-  { value: '8m+', label: '>8m', modifier: 3 }
-]
-
-// Kinetic energy categories  
-const kineticEnergy = [
-  { value: 'low', label: '<700J (approx <2kg)', modifier: 0 },
-  { value: 'medium', label: '700J - 34kJ', modifier: 1 },
-  { value: 'high', label: '34kJ - 1084kJ', modifier: 2 },
-  { value: 'very_high', label: '>1084kJ', modifier: 3 }
-]
-
-// Robustness levels
-const robustnessLevels = [
-  { value: 'none', label: 'None', color: 'bg-gray-100 text-gray-600' },
-  { value: 'low', label: 'Low', color: 'bg-blue-100 text-blue-700' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-100 text-amber-700' },
-  { value: 'high', label: 'High', color: 'bg-green-100 text-green-700' }
-]
-
-// Ground Mitigations with robustness
-const groundMitigations = [
-  { 
-    id: 'M1', 
-    name: 'Strategic Mitigations for Ground Risk',
-    description: 'Reducing number of people at risk through operational restrictions',
-    reductionLow: 0,
-    reductionMedium: 1,
-    reductionHigh: 2,
-    criteria: {
-      low: 'Basic operational limitations documented',
-      medium: 'Verified operational limitations with defined boundaries',
-      high: 'Comprehensive restrictions with active monitoring/enforcement'
-    }
-  },
-  { 
-    id: 'M2', 
-    name: 'Effects of Ground Impact Reduced',
-    description: 'Technical mitigations to reduce harm (parachute, frangible design, low energy)',
-    reductionLow: 0,
-    reductionMedium: 1,
-    reductionHigh: 2,
-    criteria: {
-      low: 'Basic energy attenuation claimed',
-      medium: 'Tested energy attenuation system',
-      high: 'Certified/proven energy attenuation with redundancy'
-    }
-  },
-  { 
-    id: 'M3', 
-    name: 'Emergency Response Plan',
-    description: 'ERP in place - required but does not reduce GRC',
-    reductionLow: 0,
-    reductionMedium: 0,
-    reductionHigh: 0,
-    criteria: {
-      low: 'Basic ERP documented',
-      medium: 'ERP with defined response times and resources',
-      high: 'Comprehensive ERP with training, drills, and coordination'
-    }
-  }
-]
-
-// Air Risk Class levels
-const arcLevels = [
-  { value: 'ARC-a', label: 'ARC-a', description: 'Atypical airspace - very low encounter rate', color: 'bg-green-100 text-green-800' },
-  { value: 'ARC-b', label: 'ARC-b', description: 'Low encounter rate (rural, Class G)', color: 'bg-blue-100 text-blue-800' },
-  { value: 'ARC-c', label: 'ARC-c', description: 'Medium encounter rate (suburban, near aerodromes)', color: 'bg-amber-100 text-amber-800' },
-  { value: 'ARC-d', label: 'ARC-d', description: 'High encounter rate (urban, busy airspace)', color: 'bg-red-100 text-red-800' }
-]
-
-// Tactical Mitigation Performance Requirements
-const tmprDefinitions = [
-  {
-    id: 'TMPR-A',
-    name: 'Remain Clear',
-    arcReduction: 1,
-    description: 'Ability to remain clear of other airspace users',
-    requirements: {
-      low: 'Visual observation and manual avoidance',
-      medium: 'Enhanced situational awareness (ADS-B In, FLARM)',
-      high: 'Automated detect and avoid capability'
-    }
-  },
-  {
-    id: 'TMPR-B', 
-    name: 'Detect and Avoid',
-    arcReduction: 2,
-    description: 'Full DAA capability to detect, track, and avoid conflicts',
-    requirements: {
-      low: 'N/A - DAA requires medium or high',
-      medium: 'Cooperative DAA (ADS-B, transponder interrogation)',
-      high: 'Non-cooperative DAA (radar, optical sensors)'
-    }
-  }
-]
-
-// SAIL determination matrix (Final GRC vs Residual ARC)
-const sailMatrix = {
-  1: { 'ARC-a': 'I', 'ARC-b': 'I', 'ARC-c': 'II', 'ARC-d': 'IV' },
-  2: { 'ARC-a': 'I', 'ARC-b': 'II', 'ARC-c': 'II', 'ARC-d': 'IV' },
-  3: { 'ARC-a': 'II', 'ARC-b': 'II', 'ARC-c': 'IV', 'ARC-d': 'VI' },
-  4: { 'ARC-a': 'II', 'ARC-b': 'IV', 'ARC-c': 'IV', 'ARC-d': 'VI' },
-  5: { 'ARC-a': 'IV', 'ARC-b': 'IV', 'ARC-c': 'VI', 'ARC-d': 'VI' },
-  6: { 'ARC-a': 'IV', 'ARC-b': 'VI', 'ARC-c': 'VI', 'ARC-d': 'VI' },
-  7: { 'ARC-a': 'VI', 'ARC-b': 'VI', 'ARC-c': 'VI', 'ARC-d': 'VI' }
-}
-
-const sailColors = {
-  'I': 'bg-green-100 text-green-800 border-green-300',
-  'II': 'bg-blue-100 text-blue-800 border-blue-300',
-  'IV': 'bg-amber-100 text-amber-800 border-amber-300',
-  'VI': 'bg-red-100 text-red-800 border-red-300'
-}
+// Import SORA configuration
+import {
+  populationCategories,
+  uaCharacteristics,
+  intrinsicGRCMatrix,
+  groundMitigations,
+  arcLevels,
+  tmprDefinitions,
+  sailMatrix,
+  sailColors,
+  sailDescriptions,
+  containmentRobustness,
+  calculateAdjacentAreaDistance,
+  osoDefinitions,
+  osoCategories,
+  robustnessLevels,
+  getIntrinsicGRC,
+  calculateFinalGRC as calcFinalGRC,
+  calculateResidualARC as calcResidualARC,
+  getSAIL,
+  checkOSOCompliance,
+  getContainmentRequirement
+} from '../../lib/soraConfig'
 
 // ============================================
-// OSO DEFINITIONS (SORA 2.5 Annex E)
-// ============================================
-// Requirements: O = Optional, L = Low, M = Medium, H = High
-const osoDefinitions = [
-  {
-    id: 'OSO#01',
-    category: 'technical',
-    name: 'Ensure operator competence',
-    description: 'The operator must demonstrate competency appropriate for the operation',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#02',
-    category: 'technical',
-    name: 'UAS manufactured by competent entity',
-    description: 'UAS should be manufactured by an entity with appropriate competencies',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#03',
-    category: 'technical',
-    name: 'UAS maintained by competent entity',
-    description: 'UAS maintenance performed by competent personnel',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#04',
-    category: 'technical',
-    name: 'UAS developed to design standards',
-    description: 'UAS developed according to recognized design standards',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#05',
-    category: 'technical',
-    name: 'UAS designed considering system safety',
-    description: 'System safety and reliability considered in UAS design',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#06',
-    category: 'technical',
-    name: 'C3 link performance appropriate',
-    description: 'Command, control, and communication link meets operational needs',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#07',
-    category: 'operational',
-    name: 'Inspection of UAS',
-    description: 'Pre-flight and periodic inspections to ensure safe condition',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#08',
-    category: 'operational',
-    name: 'Operational procedures defined',
-    description: 'Procedures are defined, validated, and adhered to',
-    requirements: { I: 'L', II: 'M', IV: 'H', VI: 'H' }
-  },
-  {
-    id: 'OSO#09',
-    category: 'operational',
-    name: 'Remote crew trained and current',
-    description: 'Flight crew have appropriate training and maintain currency',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#10',
-    category: 'technical',
-    name: 'Safe recovery from technical issue',
-    description: 'UAS can safely recover from foreseeable technical failures',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#11',
-    category: 'operational',
-    name: 'Procedures for adverse conditions',
-    description: 'Procedures exist for handling adverse operating conditions',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#12',
-    category: 'technical',
-    name: 'UAS designed for adverse conditions',
-    description: 'UAS designed and qualified to cope with adverse conditions',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#13',
-    category: 'technical',
-    name: 'External services reliable',
-    description: 'External services supporting UAS operation are reliable',
-    requirements: { I: 'O', II: 'L', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#14',
-    category: 'operational',
-    name: 'Operational volume protection',
-    description: 'Procedures to define and protect operational volume',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#15',
-    category: 'operational',
-    name: 'Ground risk buffer definition',
-    description: 'Adjacent area/ground risk buffer appropriately defined',
-    requirements: { I: 'O', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#16',
-    category: 'operational',
-    name: 'Multi-crew coordination',
-    description: 'Effective coordination between multiple crew members',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#17',
-    category: 'operational',
-    name: 'Remote crew fit to operate',
-    description: 'Fitness requirements for remote crew members',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#18',
-    category: 'technical',
-    name: 'Automatic flight envelope protection',
-    description: 'Automated systems to protect against exceeding flight envelope',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#19',
-    category: 'operational',
-    name: 'Safe recovery from human error',
-    description: 'Procedures/design to recover from remote crew errors',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#20',
-    category: 'technical',
-    name: 'Redundant flight envelope protection',
-    description: 'Redundant/autonomous flight envelope protection',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#21',
-    category: 'technical',
-    name: 'Flight termination capability',
-    description: 'Method to retrieve or terminate flight in emergency',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#22',
-    category: 'operational',
-    name: 'Safe environmental conditions',
-    description: 'Operations conducted in safe environmental conditions',
-    requirements: { I: 'L', II: 'L', IV: 'M', VI: 'H' }
-  },
-  {
-    id: 'OSO#23',
-    category: 'operational',
-    name: 'Environmental conditions defined',
-    description: 'Environmental conditions for safe operations are defined',
-    requirements: { I: 'L', II: 'L', IV: 'L', VI: 'M' }
-  },
-  {
-    id: 'OSO#24',
-    category: 'technical',
-    name: 'UAS qualified for environment',
-    description: 'UAS designed and qualified for operating environment',
-    requirements: { I: 'O', II: 'O', IV: 'L', VI: 'M' }
-  }
-]
-
-// ============================================
-// HSE HAZARD ASSESSMENT
+// HSE HAZARD ASSESSMENT CONFIG
 // ============================================
 const hazardCategories = [
-  { value: 'physical', label: 'Physical', examples: 'Terrain, weather, obstacles, traffic' },
-  { value: 'chemical', label: 'Chemical', examples: 'Fuel, batteries, industrial chemicals' },
-  { value: 'biological', label: 'Biological', examples: 'Wildlife, insects, vegetation' },
-  { value: 'ergonomic', label: 'Ergonomic', examples: 'Repetitive motion, fatigue, workstation' },
-  { value: 'psychological', label: 'Psychological', examples: 'Stress, time pressure, distractions' },
-  { value: 'environmental', label: 'Environmental', examples: 'Heat, cold, UV, noise' }
+  { value: 'environmental', label: 'Environmental', examples: 'Weather, terrain, water hazards, wildlife' },
+  { value: 'overhead', label: 'Overhead', examples: 'Power lines, towers, buildings, trees, wires' },
+  { value: 'access', label: 'Access/Egress', examples: 'Slips/trips, uneven terrain, water crossings' },
+  { value: 'ergonomic', label: 'Ergonomic', examples: 'Awkward postures, repetitive tasks, manual handling' },
+  { value: 'personal', label: 'Personal Limitations', examples: 'Fatigue, distraction, training gaps, stress' },
+  { value: 'equipment', label: 'Equipment', examples: 'Malfunction, battery hazards, sharp edges' },
+  { value: 'biological', label: 'Biological', examples: 'Insects, poisonous plants, animal encounters' },
+  { value: 'chemical', label: 'Chemical', examples: 'Fuel, battery chemicals, site contaminants' }
 ]
 
 const likelihoodLevels = [
@@ -349,8 +69,8 @@ const likelihoodLevels = [
 ]
 
 const severityLevels = [
-  { value: 1, label: 'Negligible', description: 'No injury, minor equipment damage' },
-  { value: 2, label: 'Minor', description: 'First aid injury, minor property damage' },
+  { value: 1, label: 'Negligible', description: 'No injury, minor inconvenience' },
+  { value: 2, label: 'Minor', description: 'First aid injury, minor damage' },
   { value: 3, label: 'Moderate', description: 'Medical treatment, significant damage' },
   { value: 4, label: 'Major', description: 'Serious injury, major damage' },
   { value: 5, label: 'Catastrophic', description: 'Fatality, total loss' }
@@ -371,6 +91,7 @@ export default function ProjectRisk({ project, onUpdate }) {
   const [expandedSections, setExpandedSections] = useState({
     groundRisk: true,
     airRisk: true,
+    containment: false,
     oso: false,
     hazards: true
   })
@@ -392,23 +113,35 @@ export default function ProjectRisk({ project, onUpdate }) {
         riskAssessment: {
           sora: {
             enabled: flightPlanEnabled,
-            operationType: project.flightPlan?.operationType || 'VLOS',
-            groundType: project.flightPlan?.groundType || 'sparsely_populated',
-            maxDimension: '1m',
-            kineticEnergy: 'low',
-            overPeople: false,
+            // UA Characteristics
+            uaCharacteristic: '1m_25ms',
+            maxSpeed: 25, // m/s for containment calculation
+            // Population
+            populationCategory: 'sparsely',
+            adjacentAreaPopulation: 'sparsely',
+            // Mitigations (separated M1A, M1B, M1C)
             mitigations: {
-              M1: { enabled: false, robustness: 'none', evidence: '' },
+              M1A: { enabled: false, robustness: 'none', evidence: '' },
+              M1B: { enabled: false, robustness: 'none', evidence: '' },
+              M1C: { enabled: false, robustness: 'none', evidence: '' },
               M2: { enabled: false, robustness: 'none', evidence: '' },
-              M3: { enabled: true, robustness: 'low', evidence: '' }
+              M3: { enabled: true, robustness: 'low', evidence: 'ERP documented in Emergency Plan section' }
             },
-            initialARC: 'ARC-a',
+            // Air Risk
+            initialARC: 'ARC-b',
             tmpr: {
-              enabled: false,
-              type: 'TMPR-A',
+              enabled: true,
+              type: 'VLOS',
+              robustness: 'low',
+              evidence: ''
+            },
+            // Containment
+            containment: {
+              method: '',
               robustness: 'none',
               evidence: ''
             },
+            // OSO Compliance
             osoCompliance: initialOsoCompliance,
             additionalNotes: ''
           },
@@ -420,11 +153,14 @@ export default function ProjectRisk({ project, onUpdate }) {
         }
       })
     }
-  }, [project.riskAssessment])
+  }, [project.riskAssessment, flightPlanEnabled, onUpdate])
 
   const riskAssessment = project.riskAssessment || { sora: {}, hazards: [] }
   const sora = riskAssessment.sora || {}
 
+  // ============================================
+  // UPDATE FUNCTIONS
+  // ============================================
   const updateRiskAssessment = (updates) => {
     onUpdate({
       riskAssessment: {
@@ -457,6 +193,13 @@ export default function ProjectRisk({ project, onUpdate }) {
     })
   }
 
+  const updateContainment = (field, value) => {
+    updateSora('containment', {
+      ...(sora.containment || {}),
+      [field]: value
+    })
+  }
+
   const updateOso = (osoId, field, value) => {
     updateSora('osoCompliance', {
       ...(sora.osoCompliance || {}),
@@ -475,110 +218,46 @@ export default function ProjectRisk({ project, onUpdate }) {
   // CALCULATIONS
   // ============================================
   
-  // Calculate intrinsic GRC
-  const calculateIntrinsicGRC = () => {
-    const opType = sora.operationType || 'VLOS'
-    const groundType = sora.groundType || 'sparsely_populated'
-    
-    let key = ''
-    if (opType === 'VLOS' || opType === 'EVLOS') {
-      if (groundType === 'controlled_ground') key = 'VLOS_controlled'
-      else if (groundType === 'sparsely_populated') key = 'VLOS_sparsely'
-      else if (groundType === 'populated') key = 'VLOS_populated'
-      else key = 'VLOS_gathering'
-    } else {
-      if (groundType === 'sparsely_populated' || groundType === 'controlled_ground') key = 'BVLOS_sparsely'
-      else if (groundType === 'populated') key = 'BVLOS_populated'
-      else key = 'BVLOS_gathering'
-    }
-    
-    return intrinsicGRC[key] || 2
-  }
+  // Get intrinsic GRC from matrix
+  const intrinsicGRC = getIntrinsicGRC(
+    sora.populationCategory || 'sparsely',
+    sora.uaCharacteristic || '1m_25ms'
+  )
 
   // Calculate final GRC with mitigations
-  const calculateFinalGRC = () => {
-    let grc = calculateIntrinsicGRC()
-    
-    // Add for size/energy adjustments (simplified - max +2)
-    const dimMod = maxDimensions.find(d => d.value === sora.maxDimension)?.modifier || 0
-    const energyMod = kineticEnergy.find(k => k.value === sora.kineticEnergy)?.modifier || 0
-    // Use higher of the two modifiers
-    grc += Math.max(dimMod, energyMod)
-    
-    // Over people adds 1
-    if (sora.overPeople) grc += 1
-    
-    // Apply mitigations
-    const mits = sora.mitigations || {}
-    
-    if (mits.M1?.enabled) {
-      const m1 = groundMitigations.find(m => m.id === 'M1')
-      if (mits.M1.robustness === 'medium') grc -= m1.reductionMedium
-      else if (mits.M1.robustness === 'high') grc -= m1.reductionHigh
-    }
-    
-    if (mits.M2?.enabled) {
-      const m2 = groundMitigations.find(m => m.id === 'M2')
-      if (mits.M2.robustness === 'medium') grc -= m2.reductionMedium
-      else if (mits.M2.robustness === 'high') grc -= m2.reductionHigh
-    }
-    
-    // Clamp to valid range
-    return Math.max(1, Math.min(7, grc))
-  }
+  const finalGRC = calcFinalGRC(intrinsicGRC, sora.mitigations || {})
 
-  // Calculate residual ARC (after TMPR)
-  const calculateResidualARC = () => {
-    const arcOrder = ['ARC-a', 'ARC-b', 'ARC-c', 'ARC-d']
-    const initialIndex = arcOrder.indexOf(sora.initialARC || 'ARC-a')
-    
-    if (!sora.tmpr?.enabled || sora.tmpr.robustness === 'none') {
-      return sora.initialARC || 'ARC-a'
-    }
-    
-    const tmprDef = tmprDefinitions.find(t => t.id === sora.tmpr.type)
-    const reduction = tmprDef?.arcReduction || 0
-    
-    // Only reduce if robustness is medium or high
-    let effectiveReduction = 0
-    if (sora.tmpr.robustness === 'medium') effectiveReduction = Math.min(reduction, 1)
-    else if (sora.tmpr.robustness === 'high') effectiveReduction = reduction
-    
-    const newIndex = Math.max(0, initialIndex - effectiveReduction)
-    return arcOrder[newIndex]
-  }
+  // Calculate residual ARC
+  const residualARC = calcResidualARC(sora.initialARC || 'ARC-b', sora.tmpr)
 
-  // Calculate SAIL
-  const calculateSAIL = () => {
-    const grc = calculateFinalGRC()
-    const arc = calculateResidualARC()
-    return sailMatrix[grc]?.[arc] || 'II'
-  }
+  // Get SAIL
+  const sail = getSAIL(finalGRC, residualARC) || 'II'
 
-  const intrinsicGRCValue = calculateIntrinsicGRC()
-  const finalGRC = calculateFinalGRC()
-  const residualARC = calculateResidualARC()
-  const sail = calculateSAIL()
+  // Check if outside SORA scope
+  const outsideScope = intrinsicGRC === null || intrinsicGRC > 7 || finalGRC > 7
 
-  // Get OSO requirement level for current SAIL
-  const getOsoRequirement = (oso) => {
-    return oso.requirements[sail] || 'O'
-  }
+  // Calculate adjacent area distance
+  const adjacentDistance = calculateAdjacentAreaDistance(sora.maxSpeed || 25)
 
-  // Check if OSO compliance is sufficient
-  const checkOsoCompliance = (oso) => {
-    const required = getOsoRequirement(oso)
-    const actual = sora.osoCompliance?.[oso.id]?.robustness || 'none'
-    
-    if (required === 'O') return { status: 'ok', message: 'Optional' }
-    
-    const levels = ['none', 'low', 'medium', 'high']
-    const requiredIndex = levels.indexOf(required.toLowerCase())
-    const actualIndex = levels.indexOf(actual)
-    
-    if (actualIndex >= requiredIndex) return { status: 'ok', message: 'Compliant' }
-    return { status: 'gap', message: `Requires ${required} robustness` }
-  }
+  // Get required containment robustness
+  const requiredContainment = getContainmentRequirement(
+    sora.adjacentAreaPopulation || 'sparsely',
+    sail
+  )
+
+  // Count OSO compliance gaps
+  const osoGapCount = osoDefinitions.filter(oso => {
+    const compliance = checkOSOCompliance(oso, sail, sora.osoCompliance?.[oso.id]?.robustness || 'none')
+    return !compliance.compliant
+  }).length
+
+  // Check containment compliance
+  const containmentCompliant = (() => {
+    const levels = { 'none': 0, 'low': 1, 'medium': 2, 'high': 3 }
+    const required = levels[requiredContainment] || 0
+    const actual = levels[sora.containment?.robustness] || 0
+    return actual >= required
+  })()
 
   // ============================================
   // HAZARDS MANAGEMENT
@@ -586,7 +265,7 @@ export default function ProjectRisk({ project, onUpdate }) {
   const addHazard = () => {
     updateRiskAssessment({
       hazards: [...(riskAssessment.hazards || []), {
-        category: 'physical',
+        category: 'environmental',
         description: '',
         likelihood: 2,
         severity: 2,
@@ -608,14 +287,6 @@ export default function ProjectRisk({ project, onUpdate }) {
     const newHazards = (riskAssessment.hazards || []).filter((_, i) => i !== index)
     updateRiskAssessment({ hazards: newHazards })
   }
-
-  // Count OSO compliance gaps
-  const osoGapCount = osoDefinitions.filter(oso => {
-    const req = getOsoRequirement(oso)
-    if (req === 'O') return false
-    return checkOsoCompliance(oso).status === 'gap'
-  }).length
-
   // ============================================
   // RENDER
   // ============================================
@@ -625,31 +296,63 @@ export default function ProjectRisk({ project, onUpdate }) {
       {flightPlanEnabled && (
         <div className="card bg-gradient-to-r from-aeria-sky to-white">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">SORA 2.5 Assessment Summary</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Intrinsic GRC</p>
-              <p className="text-2xl font-bold text-gray-400">{intrinsicGRCValue}</p>
+          
+          {outsideScope ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">Outside SORA Scope</span>
+              </div>
+              <p className="text-sm text-red-700 mt-1">
+                The combination of population density and UA characteristics results in a GRC outside 
+                the SORA methodology scope. Consider certified category operations or different operational parameters.
+              </p>
             </div>
-            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Final GRC</p>
-              <p className="text-2xl font-bold text-gray-900">{finalGRC}</p>
-            </div>
-            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Residual ARC</p>
-              <p className="text-2xl font-bold text-gray-900">{residualARC}</p>
-            </div>
-            <div className={`text-center p-3 rounded-lg shadow-sm ${sailColors[sail]}`}>
-              <p className="text-xs opacity-75 mb-1">SAIL</p>
-              <p className="text-2xl font-bold">{sail}</p>
-            </div>
-          </div>
-          {osoGapCount > 0 && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <span className="text-sm text-amber-800">
-                {osoGapCount} OSO compliance gap{osoGapCount > 1 ? 's' : ''} identified - review OSO section
-              </span>
-            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-xs text-gray-500 mb-1">Intrinsic GRC</p>
+                  <p className="text-2xl font-bold text-gray-400">{intrinsicGRC}</p>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-xs text-gray-500 mb-1">Final GRC</p>
+                  <p className="text-2xl font-bold text-gray-900">{finalGRC}</p>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-xs text-gray-500 mb-1">Initial ARC</p>
+                  <p className="text-lg font-bold text-gray-400">{sora.initialARC || 'ARC-b'}</p>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-xs text-gray-500 mb-1">Residual ARC</p>
+                  <p className="text-lg font-bold text-gray-900">{residualARC}</p>
+                </div>
+                <div className={`text-center p-3 rounded-lg shadow-sm ${sailColors[sail]}`}>
+                  <p className="text-xs opacity-75 mb-1">SAIL</p>
+                  <p className="text-2xl font-bold">{sail}</p>
+                </div>
+              </div>
+
+              {/* Status Alerts */}
+              <div className="mt-4 space-y-2">
+                {osoGapCount > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    <span className="text-sm text-amber-800">
+                      {osoGapCount} OSO compliance gap{osoGapCount > 1 ? 's' : ''} identified - review OSO section
+                    </span>
+                  </div>
+                )}
+                {!containmentCompliant && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+                    <Box className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    <span className="text-sm text-amber-800">
+                      Containment requires {requiredContainment} robustness - review Containment section
+                    </span>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -664,144 +367,158 @@ export default function ProjectRisk({ project, onUpdate }) {
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Target className="w-5 h-5 text-aeria-blue" />
               Ground Risk Assessment
+              <span className="text-sm font-normal text-gray-500">(Steps 2-3)</span>
             </h2>
             {expandedSections.groundRisk ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
 
           {expandedSections.groundRisk && (
             <div className="mt-4 space-y-6">
-              {/* Operational Parameters */}
+              {/* UA Characteristics */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3">Operational Parameters</h3>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  UA Characteristics
+                </h3>
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="label">Operation Type</label>
+                    <label className="label">UA Size & Speed Category</label>
                     <select
-                      value={sora.operationType || 'VLOS'}
-                      onChange={(e) => updateSora('operationType', e.target.value)}
+                      value={sora.uaCharacteristic || '1m_25ms'}
+                      onChange={(e) => {
+                        const char = uaCharacteristics.find(u => u.value === e.target.value)
+                        updateSora('uaCharacteristic', e.target.value)
+                        if (char) updateSora('maxSpeed', char.maxSpeed)
+                      }}
                       className="input"
                     >
-                      <option value="VLOS">VLOS</option>
-                      <option value="EVLOS">EVLOS</option>
-                      <option value="BVLOS">BVLOS</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label">Ground Area Type</label>
-                    <select
-                      value={sora.groundType || 'sparsely_populated'}
-                      onChange={(e) => updateSora('groundType', e.target.value)}
-                      className="input"
-                    >
-                      <option value="controlled_ground">Controlled Ground Area</option>
-                      <option value="sparsely_populated">Sparsely Populated</option>
-                      <option value="populated">Populated</option>
-                      <option value="gathering">Gathering of People</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label">Max Characteristic Dimension</label>
-                    <select
-                      value={sora.maxDimension || '1m'}
-                      onChange={(e) => updateSora('maxDimension', e.target.value)}
-                      className="input"
-                    >
-                      {maxDimensions.map(d => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
+                      {uaCharacteristics.map(ua => (
+                        <option key={ua.value} value={ua.value}>
+                          {ua.label} - {ua.description}
+                        </option>
                       ))}
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Based on max characteristic dimension and typical cruise speed
+                    </p>
                   </div>
                   <div>
-                    <label className="label">Typical Kinetic Energy</label>
-                    <select
-                      value={sora.kineticEnergy || 'low'}
-                      onChange={(e) => updateSora('kineticEnergy', e.target.value)}
-                      className="input"
-                    >
-                      {kineticEnergy.map(k => (
-                        <option key={k.value} value={k.value}>{k.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="label">Max Operational Speed (m/s)</label>
                     <input
-                      type="checkbox"
-                      checked={sora.overPeople || false}
-                      onChange={(e) => updateSora('overPeople', e.target.checked)}
-                      className="w-4 h-4 text-aeria-navy rounded"
+                      type="number"
+                      value={sora.maxSpeed || 25}
+                      onChange={(e) => updateSora('maxSpeed', parseFloat(e.target.value) || 25)}
+                      className="input"
+                      min="1"
+                      max="200"
                     />
-                    <span className="text-sm text-gray-700">Operations over uninvolved persons (+1 GRC)</span>
-                  </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used for containment calculations (3-min flight distance)
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Ground Mitigations */}
+              {/* Population Density */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Operational Area Population
+                </h3>
+                <div>
+                  <label className="label">Population Density Category</label>
+                  <select
+                    value={sora.populationCategory || 'sparsely'}
+                    onChange={(e) => updateSora('populationCategory', e.target.value)}
+                    className="input"
+                  >
+                    {populationCategories.map(pop => (
+                      <option key={pop.value} value={pop.value}>
+                        {pop.label} ({pop.density})
+                      </option>
+                    ))}
+                  </select>
+                  {sora.populationCategory && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {populationCategories.find(p => p.value === sora.populationCategory)?.examples}
+                    </p>
+                  )}
+                </div>
+
+                {/* Intrinsic GRC Display */}
+                <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Intrinsic GRC (from Table 2)</span>
+                    <span className={`text-lg font-bold ${intrinsicGRC > 5 ? 'text-amber-600' : 'text-gray-900'}`}>
+                      {intrinsicGRC || 'N/A'}
+                    </span>
+                  </div>
+                  {intrinsicGRC === null && (
+                    <p className="text-xs text-red-600 mt-1">
+                      This combination is outside SORA scope
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Ground Risk Mitigations */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   Ground Risk Mitigations
                 </h3>
+                
                 <div className="space-y-4">
-                  {groundMitigations.map((mit) => {
-                    const mitData = sora.mitigations?.[mit.id] || {}
-                    return (
-                      <div key={mit.id} className="p-3 bg-white rounded-lg border border-gray-200">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={mitData.enabled || false}
-                            onChange={(e) => updateMitigation(mit.id, 'enabled', e.target.checked)}
-                            className="w-4 h-4 text-aeria-navy rounded mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900">{mit.id}: {mit.name}</span>
-                              {mit.reductionHigh > 0 && (
-                                <span className="text-xs text-green-600">
-                                  (up to -{mit.reductionHigh} GRC)
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-500 mb-2">{mit.description}</p>
-                            
-                            {mitData.enabled && (
-                              <div className="grid sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-100">
-                                <div>
-                                  <label className="label text-xs">Robustness Level</label>
-                                  <select
-                                    value={mitData.robustness || 'none'}
-                                    onChange={(e) => updateMitigation(mit.id, 'robustness', e.target.value)}
-                                    className="input text-sm"
-                                  >
-                                    {robustnessLevels.map(r => (
-                                      <option key={r.value} value={r.value}>{r.label}</option>
-                                    ))}
-                                  </select>
-                                  {mitData.robustness && mitData.robustness !== 'none' && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {mit.criteria[mitData.robustness]}
-                                    </p>
-                                  )}
-                                </div>
-                                <div>
-                                  <label className="label text-xs">Evidence / Justification</label>
-                                  <input
-                                    type="text"
-                                    value={mitData.evidence || ''}
-                                    onChange={(e) => updateMitigation(mit.id, 'evidence', e.target.value)}
-                                    className="input text-sm"
-                                    placeholder="How is this mitigation achieved?"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {/* M1A - Sheltering */}
+                  <MitigationCard
+                    mitigation={groundMitigations.M1A}
+                    data={sora.mitigations?.M1A || {}}
+                    onUpdate={(field, value) => updateMitigation('M1A', field, value)}
+                  />
+
+                  {/* M1B - Operational Restrictions */}
+                  <MitigationCard
+                    mitigation={groundMitigations.M1B}
+                    data={sora.mitigations?.M1B || {}}
+                    onUpdate={(field, value) => updateMitigation('M1B', field, value)}
+                  />
+
+                  {/* M1C - Ground Observation */}
+                  <MitigationCard
+                    mitigation={groundMitigations.M1C}
+                    data={sora.mitigations?.M1C || {}}
+                    onUpdate={(field, value) => updateMitigation('M1C', field, value)}
+                  />
+
+                  {/* M2 - Impact Reduction */}
+                  <MitigationCard
+                    mitigation={groundMitigations.M2}
+                    data={sora.mitigations?.M2 || {}}
+                    onUpdate={(field, value) => updateMitigation('M2', field, value)}
+                  />
+
+                  {/* M3 - ERP (Required) */}
+                  <MitigationCard
+                    mitigation={groundMitigations.M3}
+                    data={sora.mitigations?.M3 || { enabled: true, robustness: 'low' }}
+                    onUpdate={(field, value) => updateMitigation('M3', field, value)}
+                    required
+                  />
+                </div>
+
+                {/* Final GRC Display */}
+                <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Final GRC (after mitigations)</span>
+                    <div className="flex items-center gap-2">
+                      {intrinsicGRC !== finalGRC && (
+                        <span className="text-sm text-gray-400">{intrinsicGRC} →</span>
+                      )}
+                      <span className={`text-lg font-bold ${finalGRC > 5 ? 'text-amber-600' : 'text-green-600'}`}>
+                        {finalGRC}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -819,6 +536,7 @@ export default function ProjectRisk({ project, onUpdate }) {
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Radar className="w-5 h-5 text-aeria-blue" />
               Air Risk Assessment
+              <span className="text-sm font-normal text-gray-500">(Steps 4-6)</span>
             </h2>
             {expandedSections.airRisk ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -829,9 +547,9 @@ export default function ProjectRisk({ project, onUpdate }) {
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-3">Initial Air Risk Classification</h3>
                 <div>
-                  <label className="label">Initial ARC (before mitigations)</label>
+                  <label className="label">Initial ARC</label>
                   <select
-                    value={sora.initialARC || 'ARC-a'}
+                    value={sora.initialARC || 'ARC-b'}
                     onChange={(e) => updateSora('initialARC', e.target.value)}
                     className="input"
                   >
@@ -844,12 +562,13 @@ export default function ProjectRisk({ project, onUpdate }) {
                 </div>
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>ARC Determination Guide:</strong><br />
-                    • ARC-a: Controlled ground, very remote, segregated airspace<br />
-                    • ARC-b: Class G uncontrolled, rural areas, low traffic<br />
-                    • ARC-c: Near aerodromes, suburban, moderate traffic<br />
-                    • ARC-d: Controlled airspace, urban, high traffic density
+                    <strong>ARC Determination Guide:</strong>
                   </p>
+                  <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                    {arcLevels.map(arc => (
+                      <li key={arc.value}>• <strong>{arc.label}:</strong> {arc.guidance}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
@@ -857,7 +576,7 @@ export default function ProjectRisk({ project, onUpdate }) {
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                   <Eye className="w-4 h-4" />
-                  Tactical Mitigation Performance Requirements (TMPR)
+                  Tactical Mitigation (TMPR)
                 </h3>
                 
                 <label className="flex items-center gap-3 cursor-pointer mb-4">
@@ -872,74 +591,211 @@ export default function ProjectRisk({ project, onUpdate }) {
 
                 {sora.tmpr?.enabled && (
                   <div className="space-y-4 pt-3 border-t border-gray-200">
-                    {tmprDefinitions.map(tmpr => (
-                      <div key={tmpr.id} className="p-3 bg-white rounded-lg border border-gray-200">
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="tmpr_type"
-                            checked={sora.tmpr.type === tmpr.id}
-                            onChange={() => updateTmpr('type', tmpr.id)}
-                            className="w-4 h-4 text-aeria-navy mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">{tmpr.id}: {tmpr.name}</span>
-                              <span className="text-xs text-green-600">(up to -{tmpr.arcReduction} ARC levels)</span>
-                            </div>
-                            <p className="text-sm text-gray-500">{tmpr.description}</p>
-                          </div>
-                        </label>
-                        
-                        {sora.tmpr.type === tmpr.id && (
-                          <div className="grid sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-100 ml-7">
-                            <div>
-                              <label className="label text-xs">Robustness Level</label>
-                              <select
-                                value={sora.tmpr.robustness || 'none'}
-                                onChange={(e) => updateTmpr('robustness', e.target.value)}
-                                className="input text-sm"
-                              >
-                                {robustnessLevels.map(r => (
-                                  <option key={r.value} value={r.value}>{r.label}</option>
-                                ))}
-                              </select>
-                              {sora.tmpr.robustness && sora.tmpr.robustness !== 'none' && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {tmpr.requirements[sora.tmpr.robustness]}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="label text-xs">Evidence / Capability</label>
-                              <input
-                                type="text"
-                                value={sora.tmpr.evidence || ''}
-                                onChange={(e) => updateTmpr('evidence', e.target.value)}
-                                className="input text-sm"
-                                placeholder="Equipment, procedures, training..."
-                              />
-                            </div>
-                          </div>
-                        )}
+                    <div>
+                      <label className="label">Mitigation Type</label>
+                      <select
+                        value={sora.tmpr?.type || 'VLOS'}
+                        onChange={(e) => updateTmpr('type', e.target.value)}
+                        className="input"
+                      >
+                        {tmprDefinitions.map(tmpr => (
+                          <option key={tmpr.id} value={tmpr.id}>
+                            {tmpr.name} (up to -{tmpr.arcReduction} ARC)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {tmprDefinitions.find(t => t.id === sora.tmpr?.type)?.description}
+                      </p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Robustness Level</label>
+                        <select
+                          value={sora.tmpr?.robustness || 'none'}
+                          onChange={(e) => updateTmpr('robustness', e.target.value)}
+                          className="input"
+                        >
+                          {robustnessLevels.map(r => (
+                            <option key={r.value} value={r.value}>{r.label}</option>
+                          ))}
+                        </select>
                       </div>
-                    ))}
+                      <div>
+                        <label className="label">Evidence / Method</label>
+                        <input
+                          type="text"
+                          value={sora.tmpr?.evidence || ''}
+                          onChange={(e) => updateTmpr('evidence', e.target.value)}
+                          className="input"
+                          placeholder="How is this achieved?"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {sora.initialARC !== residualARC && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>ARC Reduction Applied:</strong> {sora.initialARC} → {residualARC}
-                    </p>
+                {/* Residual ARC Display */}
+                <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Residual ARC</span>
+                    <div className="flex items-center gap-2">
+                      {(sora.initialARC || 'ARC-b') !== residualARC && (
+                        <span className="text-sm text-gray-400">{sora.initialARC || 'ARC-b'} →</span>
+                      )}
+                      <span className={`px-2 py-1 rounded text-sm font-medium ${arcLevels.find(a => a.value === residualARC)?.color}`}>
+                        {residualARC}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
         </div>
       )}
 
+      {/* Containment Section (Step 8) */}
+      {flightPlanEnabled && (
+        <div className="card">
+          <button
+            onClick={() => toggleSection('containment')}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Box className="w-5 h-5 text-aeria-blue" />
+              Containment Requirements
+              <span className="text-sm font-normal text-gray-500">(Step 8)</span>
+              {!containmentCompliant && (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">
+                  Gap
+                </span>
+              )}
+            </h2>
+            {expandedSections.containment ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+          </button>
+
+          {expandedSections.containment && (
+            <div className="mt-4 space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Containment ensures the UA remains within the operational volume and that the 
+                  adjacent area (ground risk buffer) is appropriately protected.
+                </p>
+              </div>
+
+              {/* Adjacent Area Calculation */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Adjacent Area Assessment
+                </h3>
+
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="label">Adjacent Area Distance (3-min flight)</label>
+                    <div className="p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-lg font-semibold text-gray-900">
+                        {adjacentDistance.km} km ({adjacentDistance.nm} NM)
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Based on max speed of {sora.maxSpeed || 25} m/s × 180 seconds
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Adjacent Area Population</label>
+                    <select
+                      value={sora.adjacentAreaPopulation || 'sparsely'}
+                      onChange={(e) => updateSora('adjacentAreaPopulation', e.target.value)}
+                      className="input"
+                    >
+                      {populationCategories.map(pop => (
+                        <option key={pop.value} value={pop.value}>
+                          {pop.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Population density of area within {adjacentDistance.km}km of operational boundary
+                    </p>
+                  </div>
+                </div>
+
+                {/* Required Containment */}
+                <div className="p-3 bg-white rounded-lg border border-gray-200 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Required Containment Robustness</span>
+                    <span className={`px-2 py-1 rounded text-sm font-medium ${
+                      requiredContainment === 'high' ? 'bg-red-100 text-red-700' :
+                      requiredContainment === 'medium' ? 'bg-amber-100 text-amber-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {requiredContainment.charAt(0).toUpperCase() + requiredContainment.slice(1)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Based on adjacent area population ({sora.adjacentAreaPopulation}) and SAIL {sail}
+                  </p>
+                </div>
+
+                {/* Containment Method */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="label">Containment Method</label>
+                    <textarea
+                      value={sora.containment?.method || ''}
+                      onChange={(e) => updateContainment('method', e.target.value)}
+                      className="input min-h-[80px]"
+                      placeholder="Describe how containment is achieved (e.g., geofencing, operational boundaries, flight termination system)..."
+                    />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="label">Achieved Robustness</label>
+                      <select
+                        value={sora.containment?.robustness || 'none'}
+                        onChange={(e) => updateContainment('robustness', e.target.value)}
+                        className="input"
+                      >
+                        {robustnessLevels.map(r => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Evidence</label>
+                      <input
+                        type="text"
+                        value={sora.containment?.evidence || ''}
+                        onChange={(e) => updateContainment('evidence', e.target.value)}
+                        className="input"
+                        placeholder="Supporting evidence..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Compliance Status */}
+                  <div className={`p-3 rounded-lg border ${containmentCompliant ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <div className="flex items-center gap-2">
+                      {containmentCompliant ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      )}
+                      <span className={`text-sm font-medium ${containmentCompliant ? 'text-green-800' : 'text-amber-800'}`}>
+                        {containmentCompliant ? 'Containment requirement met' : `Requires ${requiredContainment} robustness`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {/* OSO Compliance Section */}
       {flightPlanEnabled && (
         <div className="card">
@@ -949,7 +805,8 @@ export default function ProjectRisk({ project, onUpdate }) {
           >
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <FileCheck className="w-5 h-5 text-aeria-blue" />
-              Operational Safety Objectives (OSOs)
+              Operational Safety Objectives
+              <span className="text-sm font-normal text-gray-500">(Step 9)</span>
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${sailColors[sail]}`}>
                 SAIL {sail}
               </span>
@@ -966,144 +823,92 @@ export default function ProjectRisk({ project, onUpdate }) {
             <div className="mt-4 space-y-4">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  Based on SAIL {sail}, the following OSO robustness levels are required. 
+                  Based on SAIL {sail}, each OSO requires a specific robustness level.
                   <strong> O</strong> = Optional, <strong>L</strong> = Low, <strong>M</strong> = Medium, <strong>H</strong> = High
                 </p>
               </div>
 
-              {/* Technical OSOs */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                  <Wrench className="w-4 h-4" />
-                  Technical OSOs
-                </h3>
-                <div className="space-y-2">
-                  {osoDefinitions.filter(o => o.category === 'technical').map(oso => {
-                    const required = getOsoRequirement(oso)
-                    const compliance = checkOsoCompliance(oso)
-                    const osoData = sora.osoCompliance?.[oso.id] || {}
-                    
-                    return (
-                      <div 
-                        key={oso.id} 
-                        className={`p-3 rounded-lg border ${
-                          compliance.status === 'gap' ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-gray-900 text-sm">{oso.id}</span>
-                              <span className="text-sm text-gray-700">{oso.name}</span>
-                              <span className={`px-1.5 py-0.5 text-xs rounded ${
-                                required === 'O' ? 'bg-gray-100 text-gray-600' :
-                                required === 'L' ? 'bg-blue-100 text-blue-700' :
-                                required === 'M' ? 'bg-amber-100 text-amber-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                Req: {required}
-                              </span>
-                              {compliance.status === 'gap' && (
-                                <span className="px-1.5 py-0.5 text-xs rounded bg-amber-200 text-amber-800">
-                                  Gap
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">{oso.description}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={osoData.robustness || 'none'}
-                              onChange={(e) => updateOso(oso.id, 'robustness', e.target.value)}
-                              className="input text-xs py-1 w-24"
-                            >
-                              {robustnessLevels.map(r => (
-                                <option key={r.value} value={r.value}>{r.label}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        {(osoData.robustness && osoData.robustness !== 'none') && (
-                          <input
-                            type="text"
-                            value={osoData.evidence || ''}
-                            onChange={(e) => updateOso(oso.id, 'evidence', e.target.value)}
-                            className="input text-sm mt-2"
-                            placeholder="Evidence / means of compliance..."
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+              {/* Group OSOs by category */}
+              {Object.entries(osoCategories).map(([catKey, catInfo]) => {
+                const categoryOsos = osoDefinitions.filter(o => o.category === catKey)
+                if (categoryOsos.length === 0) return null
 
-              {/* Operational OSOs */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Operational OSOs
-                </h3>
-                <div className="space-y-2">
-                  {osoDefinitions.filter(o => o.category === 'operational').map(oso => {
-                    const required = getOsoRequirement(oso)
-                    const compliance = checkOsoCompliance(oso)
-                    const osoData = sora.osoCompliance?.[oso.id] || {}
-                    
-                    return (
-                      <div 
-                        key={oso.id} 
-                        className={`p-3 rounded-lg border ${
-                          compliance.status === 'gap' ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-gray-900 text-sm">{oso.id}</span>
-                              <span className="text-sm text-gray-700">{oso.name}</span>
-                              <span className={`px-1.5 py-0.5 text-xs rounded ${
-                                required === 'O' ? 'bg-gray-100 text-gray-600' :
-                                required === 'L' ? 'bg-blue-100 text-blue-700' :
-                                required === 'M' ? 'bg-amber-100 text-amber-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                Req: {required}
-                              </span>
-                              {compliance.status === 'gap' && (
-                                <span className="px-1.5 py-0.5 text-xs rounded bg-amber-200 text-amber-800">
-                                  Gap
-                                </span>
-                              )}
+                const CategoryIcon = {
+                  'competence': GraduationCap,
+                  'design': Wrench,
+                  'procedures': FileCheck,
+                  'crew': Users,
+                  'containment': Target,
+                  'human_factors': Brain,
+                  'external': Globe
+                }[catKey] || FileCheck
+
+                return (
+                  <div key={catKey}>
+                    <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                      <CategoryIcon className="w-4 h-4" />
+                      {catInfo.label}
+                    </h3>
+                    <div className="space-y-2">
+                      {categoryOsos.map(oso => {
+                        const required = oso.requirements[sail]
+                        const osoData = sora.osoCompliance?.[oso.id] || {}
+                        const compliance = checkOSOCompliance(oso, sail, osoData.robustness || 'none')
+
+                        return (
+                          <div 
+                            key={oso.id} 
+                            className={`p-3 rounded-lg border ${
+                              !compliance.compliant ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-gray-900 text-sm">{oso.id}</span>
+                                  <span className="text-sm text-gray-700">{oso.name}</span>
+                                  <span className={`px-1.5 py-0.5 text-xs rounded ${
+                                    required === 'O' ? 'bg-gray-100 text-gray-600' :
+                                    required === 'L' ? 'bg-blue-100 text-blue-700' :
+                                    required === 'M' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    Req: {required}
+                                  </span>
+                                  {!compliance.compliant && (
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-amber-200 text-amber-800">
+                                      Gap
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{oso.description}</p>
+                              </div>
+                              <select
+                                value={osoData.robustness || 'none'}
+                                onChange={(e) => updateOso(oso.id, 'robustness', e.target.value)}
+                                className="input text-xs py-1 w-24"
+                              >
+                                {robustnessLevels.map(r => (
+                                  <option key={r.value} value={r.value}>{r.label}</option>
+                                ))}
+                              </select>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{oso.description}</p>
+                            {(osoData.robustness && osoData.robustness !== 'none') && (
+                              <input
+                                type="text"
+                                value={osoData.evidence || ''}
+                                onChange={(e) => updateOso(oso.id, 'evidence', e.target.value)}
+                                className="input text-sm mt-2"
+                                placeholder="Evidence / means of compliance..."
+                              />
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={osoData.robustness || 'none'}
-                              onChange={(e) => updateOso(oso.id, 'robustness', e.target.value)}
-                              className="input text-xs py-1 w-24"
-                            >
-                              {robustnessLevels.map(r => (
-                                <option key={r.value} value={r.value}>{r.label}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        {(osoData.robustness && osoData.robustness !== 'none') && (
-                          <input
-                            type="text"
-                            value={osoData.evidence || ''}
-                            onChange={(e) => updateOso(oso.id, 'evidence', e.target.value)}
-                            className="input text-sm mt-2"
-                            placeholder="Evidence / means of compliance..."
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -1124,6 +929,13 @@ export default function ProjectRisk({ project, onUpdate }) {
 
         {expandedSections.hazards && (
           <div className="mt-4 space-y-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                Identify non-RPAS operational hazards following the HSE hazard assessment framework.
+                This assessment is always required regardless of SORA.
+              </p>
+            </div>
+
             {(riskAssessment.hazards || []).length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                 <AlertTriangle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
@@ -1151,7 +963,7 @@ export default function ProjectRisk({ project, onUpdate }) {
                           <select
                             value={hazard.category}
                             onChange={(e) => updateHazard(index, 'category', e.target.value)}
-                            className="input text-sm w-36"
+                            className="input text-sm w-40"
                           >
                             {hazardCategories.map(cat => (
                               <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -1215,13 +1027,13 @@ export default function ProjectRisk({ project, onUpdate }) {
                           value={hazard.controls}
                           onChange={(e) => updateHazard(index, 'controls', e.target.value)}
                           className="input text-sm min-h-[60px]"
-                          placeholder="What controls will be implemented to reduce this risk?"
+                          placeholder="What controls will be implemented?"
                         />
                       </div>
 
                       <div className="grid sm:grid-cols-4 gap-3">
                         <div>
-                          <label className="label text-xs">Likelihood (Residual)</label>
+                          <label className="label text-xs">Residual Likelihood</label>
                           <select
                             value={hazard.residualLikelihood}
                             onChange={(e) => updateHazard(index, 'residualLikelihood', parseInt(e.target.value))}
@@ -1233,7 +1045,7 @@ export default function ProjectRisk({ project, onUpdate }) {
                           </select>
                         </div>
                         <div>
-                          <label className="label text-xs">Severity (Residual)</label>
+                          <label className="label text-xs">Residual Severity</label>
                           <select
                             value={hazard.residualSeverity}
                             onChange={(e) => updateHazard(index, 'residualSeverity', parseInt(e.target.value))}
@@ -1354,6 +1166,94 @@ export default function ProjectRisk({ project, onUpdate }) {
               can proceed. The assessment should be reviewed during the tailgate briefing with all crew.
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// HELPER COMPONENTS
+// ============================================
+
+function MitigationCard({ mitigation, data, onUpdate, required = false }) {
+  const isEnabled = data.enabled || required
+
+  // Get available robustness levels for this mitigation
+  const availableLevels = robustnessLevels.filter(r => {
+    if (r.value === 'none') return true
+    return mitigation.reductions[r.value] !== null
+  })
+
+  // Calculate reduction for current robustness
+  const currentReduction = data.robustness && data.robustness !== 'none' 
+    ? mitigation.reductions[data.robustness] 
+    : 0
+
+  return (
+    <div className={`p-3 rounded-lg border ${isEnabled ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100'}`}>
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={isEnabled}
+          onChange={(e) => onUpdate('enabled', e.target.checked)}
+          disabled={required}
+          className="w-4 h-4 text-aeria-navy rounded mt-1"
+        />
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="font-medium text-gray-900">{mitigation.id}: {mitigation.name}</span>
+            {currentReduction && currentReduction !== 0 && (
+              <span className="text-xs text-green-600 font-medium">
+                ({currentReduction > 0 ? '+' : ''}{currentReduction} GRC)
+              </span>
+            )}
+            {required && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Required</span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 mb-2">{mitigation.description}</p>
+          
+          {mitigation.note && (
+            <p className="text-xs text-amber-600 mb-2 italic">{mitigation.note}</p>
+          )}
+          
+          {isEnabled && (
+            <div className="grid sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-100">
+              <div>
+                <label className="label text-xs">Robustness Level</label>
+                <select
+                  value={data.robustness || 'none'}
+                  onChange={(e) => onUpdate('robustness', e.target.value)}
+                  className="input text-sm"
+                >
+                  {availableLevels.map(r => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                      {r.value !== 'none' && mitigation.reductions[r.value] !== null && mitigation.reductions[r.value] !== 0 && 
+                        ` (${mitigation.reductions[r.value] > 0 ? '+' : ''}${mitigation.reductions[r.value]} GRC)`
+                      }
+                    </option>
+                  ))}
+                </select>
+                {data.robustness && data.robustness !== 'none' && mitigation.criteria[data.robustness] && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {mitigation.criteria[data.robustness]}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="label text-xs">Evidence / Justification</label>
+                <input
+                  type="text"
+                  value={data.evidence || ''}
+                  onChange={(e) => onUpdate('evidence', e.target.value)}
+                  className="input text-sm"
+                  placeholder="How is this mitigation achieved?"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
