@@ -27,7 +27,7 @@ import {
   AlertCircle as AlertIcon,
   Users
 } from 'lucide-react'
-import { useBranding } from './BrandingSettings'
+import { useBranding } from '../BrandingSettings'
 import { 
   exportToPDF, 
   generateOperationsPlanPDF, 
