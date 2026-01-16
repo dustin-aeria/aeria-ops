@@ -399,7 +399,7 @@ export default function ProjectExport({ project, onUpdate }) {
 
       switch (pdfType) {
         case 'operations-plan':
-          pdf = generateOperationsPlanPDF(project, exportBranding)
+          pdf = await generateOperationsPlanPDF(project, exportBranding)
           break
         
         case 'sora':
@@ -410,16 +410,16 @@ export default function ProjectExport({ project, onUpdate }) {
             residualARC: project.soraAssessment?.residualARC || project.soraAssessment?.initialARC || 'ARC-b',
             sail: project.soraAssessment?.sail || 'II'
           }
-          pdf = generateSORAPDF(project, soraCalcs, exportBranding)
+          pdf = await generateSORAPDF(project, soraCalcs, exportBranding)
           break
         
         case 'hse-risk':
-          pdf = generateHSERiskPDF(project, exportBranding)
+          pdf = await generateHSERiskPDF(project, exportBranding)
           break
         
         default:
           // For other types, use operations plan as base
-          pdf = generateOperationsPlanPDF(project, exportBranding)
+          pdf = await generateOperationsPlanPDF(project, exportBranding)
       }
 
       setPdfExportProgress('Saving...')
