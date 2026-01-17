@@ -1,6 +1,18 @@
-import { useState, useEffect } from 'react'
-import { FORM_TEMPLATES, FORM_CATEGORIES } from '../../lib/formDefinitions'
-import { getOperators } from '../../lib/firestore'
+import { useState, useEffect, useRef } from 'react'
+import { 
+  FORM_TEMPLATES, 
+  FORM_CATEGORIES,
+  HAZARD_CATEGORIES,
+  SEVERITY_RATINGS,
+  PROBABILITY_RATINGS,
+  CONTROL_TYPES,
+  SUBSTANDARD_ACTS,
+  SUBSTANDARD_CONDITIONS,
+  PERSONAL_FACTORS,
+  JOB_SYSTEM_FACTORS,
+  calculateRiskScore
+} from '../../lib/formDefinitions'
+import { getOperators, getAircraft } from '../../lib/firestore'
 import { 
   ClipboardList,
   Plus,
@@ -13,6 +25,8 @@ import {
   User,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Info,
   Search,
   X,
@@ -24,7 +38,17 @@ import {
   Truck,
   AlertOctagon,
   ClipboardCheck,
-  Clipboard
+  Clipboard,
+  MapPin,
+  Upload,
+  Phone,
+  Plane,
+  GraduationCap,
+  HardHat,
+  Loader2,
+  AlertCircle,
+  Download,
+  Copy
 } from 'lucide-react'
 
 // Map icon names to components
@@ -33,10 +57,32 @@ const iconMap = {
   Users: Users,
   Truck: Truck,
   AlertTriangle: AlertTriangle,
+  AlertOctagon: AlertOctagon,
   FileText: FileText,
   ClipboardCheck: ClipboardCheck,
   Calendar: Calendar,
-  Clipboard: Clipboard
+  Clipboard: Clipboard,
+  CheckSquare: ClipboardCheck,
+  Search: Search,
+  GraduationCap: GraduationCap,
+  HardHat: HardHat
+}
+
+// Generate unique form ID
+const generateFormId = (formType) => {
+  const date = new Date()
+  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '')
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${formType.toUpperCase()}-${dateStr}-${random}`
+}
+
+// Risk level colors
+const riskColors = {
+  critical: 'bg-red-600 text-white',
+  high: 'bg-orange-500 text-white',
+  medium: 'bg-yellow-400 text-gray-900',
+  low: 'bg-green-500 text-white',
+  unknown: 'bg-gray-300 text-gray-700'
 }
 
 // Convert FORM_TEMPLATES to array format for the library
@@ -61,45 +107,185 @@ const formStatuses = {
   issue: { label: 'Issue Noted', color: 'bg-amber-100 text-amber-700', icon: AlertTriangle }
 }
 
-// Form Viewer/Filler Modal
-function FormModal({ form, formTemplate, project, operators, onSave, onClose }) {
-  const [formData, setFormData] = useState(form?.data || {})
+// ============================================
+// FORM MODAL - Main form filling interface
+// ============================================
+function FormModal({ form, formTemplate, project, operators, aircraft, onSave, onClose }) {
+  const [formData, setFormData] = useState(() => {
+    // Initialize with existing data or defaults
+    const initial = form?.data || {}
+    
+    // Set auto-generated ID if not present
+    if (formTemplate?.sections) {
+      formTemplate.sections.forEach(section => {
+        if (!initial[section.id]) initial[section.id] = {}
+        section.fields?.forEach(field => {
+          if (field.type === 'auto_id' && !initial[section.id][field.id]) {
+            initial[section.id][field.id] = generateFormId(formTemplate.id)
+          }
+          if (field.defaultToday && !initial[section.id][field.id]) {
+            initial[section.id][field.id] = new Date().toISOString().split('T')[0]
+          }
+          if (field.defaultNow && !initial[section.id][field.id]) {
+            const now = new Date()
+            initial[section.id][field.id] = now.toTimeString().slice(0, 5)
+          }
+        })
+      })
+    }
+    
+    return initial
+  })
+  
   const [activeSection, setActiveSection] = useState(0)
+  const [repeatableSections, setRepeatableSections] = useState({})
+  const [errors, setErrors] = useState({})
+  const [gettingLocation, setGettingLocation] = useState(false)
 
   if (!formTemplate) return null
 
-  const updateField = (sectionId, fieldId, value) => {
+  const updateField = (sectionId, fieldId, value, repeatIndex = null) => {
+    setFormData(prev => {
+      if (repeatIndex !== null) {
+        const sectionData = prev[sectionId] || []
+        const updatedSection = [...sectionData]
+        if (!updatedSection[repeatIndex]) updatedSection[repeatIndex] = {}
+        updatedSection[repeatIndex][fieldId] = value
+        return { ...prev, [sectionId]: updatedSection }
+      }
+      return {
+        ...prev,
+        [sectionId]: {
+          ...(prev[sectionId] || {}),
+          [fieldId]: value
+        }
+      }
+    })
+  }
+
+  const getFieldValue = (sectionId, fieldId, repeatIndex = null) => {
+    if (repeatIndex !== null) {
+      return formData[sectionId]?.[repeatIndex]?.[fieldId] || ''
+    }
+    return formData[sectionId]?.[fieldId] || ''
+  }
+
+  const addRepeatableItem = (sectionId) => {
     setFormData(prev => ({
       ...prev,
-      [sectionId]: {
-        ...(prev[sectionId] || {}),
-        [fieldId]: value
-      }
+      [sectionId]: [...(prev[sectionId] || []), {}]
     }))
   }
 
-  const getFieldValue = (sectionId, fieldId) => {
-    return formData[sectionId]?.[fieldId] || ''
+  const removeRepeatableItem = (sectionId, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [sectionId]: (prev[sectionId] || []).filter((_, i) => i !== index)
+    }))
   }
 
   const handleSave = (markComplete = false) => {
     onSave(formData, markComplete)
   }
 
-  const renderField = (field, sectionId) => {
-    const value = getFieldValue(sectionId, field.id)
+  const getCurrentLocation = () => {
+    setGettingLocation(true)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          // Find the GPS field in current section and update it
+          const section = formTemplate.sections[activeSection]
+          const gpsField = section?.fields?.find(f => f.type === 'gps')
+          if (gpsField) {
+            updateField(section.id, gpsField.id, { lat: latitude.toFixed(6), lng: longitude.toFixed(6) })
+          }
+          setGettingLocation(false)
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          setGettingLocation(false)
+        }
+      )
+    }
+  }
+
+  // Get options from named constants
+  const getOptions = (optionsRef) => {
+    if (Array.isArray(optionsRef)) return optionsRef
+    
+    const optionsMap = {
+      'HAZARD_CATEGORIES': HAZARD_CATEGORIES,
+      'SEVERITY_RATINGS': SEVERITY_RATINGS,
+      'PROBABILITY_RATINGS': PROBABILITY_RATINGS,
+      'CONTROL_TYPES': CONTROL_TYPES,
+      'SUBSTANDARD_ACTS': SUBSTANDARD_ACTS.map(s => ({ value: s, label: s })),
+      'SUBSTANDARD_CONDITIONS': SUBSTANDARD_CONDITIONS.map(s => ({ value: s, label: s })),
+      'PERSONAL_FACTORS': PERSONAL_FACTORS.map(s => ({ value: s, label: s })),
+      'JOB_SYSTEM_FACTORS': JOB_SYSTEM_FACTORS.map(s => ({ value: s, label: s })),
+    }
+    
+    return optionsMap[optionsRef] || []
+  }
+
+  // Check if field should be shown based on conditions
+  const shouldShowField = (field, sectionId, repeatIndex = null) => {
+    if (!field.showIf) return true
+    
+    // Parse simple conditions like "fieldName === true"
+    const match = field.showIf.match(/(\w+)\s*(===|!==|>|<|>=|<=)\s*(.+)/)
+    if (!match) return true
+    
+    const [, fieldName, operator, rawValue] = match
+    const fieldValue = getFieldValue(sectionId, fieldName, repeatIndex)
+    let compareValue = rawValue.trim()
+    
+    // Parse the compare value
+    if (compareValue === 'true') compareValue = true
+    else if (compareValue === 'false') compareValue = false
+    else if (compareValue.startsWith('"') || compareValue.startsWith("'")) {
+      compareValue = compareValue.slice(1, -1)
+    }
+    
+    switch (operator) {
+      case '===': return fieldValue === compareValue
+      case '!==': return fieldValue !== compareValue
+      case '>': return fieldValue > compareValue
+      case '<': return fieldValue < compareValue
+      case '>=': return fieldValue >= compareValue
+      case '<=': return fieldValue <= compareValue
+      default: return true
+    }
+  }
+
+  // ============================================
+  // FIELD RENDERER
+  // ============================================
+  const renderField = (field, sectionId, repeatIndex = null) => {
+    if (!shouldShowField(field, sectionId, repeatIndex)) return null
+    
+    const value = getFieldValue(sectionId, field.id, repeatIndex)
+    const fieldKey = repeatIndex !== null ? `${sectionId}-${repeatIndex}-${field.id}` : `${sectionId}-${field.id}`
     
     switch (field.type) {
       case 'text':
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+            placeholder={field.placeholder || ''}
+          />
+        )
+      
       case 'auto_id':
         return (
           <input
             type="text"
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
-            className="input"
-            placeholder={field.placeholder || ''}
-            readOnly={field.type === 'auto_id'}
+            className="input bg-gray-50 font-mono text-sm"
+            readOnly
           />
         )
       
@@ -108,19 +294,49 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
           <input
             type="number"
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
             min={field.min}
             max={field.max}
+            step={field.step}
           />
+        )
+      
+      case 'currency':
+        return (
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+              className="input pl-7"
+              min="0"
+              step="0.01"
+            />
+          </div>
+        )
+      
+      case 'phone':
+        return (
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="tel"
+              value={value}
+              onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+              className="input pl-10"
+              placeholder="(555) 555-5555"
+            />
+          </div>
         )
       
       case 'date':
         return (
           <input
             type="date"
-            value={value || (field.defaultToday ? new Date().toISOString().split('T')[0] : '')}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            value={value || ''}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
           />
         )
@@ -129,8 +345,18 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
         return (
           <input
             type="time"
-            value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            value={value || ''}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+          />
+        )
+      
+      case 'datetime':
+        return (
+          <input
+            type="datetime-local"
+            value={value || ''}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
           />
         )
@@ -139,7 +365,7 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
         return (
           <textarea
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input min-h-[80px]"
             rows={field.rows || 3}
             placeholder={field.placeholder || ''}
@@ -147,38 +373,72 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
         )
       
       case 'select':
+        const options = getOptions(field.options)
         return (
           <select
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
           >
             <option value="">Select...</option>
-            {field.options?.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {options.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+                {opt.description && ` - ${opt.description}`}
+              </option>
             ))}
           </select>
+        )
+      
+      case 'multiselect':
+        const multiOptions = getOptions(field.options)
+        const selectedValues = value || []
+        return (
+          <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+            {multiOptions.map(opt => (
+              <label key={opt.value || opt} className="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                <input
+                  type="checkbox"
+                  checked={selectedValues.includes(opt.value || opt)}
+                  onChange={(e) => {
+                    const optValue = opt.value || opt
+                    if (e.target.checked) {
+                      updateField(sectionId, field.id, [...selectedValues, optValue], repeatIndex)
+                    } else {
+                      updateField(sectionId, field.id, selectedValues.filter(v => v !== optValue), repeatIndex)
+                    }
+                  }}
+                  className="w-4 h-4 rounded mt-0.5"
+                />
+                <span className="text-sm">{opt.label || opt}</span>
+              </label>
+            ))}
+          </div>
         )
       
       case 'yesno':
         return (
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+              value === true ? 'bg-green-100 border-green-500 text-green-700' : 'hover:bg-gray-50'
+            }`}>
               <input
                 type="radio"
-                name={`${sectionId}_${field.id}`}
-                checked={value === true || value === 'true'}
-                onChange={() => updateField(sectionId, field.id, true)}
+                name={fieldKey}
+                checked={value === true}
+                onChange={() => updateField(sectionId, field.id, true, repeatIndex)}
                 className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+              value === false ? 'bg-red-100 border-red-500 text-red-700' : 'hover:bg-gray-50'
+            }`}>
               <input
                 type="radio"
-                name={`${sectionId}_${field.id}`}
-                checked={value === false || value === 'false'}
-                onChange={() => updateField(sectionId, field.id, false)}
+                name={fieldKey}
+                checked={value === false}
+                onChange={() => updateField(sectionId, field.id, false, repeatIndex)}
                 className="w-4 h-4"
               />
               <span>No</span>
@@ -192,26 +452,27 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
             <input
               type="checkbox"
               checked={value === true}
-              onChange={(e) => updateField(sectionId, field.id, e.target.checked)}
-              className="w-4 h-4 rounded"
+              onChange={(e) => updateField(sectionId, field.id, e.target.checked, repeatIndex)}
+              className="w-5 h-5 rounded"
             />
-            <span className="text-sm">{field.checkboxLabel || 'Yes'}</span>
+            <span className="text-sm">{field.checkboxLabel || 'Confirmed'}</span>
           </label>
         )
       
       case 'checklist':
+        const checklistOptions = getOptions(field.options) || field.items || []
         const checklistValue = value || {}
         return (
           <div className="space-y-2">
-            {field.items?.map(item => (
-              <label key={item.value} className="flex items-start gap-2 cursor-pointer">
+            {checklistOptions.map(item => (
+              <label key={item.value} className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-gray-50">
                 <input
                   type="checkbox"
                   checked={checklistValue[item.value] === true}
                   onChange={(e) => updateField(sectionId, field.id, {
                     ...checklistValue,
                     [item.value]: e.target.checked
-                  })}
+                  }, repeatIndex)}
                   className="w-4 h-4 rounded mt-0.5"
                 />
                 <span className="text-sm">{item.label}</span>
@@ -221,15 +482,69 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
         )
       
       case 'operator_select':
+      case 'user_auto':
         return (
           <select
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
           >
             <option value="">Select person...</option>
             {operators.map(op => (
               <option key={op.id} value={op.id}>{op.name}</option>
+            ))}
+          </select>
+        )
+      
+      case 'crew_multi_select':
+        const selectedCrew = value || []
+        return (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {selectedCrew.map(crewId => {
+                const crew = operators.find(o => o.id === crewId)
+                return crew ? (
+                  <span key={crewId} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1">
+                    {crew.name}
+                    <button
+                      onClick={() => updateField(sectionId, field.id, selectedCrew.filter(c => c !== crewId), repeatIndex)}
+                      className="hover:text-blue-900"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ) : null
+              })}
+            </div>
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value && !selectedCrew.includes(e.target.value)) {
+                  updateField(sectionId, field.id, [...selectedCrew, e.target.value], repeatIndex)
+                }
+              }}
+              className="input"
+            >
+              <option value="">Add crew member...</option>
+              {operators.filter(op => !selectedCrew.includes(op.id)).map(op => (
+                <option key={op.id} value={op.id}>{op.name}</option>
+              ))}
+            </select>
+          </div>
+        )
+      
+      case 'aircraft_select':
+        return (
+          <select
+            value={value}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+          >
+            <option value="">Select aircraft...</option>
+            {aircraft.map(ac => (
+              <option key={ac.id} value={ac.id}>
+                {ac.nickname || ac.model} - {ac.serialNumber}
+              </option>
             ))}
           </select>
         )
@@ -244,34 +559,256 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
           />
         )
       
+      case 'gps':
+        const gpsValue = value || {}
+        return (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-500">Latitude</label>
+                <input
+                  type="text"
+                  value={gpsValue.lat || ''}
+                  onChange={(e) => updateField(sectionId, field.id, { ...gpsValue, lat: e.target.value }, repeatIndex)}
+                  className="input font-mono text-sm"
+                  placeholder="e.g., 49.2827"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Longitude</label>
+                <input
+                  type="text"
+                  value={gpsValue.lng || ''}
+                  onChange={(e) => updateField(sectionId, field.id, { ...gpsValue, lng: e.target.value }, repeatIndex)}
+                  className="input font-mono text-sm"
+                  placeholder="e.g., -123.1207"
+                />
+              </div>
+            </div>
+            <button
+              onClick={getCurrentLocation}
+              disabled={gettingLocation}
+              className="btn-secondary text-sm flex items-center gap-2"
+            >
+              {gettingLocation ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MapPin className="w-4 h-4" />
+              )}
+              {gettingLocation ? 'Getting Location...' : 'Use Current Location'}
+            </button>
+          </div>
+        )
+      
+      case 'weather_conditions':
+        const weatherValue = value || {}
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs text-gray-500">Temperature (°C)</label>
+              <input
+                type="number"
+                value={weatherValue.temp || ''}
+                onChange={(e) => updateField(sectionId, field.id, { ...weatherValue, temp: e.target.value }, repeatIndex)}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Wind (km/h)</label>
+              <input
+                type="number"
+                value={weatherValue.wind || ''}
+                onChange={(e) => updateField(sectionId, field.id, { ...weatherValue, wind: e.target.value }, repeatIndex)}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Visibility</label>
+              <select
+                value={weatherValue.visibility || ''}
+                onChange={(e) => updateField(sectionId, field.id, { ...weatherValue, visibility: e.target.value }, repeatIndex)}
+                className="input"
+              >
+                <option value="">Select...</option>
+                <option value="good">Good (&gt;5km)</option>
+                <option value="moderate">Moderate (1-5km)</option>
+                <option value="poor">Poor (&lt;1km)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Conditions</label>
+              <select
+                value={weatherValue.conditions || ''}
+                onChange={(e) => updateField(sectionId, field.id, { ...weatherValue, conditions: e.target.value }, repeatIndex)}
+                className="input"
+              >
+                <option value="">Select...</option>
+                <option value="clear">Clear</option>
+                <option value="cloudy">Cloudy</option>
+                <option value="rain">Rain</option>
+                <option value="snow">Snow</option>
+                <option value="fog">Fog</option>
+              </select>
+            </div>
+          </div>
+        )
+      
       case 'signature':
         return (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+          <div className={`border-2 rounded-lg p-4 text-center ${value ? 'border-green-300 bg-green-50' : 'border-dashed border-gray-300'}`}>
             {value ? (
-              <div>
-                <p className="text-sm text-gray-700">Signed by: {value.name}</p>
-                <p className="text-xs text-gray-500">{value.timestamp}</p>
+              <div className="space-y-1">
+                <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto" />
+                <p className="text-sm font-medium text-gray-700">{value.name}</p>
+                <p className="text-xs text-gray-500">{new Date(value.timestamp).toLocaleString()}</p>
+                <button
+                  onClick={() => updateField(sectionId, field.id, null, repeatIndex)}
+                  className="text-xs text-red-500 hover:underline mt-2"
+                >
+                  Clear signature
+                </button>
               </div>
             ) : (
               <button
-                onClick={() => updateField(sectionId, field.id, {
-                  name: 'Current User', // Would be replaced with actual user
-                  timestamp: new Date().toISOString()
-                })}
-                className="text-sm text-aeria-blue hover:underline"
+                onClick={() => {
+                  const signerName = operators.find(o => o.id === formData.header?.pic)?.name || 'User'
+                  updateField(sectionId, field.id, {
+                    name: signerName,
+                    timestamp: new Date().toISOString()
+                  }, repeatIndex)
+                }}
+                className="w-full py-4 text-sm text-aeria-blue hover:bg-blue-50 rounded transition-colors"
               >
+                <User className="w-6 h-6 mx-auto mb-1 opacity-50" />
                 Click to sign
               </button>
             )}
           </div>
         )
       
-      case 'hazard_repeater':
-      case 'crew_multi_signature':
       case 'multi_signature':
+      case 'crew_multi_signature':
+        const signatures = value || []
         return (
-          <div className="p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-500">
-            Advanced field type - coming soon
+          <div className="space-y-3">
+            {signatures.length > 0 && (
+              <div className="space-y-2">
+                {signatures.map((sig, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium">{sig.name}</span>
+                      <span className="text-xs text-gray-500">{new Date(sig.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <button
+                      onClick={() => updateField(sectionId, field.id, signatures.filter((_, i) => i !== idx), repeatIndex)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <select
+                id={`${fieldKey}-select`}
+                className="input flex-1"
+                defaultValue=""
+              >
+                <option value="">Select person to sign...</option>
+                {operators.filter(op => !signatures.find(s => s.id === op.id)).map(op => (
+                  <option key={op.id} value={op.id}>{op.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  const select = document.getElementById(`${fieldKey}-select`)
+                  if (select?.value) {
+                    const person = operators.find(o => o.id === select.value)
+                    if (person) {
+                      updateField(sectionId, field.id, [...signatures, {
+                        id: person.id,
+                        name: person.name,
+                        timestamp: new Date().toISOString()
+                      }], repeatIndex)
+                      select.value = ''
+                    }
+                  }
+                }}
+                className="btn-secondary"
+              >
+                Add Signature
+              </button>
+            </div>
+          </div>
+        )
+      
+      case 'risk_matrix':
+        // Get severity and probability from sibling fields
+        const severityFieldId = field.id.includes('residual') ? 'residual_severity' : 'severity'
+        const probabilityFieldId = field.id.includes('residual') ? 'residual_probability' : 'probability'
+        const severity = getFieldValue(sectionId, severityFieldId, repeatIndex)
+        const probability = getFieldValue(sectionId, probabilityFieldId, repeatIndex)
+        const riskLevel = calculateRiskScore(severity, probability)
+        
+        return (
+          <div className={`px-4 py-2 rounded-lg font-medium text-center ${riskColors[riskLevel]}`}>
+            {riskLevel.toUpperCase()}
+          </div>
+        )
+      
+      case 'file_upload':
+        const files = value || []
+        return (
+          <div className="space-y-2">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-aeria-blue transition-colors">
+              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500">
+                {field.multiple ? 'Drop files here or click to upload' : 'Drop file here or click to upload'}
+              </p>
+              <input
+                type="file"
+                accept={field.accept || '*'}
+                multiple={field.multiple}
+                className="hidden"
+                id={fieldKey}
+                onChange={(e) => {
+                  const newFiles = Array.from(e.target.files).map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    type: f.type,
+                    uploadedAt: new Date().toISOString()
+                  }))
+                  updateField(sectionId, field.id, field.multiple ? [...files, ...newFiles] : newFiles, repeatIndex)
+                }}
+              />
+              <label htmlFor={fieldKey} className="btn-secondary mt-2 cursor-pointer inline-block">
+                Browse Files
+              </label>
+            </div>
+            {files.length > 0 && (
+              <div className="space-y-1">
+                {files.map((file, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-sm truncate">{file.name}</span>
+                    <button
+                      onClick={() => updateField(sectionId, field.id, files.filter((_, i) => i !== idx), repeatIndex)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      
+      case 'calculated':
+        return (
+          <div className="input bg-gray-50 text-gray-500 italic">
+            Auto-calculated
           </div>
         )
       
@@ -280,40 +817,135 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
           <input
             type="text"
             value={value}
-            onChange={(e) => updateField(sectionId, field.id, e.target.value)}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
             className="input"
+            placeholder={field.placeholder || ''}
           />
         )
     }
   }
 
+  // ============================================
+  // SECTION RENDERER
+  // ============================================
+  const renderSection = (section, sectionIndex) => {
+    const isActive = activeSection === sectionIndex
+    
+    // Handle repeatable sections
+    if (section.repeatable) {
+      const items = formData[section.id] || []
+      
+      return (
+        <div key={section.id} className={`${isActive ? '' : 'hidden'}`}>
+          <div className="space-y-4">
+            {items.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No items added yet</p>
+            )}
+            
+            {items.map((item, idx) => (
+              <div key={idx} className="p-4 border rounded-lg bg-gray-50 relative">
+                <div className="absolute top-2 right-2">
+                  <button
+                    onClick={() => removeRepeatableItem(section.id, idx)}
+                    className="p-1 text-red-500 hover:bg-red-100 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  {section.repeatLabel?.replace('Add ', '') || 'Item'} #{idx + 1}
+                </h4>
+                <div className="grid gap-4">
+                  {section.fields?.map(field => (
+                    <div key={field.id}>
+                      <label className="label flex items-center gap-1">
+                        {field.label}
+                        {field.required && <span className="text-red-500">*</span>}
+                        {field.helpText && (
+                          <span className="text-xs text-gray-400 ml-1">({field.helpText})</span>
+                        )}
+                      </label>
+                      {renderField(field, section.id, idx)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            
+            <button
+              onClick={() => addRepeatableItem(section.id)}
+              className="btn-secondary w-full flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {section.repeatLabel || 'Add Item'}
+            </button>
+          </div>
+        </div>
+      )
+    }
+    
+    // Regular section
+    return (
+      <div key={section.id} className={`space-y-4 ${isActive ? '' : 'hidden'}`}>
+        {section.description && (
+          <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">{section.description}</p>
+        )}
+        
+        {section.fields?.map(field => {
+          if (!shouldShowField(field, section.id)) return null
+          
+          return (
+            <div key={field.id}>
+              <label className="label flex items-center gap-1">
+                {field.label}
+                {field.required && <span className="text-red-500">*</span>}
+              </label>
+              {field.helpText && (
+                <p className="text-xs text-gray-500 mb-1">{field.helpText}</p>
+              )}
+              {renderField(field, section.id)}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const sections = formTemplate.sections || []
+  const currentSection = sections[activeSection]
+  const IconComponent = iconMap[formTemplate.icon] || FileText
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{formTemplate.name}</h2>
-            <p className="text-sm text-gray-500">{formTemplate.description}</p>
+        <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-aeria-blue to-blue-600 text-white rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <IconComponent className="w-6 h-6" />
+            <div>
+              <h2 className="text-lg font-semibold">{formTemplate.name}</h2>
+              <p className="text-sm text-blue-100">{formTemplate.description}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Section Tabs */}
-        <div className="border-b overflow-x-auto">
-          <div className="flex">
-            {formTemplate.sections.map((section, idx) => (
+        <div className="border-b bg-gray-50 px-4 overflow-x-auto">
+          <div className="flex gap-1 py-2">
+            {sections.map((section, idx) => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(idx)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
                   activeSection === idx
-                    ? 'border-aeria-blue text-aeria-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'bg-white text-aeria-blue shadow'
+                    : 'text-gray-600 hover:bg-white/50'
                 }`}
               >
+                <span className="mr-2">{idx + 1}.</span>
                 {section.title}
               </button>
             ))}
@@ -322,69 +954,39 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
 
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {formTemplate.sections[activeSection] && (
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800 mb-4">
-                {formTemplate.sections[activeSection].title}
-              </h3>
-              
-              <div className="grid gap-4">
-                {formTemplate.sections[activeSection].fields.map(field => (
-                  <div key={field.id}>
-                    <label className="label">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
-                    {field.helpText && (
-                      <p className="text-xs text-gray-500 mb-1">{field.helpText}</p>
-                    )}
-                    {renderField(field, formTemplate.sections[activeSection].id)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {sections.map((section, idx) => renderSection(section, idx))}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex items-center justify-between gap-3">
-          <div className="text-sm text-gray-500">
-            Section {activeSection + 1} of {formTemplate.sections.length}
-          </div>
+        <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
           <div className="flex gap-2">
-            {activeSection > 0 && (
-              <button
-                onClick={() => setActiveSection(prev => prev - 1)}
-                className="btn-secondary"
-              >
-                Previous
-              </button>
-            )}
-            {activeSection < formTemplate.sections.length - 1 ? (
-              <button
-                onClick={() => setActiveSection(prev => prev + 1)}
-                className="btn-primary"
-              >
-                Next
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleSave(false)}
-                  className="btn-secondary flex items-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  Save Draft
-                </button>
-                <button
-                  onClick={() => handleSave(true)}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Complete Form
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => setActiveSection(Math.max(0, activeSection - 1))}
+              disabled={activeSection === 0}
+              className="btn-secondary flex items-center gap-1 disabled:opacity-50"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <button
+              onClick={() => setActiveSection(Math.min(sections.length - 1, activeSection + 1))}
+              disabled={activeSection === sections.length - 1}
+              className="btn-secondary flex items-center gap-1 disabled:opacity-50"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="flex gap-2">
+            <button onClick={() => handleSave(false)} className="btn-secondary flex items-center gap-2">
+              <Save className="w-4 h-4" />
+              Save Draft
+            </button>
+            <button onClick={() => handleSave(true)} className="btn-primary flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Complete Form
+            </button>
           </div>
         </div>
       </div>
@@ -392,438 +994,324 @@ function FormModal({ form, formTemplate, project, operators, onSave, onClose }) 
   )
 }
 
-export default function ProjectForms({ project, onUpdate }) {
-  const [operators, setOperators] = useState([])
-  const [expandedSections, setExpandedSections] = useState({
-    linked: true,
-    available: true
-  })
-  const [categoryFilter, setCategoryFilter] = useState('all')
+// ============================================
+// FORM LIBRARY BROWSER
+// ============================================
+function FormLibrary({ onSelectForm, onClose }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeFormModal, setActiveFormModal] = useState(null)
-
-  const availableForms = getAvailableForms()
-
-  useEffect(() => {
-    loadOperators()
-  }, [])
-
-  const loadOperators = async () => {
-    try {
-      const data = await getOperators()
-      setOperators(data)
-    } catch (err) {
-      console.error('Error loading operators:', err)
-    }
-  }
-
-  // Initialize forms if not present
-  useEffect(() => {
-    if (!project.forms) {
-      const requiredForms = availableForms
-        .filter(f => f.required)
-        .map(f => ({
-          formId: f.id,
-          name: f.name,
-          status: 'pending',
-          assignedTo: '',
-          dueDate: '',
-          completedDate: '',
-          completedBy: '',
-          notes: '',
-          data: {},
-          entries: []
-        }))
-
-      onUpdate({
-        forms: {
-          linkedForms: requiredForms,
-          customForms: []
-        }
-      })
-    }
-  }, [project.forms])
-
-  const forms = project.forms || { linkedForms: [], customForms: [] }
-  const linkedForms = forms.linkedForms || []
-
-  const updateForms = (updates) => {
-    onUpdate({
-      forms: {
-        ...forms,
-        ...updates
-      }
-    })
-  }
-
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
-  }
-
-  const addForm = (formTemplate) => {
-    const alreadyLinked = linkedForms.some(f => f.formId === formTemplate.id)
-    if (alreadyLinked) return
-
-    updateForms({
-      linkedForms: [
-        ...linkedForms,
-        {
-          formId: formTemplate.id,
-          name: formTemplate.name,
-          status: 'pending',
-          assignedTo: '',
-          dueDate: '',
-          completedDate: '',
-          completedBy: '',
-          notes: '',
-          data: {},
-          entries: []
-        }
-      ]
-    })
-  }
-
-  const removeForm = (formId) => {
-    if (!confirm('Remove this form from the project?')) return
-    updateForms({
-      linkedForms: linkedForms.filter(f => f.formId !== formId)
-    })
-  }
-
-  const updateLinkedForm = (formId, updates) => {
-    updateForms({
-      linkedForms: linkedForms.map(f => 
-        f.formId === formId ? { ...f, ...updates } : f
-      )
-    })
-  }
-
-  const openFormModal = (form) => {
-    setActiveFormModal(form)
-  }
-
-  const handleFormSave = (formData, markComplete) => {
-    const form = activeFormModal
-    const updates = {
-      data: formData,
-      status: markComplete ? 'completed' : 'in_progress'
-    }
-    
-    if (markComplete) {
-      updates.completedDate = new Date().toISOString().split('T')[0]
-      updates.completedBy = 'Current User' // Would be replaced with actual user
-    }
-
-    updateLinkedForm(form.formId, updates)
-    setActiveFormModal(null)
-  }
-
-  // Filter available forms
-  const filteredAvailable = availableForms.filter(form => {
-    const notLinked = !linkedForms.some(f => f.formId === form.id)
-    const matchesCategory = categoryFilter === 'all' || form.category === categoryFilter
+  const [activeCategory, setActiveCategory] = useState('all')
+  
+  const forms = getAvailableForms()
+  
+  const filteredForms = forms.filter(form => {
     const matchesSearch = !searchQuery || 
       form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       form.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return notLinked && matchesCategory && matchesSearch
+    const matchesCategory = activeCategory === 'all' || form.category === activeCategory
+    return matchesSearch && matchesCategory
   })
 
-  // Get completion stats
-  const completedCount = linkedForms.filter(f => f.status === 'completed').length
-  const totalCount = linkedForms.length
-  const completionPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-aeria-blue" />
+            Form Library
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Search & Filter */}
+        <div className="p-4 border-b space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search forms..."
+              className="input pl-10"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`px-3 py-1.5 rounded-full text-sm ${
+                activeCategory === 'all' ? 'bg-aeria-blue text-white' : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              All Forms
+            </button>
+            {FORM_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-full text-sm ${
+                  activeCategory === cat.id ? 'bg-aeria-blue text-white' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Form Grid */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredForms.map(form => {
+              const IconComponent = iconMap[form.icon] || FileText
+              return (
+                <button
+                  key={form.id}
+                  onClick={() => onSelectForm(form)}
+                  className="p-4 border rounded-lg text-left hover:border-aeria-blue hover:bg-blue-50 transition-colors group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-aeria-blue group-hover:text-white transition-colors">
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{form.shortName || form.name}</h3>
+                      <p className="text-xs text-gray-500 line-clamp-2 mt-1">{form.description}</p>
+                      {form.required && (
+                        <span className="inline-block mt-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded">
+                          Required
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          
+          {filteredForms.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No forms found matching your criteria</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+export default function ProjectForms({ project, onUpdate }) {
+  const [operators, setOperators] = useState([])
+  const [aircraft, setAircraft] = useState([])
+  const [showLibrary, setShowLibrary] = useState(false)
+  const [selectedForm, setSelectedForm] = useState(null)
+  const [editingForm, setEditingForm] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [ops, acs] = await Promise.all([
+          getOperators(),
+          getAircraft()
+        ])
+        setOperators(ops)
+        setAircraft(acs)
+      } catch (err) {
+        console.error('Error loading data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const projectForms = project?.forms || []
+
+  const handleSelectForm = (formTemplate) => {
+    setSelectedForm(formTemplate)
+    setShowLibrary(false)
+  }
+
+  const handleSaveForm = (formData, markComplete) => {
+    const newForm = {
+      id: editingForm?.id || `form-${Date.now()}`,
+      templateId: selectedForm?.id || editingForm?.templateId,
+      status: markComplete ? 'completed' : 'in_progress',
+      data: formData,
+      createdAt: editingForm?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: markComplete ? new Date().toISOString() : null
+    }
+
+    let updatedForms
+    if (editingForm) {
+      updatedForms = projectForms.map(f => f.id === editingForm.id ? newForm : f)
+    } else {
+      updatedForms = [...projectForms, newForm]
+    }
+
+    onUpdate({ forms: updatedForms })
+    setSelectedForm(null)
+    setEditingForm(null)
+  }
+
+  const handleEditForm = (form) => {
+    const template = FORM_TEMPLATES[form.templateId]
+    if (template) {
+      setSelectedForm(template)
+      setEditingForm(form)
+    }
+  }
+
+  const handleDeleteForm = (formId) => {
+    if (window.confirm('Are you sure you want to delete this form?')) {
+      onUpdate({ forms: projectForms.filter(f => f.id !== formId) })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-aeria-blue" />
+      </div>
+    )
+  }
+
+  // Group forms by category
+  const formsByCategory = {}
+  FORM_CATEGORIES.forEach(cat => {
+    formsByCategory[cat.id] = projectForms.filter(f => {
+      const template = FORM_TEMPLATES[f.templateId]
+      return template?.category === cat.id
+    })
+  })
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
-      <div className="card bg-gradient-to-r from-aeria-navy to-aeria-blue text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Form Completion</h3>
-            <p className="text-white/80 text-sm mt-1">
-              {completedCount} of {totalCount} forms completed
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">{completionPct}%</div>
-            <div className="w-24 h-2 bg-white/20 rounded-full mt-2">
-              <div 
-                className="h-full bg-white rounded-full transition-all"
-                style={{ width: `${completionPct}%` }}
-              />
-            </div>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Project Forms</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {projectForms.length} form{projectForms.length !== 1 ? 's' : ''} • 
+            {projectForms.filter(f => f.status === 'completed').length} completed
+          </p>
         </div>
+        <button
+          onClick={() => setShowLibrary(true)}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Form
+        </button>
       </div>
 
-      {/* Linked Forms */}
-      <div className="card">
-        <button
-          onClick={() => toggleSection('linked')}
-          className="flex items-center justify-between w-full text-left"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-aeria-blue" />
-            Project Forms
-            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-              {linkedForms.length}
-            </span>
-          </h2>
-          {expandedSections.linked ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-        </button>
-
-        {expandedSections.linked && (
-          <div className="mt-4 space-y-3">
-            {linkedForms.length === 0 ? (
-              <p className="text-center py-6 text-gray-500">
-                No forms linked to this project. Add forms from the library below.
-              </p>
-            ) : (
-              linkedForms.map((form) => {
-                const template = availableForms.find(f => f.id === form.formId)
-                const status = formStatuses[form.status] || formStatuses.pending
-                const StatusIcon = status.icon
-                const FormIcon = template?.icon ? (iconMap[template.icon] || FileText) : FileText
-
-                return (
-                  <div 
-                    key={form.formId}
-                    className="p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          <FormIcon className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-900">{form.name}</h4>
-                            <span className={`px-2 py-0.5 text-xs rounded-full flex items-center gap-1 ${status.color}`}>
-                              <StatusIcon className="w-3 h-3" />
-                              {status.label}
-                            </span>
-                            {template?.required && (
-                              <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-600">
-                                Required
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500">{template?.description}</p>
-                          
-                          {/* Form metadata */}
-                          <div className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500">
-                            {form.assignedTo && (
-                              <span className="flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                {operators.find(o => o.id === form.assignedTo)?.name || form.assignedTo}
-                              </span>
-                            )}
-                            {form.dueDate && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                Due: {form.dueDate}
-                              </span>
-                            )}
-                            {form.completedDate && (
-                              <span className="flex items-center gap-1 text-green-600">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Completed: {form.completedDate}
-                              </span>
-                            )}
+      {/* Forms by Category */}
+      {projectForms.length === 0 ? (
+        <div className="card text-center py-12">
+          <ClipboardList className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+          <h3 className="font-medium text-gray-900">No forms yet</h3>
+          <p className="text-sm text-gray-500 mt-1">Add forms from the library to get started</p>
+          <button
+            onClick={() => setShowLibrary(true)}
+            className="btn-primary mt-4"
+          >
+            Browse Form Library
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {FORM_CATEGORIES.map(category => {
+            const categoryForms = formsByCategory[category.id]
+            if (categoryForms.length === 0) return null
+            
+            return (
+              <div key={category.id} className="card">
+                <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                  {category.name}
+                  <span className="text-sm font-normal text-gray-500">
+                    ({categoryForms.length})
+                  </span>
+                </h3>
+                
+                <div className="space-y-2">
+                  {categoryForms.map(form => {
+                    const template = FORM_TEMPLATES[form.templateId]
+                    const status = formStatuses[form.status] || formStatuses.pending
+                    const StatusIcon = status.icon
+                    const FormIcon = iconMap[template?.icon] || FileText
+                    
+                    return (
+                      <div
+                        key={form.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FormIcon className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {template?.shortName || template?.name || 'Unknown Form'}
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              {form.updatedAt ? `Updated ${new Date(form.updatedAt).toLocaleDateString()}` : 'Draft'}
+                            </p>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {template?.sections && (
+                        
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${status.color}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {status.label}
+                          </span>
                           <button
-                            onClick={() => openFormModal(form)}
-                            className="p-2 text-aeria-blue hover:bg-aeria-sky rounded-lg flex items-center gap-1"
-                            title={form.status === 'completed' ? 'View Form' : 'Fill Form'}
+                            onClick={() => handleEditForm(form)}
+                            className="p-2 text-gray-500 hover:text-aeria-blue hover:bg-blue-50 rounded"
                           >
-                            {form.status === 'completed' ? (
-                              <Eye className="w-4 h-4" />
-                            ) : (
-                              <Edit3 className="w-4 h-4" />
-                            )}
+                            <Edit3 className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          onClick={() => removeForm(form.formId)}
-                          className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"
-                          title="Remove from project"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <button
+                            onClick={() => handleDeleteForm(form.id)}
+                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Quick assign */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 grid sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="label text-xs">Assigned To</label>
-                        <select
-                          value={form.assignedTo || ''}
-                          onChange={(e) => updateLinkedForm(form.formId, { assignedTo: e.target.value })}
-                          className="input text-sm"
-                        >
-                          <option value="">Unassigned</option>
-                          {operators.map(op => (
-                            <option key={op.id} value={op.id}>{op.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label text-xs">Due Date</label>
-                        <input
-                          type="date"
-                          value={form.dueDate || ''}
-                          onChange={(e) => updateLinkedForm(form.formId, { dueDate: e.target.value })}
-                          className="input text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Available Forms Library */}
-      <div className="card">
-        <button
-          onClick={() => toggleSection('available')}
-          className="flex items-center justify-between w-full text-left"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-aeria-blue" />
-            Forms Library
-            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-              {availableForms.length} available
-            </span>
-          </h2>
-          {expandedSections.available ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-        </button>
-
-        {expandedSections.available && (
-          <div className="mt-4 space-y-4">
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input pl-10"
-                    placeholder="Search forms..."
-                  />
+                    )
+                  })}
                 </div>
               </div>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="input w-auto"
-              >
-                <option value="all">All Categories</option>
-                {FORM_CATEGORIES.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category Groups */}
-            {FORM_CATEGORIES.map(category => {
-              const categoryForms = filteredAvailable.filter(f => f.category === category.id)
-              if (categoryForms.length === 0) return null
-
-              return (
-                <div key={category.id}>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    {category.name}
-                    <span className="text-xs text-gray-400">({categoryForms.length})</span>
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {categoryForms.map((form) => {
-                      const FormIcon = form.icon ? (iconMap[form.icon] || FileText) : FileText
-                      return (
-                        <div 
-                          key={form.id}
-                          className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-aeria-blue transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-3">
-                              <div className="p-1.5 bg-white rounded">
-                                <FormIcon className="w-4 h-4 text-gray-500" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-gray-900 text-sm">{form.name}</h4>
-                                  {form.required && (
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-600">
-                                      Required
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500">{form.description}</p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {form.sections?.length || 0} sections
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => addForm(form)}
-                              className="p-1.5 text-aeria-blue hover:bg-aeria-sky rounded"
-                              title="Add to project"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-
-            {filteredAvailable.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">
-                {linkedForms.length === availableForms.length 
-                  ? 'All available forms have been added to this project.'
-                  : 'No forms match your search.'}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Info Card */}
-      <div className="card bg-blue-50 border-blue-200">
-        <div className="flex gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-medium text-blue-900">Digital Forms</h3>
-            <p className="text-sm text-blue-700 mt-1">
-              Forms from your HSE program are available here. Click the edit button to fill out a form, 
-              or assign it to a crew member with a due date. Completed forms are stored with your project.
-            </p>
-          </div>
+            )
+          })}
         </div>
-      </div>
+      )}
 
-      {/* Form Modal */}
-      {activeFormModal && (
+      {/* Modals */}
+      {showLibrary && (
+        <FormLibrary
+          onSelectForm={handleSelectForm}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
+
+      {selectedForm && (
         <FormModal
-          form={activeFormModal}
-          formTemplate={availableForms.find(f => f.id === activeFormModal.formId)}
+          form={editingForm}
+          formTemplate={selectedForm}
           project={project}
           operators={operators}
-          onSave={handleFormSave}
-          onClose={() => setActiveFormModal(null)}
+          aircraft={aircraft}
+          onSave={handleSaveForm}
+          onClose={() => {
+            setSelectedForm(null)
+            setEditingForm(null)
+          }}
         />
       )}
     </div>
