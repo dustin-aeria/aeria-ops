@@ -180,6 +180,18 @@ function SiteMapEditor({
     recovery: { lat: recoveryPoint?.lat || '', lng: recoveryPoint?.lng || '' }
   })
 
+  // Sync coords with props when modal opens (props may have changed)
+  useEffect(() => {
+    if (isOpen) {
+      setCoords({
+        site: { lat: siteLocation?.lat || '', lng: siteLocation?.lng || '' },
+        launch: { lat: launchPoint?.lat || '', lng: launchPoint?.lng || '' },
+        recovery: { lat: recoveryPoint?.lat || '', lng: recoveryPoint?.lng || '' }
+      })
+      setBoundaryPoints(boundary || [])
+    }
+  }, [isOpen, siteLocation, launchPoint, recoveryPoint, boundary])
+
   const markerColors = {
     site: { color: '#1e40af', label: 'Site Location', icon: '📍' },
     launch: { color: '#16a34a', label: 'Launch Point', icon: '🛫' },
@@ -740,12 +752,142 @@ function SiteMapEditor({
 
 // ============================================
 // MAP PREVIEW COMPONENT
-// Shows embedded map preview with all points
+// Shows embedded map preview with all points using Leaflet
 // ============================================
 function MapPreview({ siteLocation, launchPoint, recoveryPoint, boundary, onOpenEditor }) {
+  const mapContainerRef = useRef(null)
+  const mapRef = useRef(null)
+  const [mapReady, setMapReady] = useState(false)
+
   const hasCoords = siteLocation?.lat && siteLocation?.lng && 
     !isNaN(parseFloat(siteLocation.lat)) && !isNaN(parseFloat(siteLocation.lng))
   
+  const hasLaunch = launchPoint?.lat && launchPoint?.lng && 
+    !isNaN(parseFloat(launchPoint.lat)) && !isNaN(parseFloat(launchPoint.lng))
+  const hasRecovery = recoveryPoint?.lat && recoveryPoint?.lng &&
+    !isNaN(parseFloat(recoveryPoint.lat)) && !isNaN(parseFloat(recoveryPoint.lng))
+  const hasBoundary = boundary && boundary.length >= 3
+
+  // Initialize map
+  useEffect(() => {
+    if (!hasCoords || !mapContainerRef.current) return
+
+    // Load Leaflet CSS
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    const loadLeaflet = () => {
+      return new Promise((resolve) => {
+        if (window.L) {
+          resolve(window.L)
+          return
+        }
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+        script.onload = () => resolve(window.L)
+        document.body.appendChild(script)
+      })
+    }
+
+    loadLeaflet().then((L) => {
+      // Clean up existing map
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+
+      if (!mapContainerRef.current) return
+
+      const lat = parseFloat(siteLocation.lat)
+      const lng = parseFloat(siteLocation.lng)
+
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        scrollWheelZoom: false,
+        dragging: true
+      }).setView([lat, lng], 15)
+      
+      mapRef.current = map
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OSM'
+      }).addTo(map)
+
+      // Custom icon function
+      const createIcon = (color, emoji) => {
+        return L.divIcon({
+          className: 'custom-marker-preview',
+          html: `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 12px;">${emoji}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        })
+      }
+
+      // Add site marker
+      L.marker([lat, lng], {
+        icon: createIcon('#1e40af', '📍')
+      }).addTo(map).bindTooltip('Site Location', { permanent: false })
+
+      // Add launch marker
+      if (hasLaunch) {
+        L.marker([parseFloat(launchPoint.lat), parseFloat(launchPoint.lng)], {
+          icon: createIcon('#16a34a', '🛫')
+        }).addTo(map).bindTooltip('Launch Point', { permanent: false })
+      }
+
+      // Add recovery marker
+      if (hasRecovery) {
+        L.marker([parseFloat(recoveryPoint.lat), parseFloat(recoveryPoint.lng)], {
+          icon: createIcon('#d97706', '🛬')
+        }).addTo(map).bindTooltip('Recovery Point', { permanent: false })
+      }
+
+      // Add boundary polygon
+      if (hasBoundary) {
+        L.polygon(
+          boundary.map(p => [parseFloat(p.lat), parseFloat(p.lng)]),
+          {
+            color: '#7c3aed',
+            fillColor: '#7c3aed',
+            fillOpacity: 0.15,
+            weight: 2
+          }
+        ).addTo(map)
+      }
+
+      // Fit bounds to show all markers
+      const bounds = L.latLngBounds([[lat, lng]])
+      if (hasLaunch) bounds.extend([parseFloat(launchPoint.lat), parseFloat(launchPoint.lng)])
+      if (hasRecovery) bounds.extend([parseFloat(recoveryPoint.lat), parseFloat(recoveryPoint.lng)])
+      if (hasBoundary) {
+        boundary.forEach(p => bounds.extend([parseFloat(p.lat), parseFloat(p.lng)]))
+      }
+      
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
+      }
+
+      // Invalidate size after render
+      setTimeout(() => {
+        if (map) map.invalidateSize()
+      }, 100)
+
+      setMapReady(true)
+    })
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [hasCoords, siteLocation?.lat, siteLocation?.lng, launchPoint?.lat, launchPoint?.lng, recoveryPoint?.lat, recoveryPoint?.lng, boundary])
+
   if (!hasCoords) {
     return (
       <div 
@@ -761,37 +903,25 @@ function MapPreview({ siteLocation, launchPoint, recoveryPoint, boundary, onOpen
 
   const lat = parseFloat(siteLocation.lat)
   const lng = parseFloat(siteLocation.lng)
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lng}`
-
-  const hasLaunch = launchPoint?.lat && launchPoint?.lng
-  const hasRecovery = recoveryPoint?.lat && recoveryPoint?.lng
-  const hasBoundary = boundary && boundary.length >= 3
 
   return (
     <div className="space-y-3">
       <div className="relative rounded-lg overflow-hidden border border-gray-200">
-        <iframe
-          src={mapUrl}
-          width="100%"
-          height="220"
-          style={{ border: 0 }}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Location Map"
+        <div 
+          ref={mapContainerRef} 
+          style={{ width: '100%', height: '220px' }}
         />
         <button
           onClick={onOpenEditor}
-          className="absolute top-2 right-2 px-3 py-1.5 bg-white rounded-lg shadow-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1"
+          className="absolute top-2 right-2 px-3 py-1.5 bg-white rounded-lg shadow-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 z-[1000]"
         >
           <Target className="w-4 h-4" />
           Edit Map
         </button>
         
         {/* Point indicators */}
-        <div className="absolute bottom-2 left-2 flex gap-2">
-          <div className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
-            hasCoords ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
-          }`}>
+        <div className="absolute bottom-2 left-2 flex gap-2 z-[1000]">
+          <div className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 flex items-center gap-1">
             📍 Site
           </div>
           <div className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
