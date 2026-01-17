@@ -104,10 +104,10 @@ export default function ProjectPPE({ project, onUpdate }) {
     notes: ''
   })
 
-  // Initialize PPE if not present
+  // Initialize PPE or migrate from old structure
   useEffect(() => {
+    // If no PPE at all, initialize with defaults
     if (!project.ppe) {
-      // Start with common required items selected
       const defaultSelected = commonPPEItems
         .filter(item => item.required)
         .map(item => item.id)
@@ -121,10 +121,56 @@ export default function ProjectPPE({ project, onUpdate }) {
           inspectionNotes: ''
         }
       })
+      return
     }
-  }, [project.ppe])
+    
+    // If old structure exists (has 'items' array but no 'selectedItems'), migrate it
+    if (project.ppe.items && !project.ppe.selectedItems) {
+      // Migrate old items to new structure
+      const migratedCustomItems = project.ppe.items.map((item, index) => ({
+        id: `migrated_${index}`,
+        category: item.category || 'other',
+        item: item.item || item.name || '',
+        specification: item.specification || '',
+        required: item.required || false,
+        notes: item.notes || ''
+      }))
+      
+      onUpdate({
+        ppe: {
+          selectedItems: ['hi_vis_vest', 'safety_boots'], // Default required items
+          customItems: migratedCustomItems,
+          siteSpecific: project.ppe.siteSpecific || '',
+          clientRequirements: project.ppe.clientRequirements || '',
+          inspectionNotes: project.ppe.inspectionNotes || ''
+        }
+      })
+      return
+    }
+    
+    // Ensure selectedItems exists even if ppe exists
+    if (!project.ppe.selectedItems) {
+      onUpdate({
+        ppe: {
+          ...project.ppe,
+          selectedItems: ['hi_vis_vest', 'safety_boots'],
+          customItems: project.ppe.customItems || []
+        }
+      })
+    }
+  }, [project.ppe?.selectedItems])
 
-  const ppe = project.ppe || { selectedItems: [], customItems: [] }
+  const ppe = project.ppe || { selectedItems: [], customItems: [], requirements: {} }
+  
+  // Don't render until PPE is initialized
+  if (!ppe.selectedItems) {
+    return (
+      <div className="card text-center py-12">
+        <div className="w-8 h-8 border-4 border-aeria-navy border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-500">Loading PPE data...</p>
+      </div>
+    )
+  }
 
   const updatePPE = (updates) => {
     onUpdate({
