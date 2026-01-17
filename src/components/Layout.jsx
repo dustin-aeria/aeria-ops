@@ -12,13 +12,22 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  Shield,
+  AlertTriangle,
+  Target
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
+]
+
+const safetyNavigation = [
+  { name: 'Safety Dashboard', href: '/safety', icon: Shield },
+  { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
+  { name: 'CAPAs', href: '/capas', icon: Target },
 ]
 
 const libraries = [
@@ -31,6 +40,7 @@ function Sidebar({ mobile, onClose }) {
   const { userProfile, signOut } = useAuth()
   const navigate = useNavigate()
   const [librariesOpen, setLibrariesOpen] = useState(true)
+  const [safetyOpen, setSafetyOpen] = useState(true)
 
   const handleSignOut = async () => {
     await signOut()
@@ -76,6 +86,27 @@ function Sidebar({ mobile, onClose }) {
         {navigation.map((item) => (
           <NavItem key={item.name} item={item} />
         ))}
+
+        {/* Safety section */}
+        <div className="pt-4">
+          <button
+            onClick={() => setSafetyOpen(!safetyOpen)}
+            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700"
+          >
+            <span className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Safety
+            </span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${safetyOpen ? '' : '-rotate-90'}`} />
+          </button>
+          {safetyOpen && (
+            <div className="mt-1 space-y-1">
+              {safetyNavigation.map((item) => (
+                <NavItem key={item.name} item={item} />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Libraries section */}
         <div className="pt-4">
