@@ -1,18 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getOperators, getAircraft } from '../../lib/firestore'
-import { 
-  FORM_TEMPLATES, 
-  FORM_CATEGORIES,
-  HAZARD_CATEGORIES,
-  SEVERITY_RATINGS,
-  PROBABILITY_RATINGS,
-  CONTROL_TYPES,
-  SUBSTANDARD_ACTS,
-  SUBSTANDARD_CONDITIONS,
-  PERSONAL_FACTORS,
-  JOB_SYSTEM_FACTORS,
-  calculateRiskScore
-} from '../../lib/formDefinitions'
+import * as formDefs from '../../lib/formDefinitions'
 import { 
   ClipboardList,
   Plus,
@@ -51,6 +39,19 @@ import {
   Copy
 } from 'lucide-react'
 
+// Extract with fallbacks
+const FORM_TEMPLATES = formDefs.FORM_TEMPLATES || {}
+const FORM_CATEGORIES = formDefs.FORM_CATEGORIES || []
+const HAZARD_CATEGORIES = formDefs.HAZARD_CATEGORIES || []
+const SEVERITY_RATINGS = formDefs.SEVERITY_RATINGS || []
+const PROBABILITY_RATINGS = formDefs.PROBABILITY_RATINGS || []
+const CONTROL_TYPES = formDefs.CONTROL_TYPES || []
+const SUBSTANDARD_ACTS = formDefs.SUBSTANDARD_ACTS || []
+const SUBSTANDARD_CONDITIONS = formDefs.SUBSTANDARD_CONDITIONS || []
+const PERSONAL_FACTORS = formDefs.PERSONAL_FACTORS || []
+const JOB_SYSTEM_FACTORS = formDefs.JOB_SYSTEM_FACTORS || []
+const calculateRiskScore = formDefs.calculateRiskScore || (() => 'unknown')
+
 // Map icon names to components
 const iconMap = {
   Shield: Shield,
@@ -87,18 +88,29 @@ const riskColors = {
 
 // Convert FORM_TEMPLATES to array format for the library
 const getAvailableForms = () => {
-  const templates = FORM_TEMPLATES || {}
-  return Object.values(templates).map(form => ({
-    id: form.id,
-    name: form.name,
-    shortName: form.shortName,
-    description: form.description,
-    category: form.category,
-    icon: form.icon,
-    version: form.version,
-    sections: form.sections,
-    required: ['flha', 'tailgate_briefing', 'preflight_checklist'].includes(form.id)
-  }))
+  try {
+    const templates = FORM_TEMPLATES || {}
+    if (typeof templates !== 'object' || templates === null) {
+      console.warn('FORM_TEMPLATES is not an object:', templates)
+      return []
+    }
+    return Object.values(templates).map(form => {
+      if (!form || typeof form !== 'object') return null
+      return {
+        id: form.id || '',
+        name: form.name || 'Unknown Form',
+        shortName: form.shortName || form.name || 'Unknown',
+        description: form.description || '',
+        category: form.category || 'other',
+        icon: form.icon || 'FileText',
+        version: form.version || '1.0',
+        sections: Array.isArray(form.sections) ? form.sections : []
+      }
+    }).filter(Boolean)
+  } catch (e) {
+    console.error('Error in getAvailableForms:', e)
+    return []
+  }
 }
 
 const formStatuses = {
@@ -111,28 +123,50 @@ const formStatuses = {
 // ============================================
 // FORM MODAL - Main form filling interface
 // ============================================
-function FormModal({ form, formTemplate, project, operators, aircraft, onSave, onClose }) {
+function FormModal({ form, formTemplate, project, operators = [], aircraft = [], onSave, onClose, onBackToLibrary }) {
+  // Early validation - if no valid template, show error
+  if (!formTemplate || typeof formTemplate !== 'object') {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900">Form Template Error</h3>
+          <p className="text-sm text-gray-500 mt-2">Unable to load this form template.</p>
+          <button onClick={onClose} className="btn-primary mt-6">Close</button>
+        </div>
+      </div>
+    )
+  }
+
   const [formData, setFormData] = useState(() => {
     // Initialize with existing data or defaults
     const initial = form?.data || {}
     
     // Set auto-generated ID if not present
-    if (formTemplate?.sections) {
-      formTemplate.sections.forEach(section => {
-        if (!initial[section.id]) initial[section.id] = {}
-        section.fields?.forEach(field => {
-          if (field.type === 'auto_id' && !initial[section.id][field.id]) {
-            initial[section.id][field.id] = generateFormId(formTemplate.id)
-          }
-          if (field.defaultToday && !initial[section.id][field.id]) {
-            initial[section.id][field.id] = new Date().toISOString().split('T')[0]
-          }
-          if (field.defaultNow && !initial[section.id][field.id]) {
-            const now = new Date()
-            initial[section.id][field.id] = now.toTimeString().slice(0, 5)
+    try {
+      if (formTemplate?.sections && Array.isArray(formTemplate.sections)) {
+        formTemplate.sections.forEach(section => {
+          if (!section || !section.id) return
+          if (!initial[section.id]) initial[section.id] = section.repeatable ? [] : {}
+          if (Array.isArray(section.fields)) {
+            section.fields.forEach(field => {
+              if (!field || !field.id) return
+              if (field.type === 'auto_id' && !initial[section.id][field.id]) {
+                initial[section.id][field.id] = generateFormId(formTemplate.id)
+              }
+              if (field.defaultToday && !initial[section.id][field.id]) {
+                initial[section.id][field.id] = new Date().toISOString().split('T')[0]
+              }
+              if (field.defaultNow && !initial[section.id][field.id]) {
+                const now = new Date()
+                initial[section.id][field.id] = now.toTimeString().slice(0, 5)
+              }
+            })
           }
         })
-      })
+      }
+    } catch (err) {
+      console.error('Error initializing form data:', err)
     }
     
     return initial
@@ -215,15 +249,16 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
   const getOptions = (optionsRef) => {
     if (Array.isArray(optionsRef)) return optionsRef
     
+    // Build options map with defensive checks
     const optionsMap = {
-      'HAZARD_CATEGORIES': HAZARD_CATEGORIES,
-      'SEVERITY_RATINGS': SEVERITY_RATINGS,
-      'PROBABILITY_RATINGS': PROBABILITY_RATINGS,
-      'CONTROL_TYPES': CONTROL_TYPES,
-      'SUBSTANDARD_ACTS': SUBSTANDARD_ACTS.map(s => ({ value: s, label: s })),
-      'SUBSTANDARD_CONDITIONS': SUBSTANDARD_CONDITIONS.map(s => ({ value: s, label: s })),
-      'PERSONAL_FACTORS': PERSONAL_FACTORS.map(s => ({ value: s, label: s })),
-      'JOB_SYSTEM_FACTORS': JOB_SYSTEM_FACTORS.map(s => ({ value: s, label: s })),
+      'HAZARD_CATEGORIES': HAZARD_CATEGORIES || [],
+      'SEVERITY_RATINGS': SEVERITY_RATINGS || [],
+      'PROBABILITY_RATINGS': PROBABILITY_RATINGS || [],
+      'CONTROL_TYPES': CONTROL_TYPES || [],
+      'SUBSTANDARD_ACTS': Array.isArray(SUBSTANDARD_ACTS) ? SUBSTANDARD_ACTS.map(s => ({ value: s, label: s })) : [],
+      'SUBSTANDARD_CONDITIONS': Array.isArray(SUBSTANDARD_CONDITIONS) ? SUBSTANDARD_CONDITIONS.map(s => ({ value: s, label: s })) : [],
+      'PERSONAL_FACTORS': Array.isArray(PERSONAL_FACTORS) ? PERSONAL_FACTORS.map(s => ({ value: s, label: s })) : [],
+      'JOB_SYSTEM_FACTORS': Array.isArray(JOB_SYSTEM_FACTORS) ? JOB_SYSTEM_FACTORS.map(s => ({ value: s, label: s })) : [],
     }
     
     return optionsMap[optionsRef] || []
@@ -288,6 +323,70 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
             className="input bg-gray-50 font-mono text-sm"
             readOnly
           />
+        )
+      
+      case 'auto_increment':
+        return (
+          <input
+            type="text"
+            value={value || (repeatIndex !== null ? repeatIndex + 1 : 1)}
+            className="input bg-gray-50 font-mono text-sm w-20"
+            readOnly
+          />
+        )
+      
+      case 'battery_select':
+        // Batteries aren't tracked separately yet - use text input
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+            placeholder="Battery ID (e.g., BAT-001)"
+          />
+        )
+      
+      case 'yesno_text':
+        const yesnoTextValue = value || { answer: null, details: '' }
+        return (
+          <div className="space-y-2">
+            <div className="flex gap-4">
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                yesnoTextValue.answer === true ? 'bg-green-100 border-green-500 text-green-700' : 'hover:bg-gray-50'
+              }`}>
+                <input
+                  type="radio"
+                  name={fieldKey}
+                  checked={yesnoTextValue.answer === true}
+                  onChange={() => updateField(sectionId, field.id, { ...yesnoTextValue, answer: true }, repeatIndex)}
+                  className="w-4 h-4"
+                />
+                <span>Yes</span>
+              </label>
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                yesnoTextValue.answer === false ? 'bg-red-100 border-red-500 text-red-700' : 'hover:bg-gray-50'
+              }`}>
+                <input
+                  type="radio"
+                  name={fieldKey}
+                  checked={yesnoTextValue.answer === false}
+                  onChange={() => updateField(sectionId, field.id, { ...yesnoTextValue, answer: false }, repeatIndex)}
+                  className="w-4 h-4"
+                />
+                <span>No</span>
+              </label>
+            </div>
+            {yesnoTextValue.answer === true && (
+              <textarea
+                value={yesnoTextValue.details || ''}
+                onChange={(e) => updateField(sectionId, field.id, { ...yesnoTextValue, details: e.target.value }, repeatIndex)}
+                className="input"
+                placeholder="Please provide details..."
+                rows={2}
+              />
+            )}
+          </div>
         )
       
       case 'number':
@@ -491,7 +590,7 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
             className="input"
           >
             <option value="">Select person...</option>
-            {operators.map(op => (
+            {(Array.isArray(operators) ? operators : []).map(op => (
               <option key={op.id} value={op.id}>{op.name}</option>
             ))}
           </select>
@@ -527,7 +626,7 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
               className="input"
             >
               <option value="">Add crew member...</option>
-              {operators.filter(op => !selectedCrew.includes(op.id)).map(op => (
+              {(Array.isArray(operators) ? operators : []).filter(op => !selectedCrew.includes(op.id)).map(op => (
                 <option key={op.id} value={op.id}>{op.name}</option>
               ))}
             </select>
@@ -542,7 +641,7 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
             className="input"
           >
             <option value="">Select aircraft...</option>
-            {aircraft.map(ac => (
+            {(Array.isArray(aircraft) ? aircraft : []).map(ac => (
               <option key={ac.id} value={ac.id}>
                 {ac.nickname || ac.model} - {ac.serialNumber}
               </option>
@@ -718,7 +817,7 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
                 defaultValue=""
               >
                 <option value="">Select person to sign...</option>
-                {operators.filter(op => !signatures.find(s => s.id === op.id)).map(op => (
+                {(Array.isArray(operators) ? operators : []).filter(op => !signatures.find(s => s.id === op.id)).map(op => (
                   <option key={op.id} value={op.id}>{op.name}</option>
                 ))}
               </select>
@@ -912,9 +1011,42 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
     )
   }
 
-  const sections = formTemplate.sections || []
+  const sections = Array.isArray(formTemplate.sections) ? formTemplate.sections : []
   const currentSection = sections[activeSection]
   const IconComponent = iconMap[formTemplate.icon] || FileText
+
+  // Debug log for troubleshooting
+  console.log('FormModal rendering:', { 
+    formName: formTemplate.name, 
+    sectionsCount: sections.length,
+    activeSection,
+    hasSections: sections.length > 0
+  })
+
+  // Handle case where form has no sections defined
+  if (sections.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900">Form Not Yet Available</h3>
+          <p className="text-sm text-gray-500 mt-2">
+            The "{formTemplate.name}" form template doesn't have any sections defined yet.
+          </p>
+          <div className="flex gap-2 justify-center mt-6">
+            {onBackToLibrary && (
+              <button onClick={onBackToLibrary} className="btn-secondary">
+                Back to Library
+              </button>
+            )}
+            <button onClick={onClose} className="btn-primary">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -928,9 +1060,20 @@ function FormModal({ form, formTemplate, project, operators, aircraft, onSave, o
               <p className="text-sm text-blue-100">{formTemplate.description}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onBackToLibrary && (
+              <button 
+                onClick={onBackToLibrary} 
+                className="px-3 py-1.5 text-sm bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Back to Library
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Section Tabs */}
@@ -1002,15 +1145,16 @@ function FormLibrary({ onSelectForm, onClose }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   
-  const forms = getAvailableForms()
+  const forms = getAvailableForms() || []
   
-  const filteredForms = forms.filter(form => {
+  const filteredForms = Array.isArray(forms) ? forms.filter(form => {
+    if (!form) return false
     const matchesSearch = !searchQuery || 
-      form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      form.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (form.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (form.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = activeCategory === 'all' || form.category === activeCategory
     return matchesSearch && matchesCategory
-  })
+  }) : []
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1079,11 +1223,6 @@ function FormLibrary({ onSelectForm, onClose }) {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">{form.shortName || form.name}</h3>
                       <p className="text-xs text-gray-500 line-clamp-2 mt-1">{form.description}</p>
-                      {form.required && (
-                        <span className="inline-block mt-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded">
-                          Required
-                        </span>
-                      )}
                     </div>
                   </div>
                 </button>
@@ -1194,7 +1333,7 @@ export default function ProjectForms({ project, onUpdate }) {
   }
 
   // Defensive check for form definitions
-  const categories = FORM_CATEGORIES || []
+  const categories = Array.isArray(FORM_CATEGORIES) ? FORM_CATEGORIES : []
   const templates = FORM_TEMPLATES || {}
 
   // Group forms by category
@@ -1322,6 +1461,11 @@ export default function ProjectForms({ project, onUpdate }) {
           operators={operators}
           aircraft={aircraft}
           onSave={handleSaveForm}
+          onBackToLibrary={() => {
+            setSelectedForm(null)
+            setEditingForm(null)
+            setShowLibrary(true)
+          }}
           onClose={() => {
             setSelectedForm(null)
             setEditingForm(null)
