@@ -1,6 +1,7 @@
 // ============================================
 // BRANDING SETTINGS COMPONENT
 // Manage operator and client branding for PDF exports
+// Fixed to use simple settings/branding path
 // ============================================
 
 import { useState, useEffect } from 'react'
@@ -15,7 +16,8 @@ import {
   Plus,
   X,
   Check,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -124,9 +126,10 @@ const LogoUpload = ({ logo, onUpload, onRemove, label = "Logo" }) => {
           />
           <button
             onClick={onRemove}
-            className="btn btn-secondary text-red-600 hover:bg-red-50"
+            type="button"
+            className="btn-secondary text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
+            <Trash2 className="w-4 h-4" />
             Remove
           </button>
         </div>
@@ -178,16 +181,11 @@ export default function BrandingSettings() {
   const [clientBrandings, setClientBrandings] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
 
-  // Load branding from Firestore
+  // Load branding from Firestore - using simple path
   useEffect(() => {
     const loadBranding = async () => {
-      if (!user?.organizationId) {
-        setLoading(false)
-        return
-      }
-
       try {
-        const brandingDoc = await getDoc(doc(db, 'organizations', user.organizationId, 'settings', 'branding'))
+        const brandingDoc = await getDoc(doc(db, 'settings', 'branding'))
         
         if (brandingDoc.exists()) {
           const data = brandingDoc.data()
@@ -206,23 +204,21 @@ export default function BrandingSettings() {
     }
 
     loadBranding()
-  }, [user])
+  }, [])
 
-  // Save branding to Firestore
+  // Save branding to Firestore - using simple path
   const saveBranding = async () => {
-    if (!user?.organizationId) return
-
     setSaving(true)
     setSaved(false)
 
     try {
       await setDoc(
-        doc(db, 'organizations', user.organizationId, 'settings', 'branding'),
+        doc(db, 'settings', 'branding'),
         {
           operator: operatorBranding,
           clients: clientBrandings,
           updatedAt: new Date().toISOString(),
-          updatedBy: user.uid
+          updatedBy: user?.uid || 'unknown'
         },
         { merge: true }
       )
@@ -230,6 +226,7 @@ export default function BrandingSettings() {
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
       console.error('Failed to save branding:', err)
+      alert('Failed to save branding settings')
     } finally {
       setSaving(false)
     }
@@ -280,8 +277,9 @@ export default function BrandingSettings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aeria-blue" />
+      <div className="card text-center py-12">
+        <div className="w-8 h-8 border-4 border-aeria-navy border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-500">Loading branding settings...</p>
       </div>
     )
   }
@@ -289,67 +287,75 @@ export default function BrandingSettings() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-aeria-sky rounded-lg">
-            <Palette className="w-5 h-5 text-aeria-navy" />
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-aeria-sky rounded-lg">
+              <Palette className="w-5 h-5 text-aeria-navy" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Branding</h2>
+              <p className="text-sm text-gray-500">Customize PDF export appearance</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Branding Settings</h2>
-            <p className="text-sm text-gray-500">Customize PDF exports with your branding</p>
-          </div>
+          <button
+            onClick={saveBranding}
+            disabled={saving}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : saved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Branding
+              </>
+            )}
+          </button>
         </div>
-        
-        <button
-          onClick={saveBranding}
-          disabled={saving}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          {saving ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-          ) : saved ? (
-            <Check className="w-4 h-4" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          {saved ? 'Saved!' : 'Save Changes'}
-        </button>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('operator')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'operator'
-              ? 'border-aeria-blue text-aeria-blue'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Building className="w-4 h-4 inline mr-2" />
-          Operator Branding
-        </button>
-        <button
-          onClick={() => setActiveTab('clients')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'clients'
-              ? 'border-aeria-blue text-aeria-blue'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Image className="w-4 h-4 inline mr-2" />
-          Client Branding
-        </button>
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-gray-200 pb-4">
+          <button
+            onClick={() => setActiveTab('operator')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'operator'
+                ? 'bg-aeria-navy text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Building className="w-4 h-4 inline mr-2" />
+            Operator Branding
+          </button>
+          <button
+            onClick={() => setActiveTab('clients')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'clients'
+                ? 'bg-aeria-navy text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Image className="w-4 h-4 inline mr-2" />
+            Client Branding
+          </button>
+        </div>
       </div>
 
       {/* Operator Branding Tab */}
       {activeTab === 'operator' && (
         <div className="space-y-6">
-          {/* Company Information */}
+          {/* Company Info */}
           <div className="card">
             <h3 className="font-semibold text-gray-900 mb-4">Company Information</h3>
-            
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="label">Company Name</label>
                 <input
@@ -357,21 +363,18 @@ export default function BrandingSettings() {
                   value={operatorBranding.name}
                   onChange={(e) => updateOperator('name', e.target.value)}
                   className="input"
-                  placeholder="Your Company Name"
                 />
               </div>
-              
               <div>
-                <label className="label">Registration Number</label>
+                <label className="label">Registration</label>
                 <input
                   type="text"
                   value={operatorBranding.registration}
                   onChange={(e) => updateOperator('registration', e.target.value)}
                   className="input"
-                  placeholder="Transport Canada Operator #"
+                  placeholder="e.g., Transport Canada Operator #123456"
                 />
               </div>
-              
               <div>
                 <label className="label">Tagline</label>
                 <input
@@ -379,10 +382,9 @@ export default function BrandingSettings() {
                   value={operatorBranding.tagline}
                   onChange={(e) => updateOperator('tagline', e.target.value)}
                   className="input"
-                  placeholder="Professional RPAS Operations"
+                  placeholder="e.g., Professional RPAS Operations"
                 />
               </div>
-              
               <div>
                 <label className="label">Website</label>
                 <input
@@ -390,10 +392,9 @@ export default function BrandingSettings() {
                   value={operatorBranding.website}
                   onChange={(e) => updateOperator('website', e.target.value)}
                   className="input"
-                  placeholder="www.example.com"
+                  placeholder="www.yourcompany.com"
                 />
               </div>
-              
               <div>
                 <label className="label">Email</label>
                 <input
@@ -401,10 +402,8 @@ export default function BrandingSettings() {
                   value={operatorBranding.email}
                   onChange={(e) => updateOperator('email', e.target.value)}
                   className="input"
-                  placeholder="ops@example.com"
                 />
               </div>
-              
               <div>
                 <label className="label">Phone</label>
                 <input
@@ -415,16 +414,16 @@ export default function BrandingSettings() {
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
-            </div>
-            
-            <div className="mt-4">
-              <label className="label">Address</label>
-              <textarea
-                value={operatorBranding.address}
-                onChange={(e) => updateOperator('address', e.target.value)}
-                className="input min-h-[60px]"
-                placeholder="Street Address, City, Province, Postal Code"
-              />
+              <div className="md:col-span-2">
+                <label className="label">Address</label>
+                <textarea
+                  value={operatorBranding.address}
+                  onChange={(e) => updateOperator('address', e.target.value)}
+                  className="input"
+                  rows={2}
+                  placeholder="Street, City, Province, Postal Code"
+                />
+              </div>
             </div>
           </div>
 
@@ -435,67 +434,73 @@ export default function BrandingSettings() {
               logo={operatorBranding.logo}
               onUpload={(logo) => updateOperator('logo', logo)}
               onRemove={() => updateOperator('logo', null)}
-              label="Upload your company logo"
+              label="Operator Logo"
             />
             <p className="text-xs text-gray-500 mt-2">
-              Recommended: Transparent PNG, landscape orientation, minimum 300px wide
+              This logo will appear on all PDF exports. For best results, use a transparent PNG.
             </p>
           </div>
 
-          {/* Brand Colors */}
+          {/* Colors */}
           <div className="card">
             <h3 className="font-semibold text-gray-900 mb-4">Brand Colors</h3>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <ColorPicker
-                label="Primary Color"
+                label="Primary"
                 value={operatorBranding.colors.primary}
-                onChange={(v) => updateOperatorColor('primary', v)}
+                onChange={(value) => updateOperatorColor('primary', value)}
               />
               <ColorPicker
-                label="Secondary Color"
+                label="Secondary"
                 value={operatorBranding.colors.secondary}
-                onChange={(v) => updateOperatorColor('secondary', v)}
+                onChange={(value) => updateOperatorColor('secondary', value)}
               />
               <ColorPicker
-                label="Accent Color"
+                label="Accent"
                 value={operatorBranding.colors.accent}
-                onChange={(v) => updateOperatorColor('accent', v)}
+                onChange={(value) => updateOperatorColor('accent', value)}
               />
               <ColorPicker
-                label="Light Background"
+                label="Light"
                 value={operatorBranding.colors.light}
-                onChange={(v) => updateOperatorColor('light', v)}
+                onChange={(value) => updateOperatorColor('light', value)}
               />
             </div>
-            
-            {/* Color Preview */}
-            <div className="mt-4 p-4 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-500 mb-2">Preview</p>
-              <div className="flex gap-2">
-                <div 
-                  className="w-20 h-10 rounded flex items-center justify-center text-white text-xs"
-                  style={{ backgroundColor: operatorBranding.colors.primary }}
-                >
-                  Primary
+          </div>
+
+          {/* Preview */}
+          <div className="card bg-gray-50">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Preview
+            </h3>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: operatorBranding.colors.primary }}>
+                <div className="flex items-center gap-4">
+                  {operatorBranding.logo ? (
+                    <img src={operatorBranding.logo} alt="Logo" className="h-12 w-auto" />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400">
+                      <Image className="w-6 h-6" />
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-bold" style={{ color: operatorBranding.colors.primary }}>
+                      {operatorBranding.name}
+                    </h4>
+                    <p className="text-sm text-gray-500">{operatorBranding.tagline}</p>
+                  </div>
                 </div>
-                <div 
-                  className="w-20 h-10 rounded flex items-center justify-center text-white text-xs"
-                  style={{ backgroundColor: operatorBranding.colors.secondary }}
-                >
-                  Secondary
+                <div className="text-right text-sm text-gray-500">
+                  <p>{operatorBranding.registration}</p>
+                  <p>{operatorBranding.website}</p>
                 </div>
-                <div 
-                  className="w-20 h-10 rounded flex items-center justify-center text-white text-xs"
-                  style={{ backgroundColor: operatorBranding.colors.accent }}
-                >
-                  Accent
-                </div>
-                <div 
-                  className="w-20 h-10 rounded flex items-center justify-center text-xs border"
-                  style={{ backgroundColor: operatorBranding.colors.light }}
-                >
-                  Light
-                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <div className="w-8 h-8 rounded" style={{ backgroundColor: operatorBranding.colors.primary }} title="Primary" />
+                <div className="w-8 h-8 rounded" style={{ backgroundColor: operatorBranding.colors.secondary }} title="Secondary" />
+                <div className="w-8 h-8 rounded" style={{ backgroundColor: operatorBranding.colors.accent }} title="Accent" />
+                <div className="w-8 h-8 rounded border" style={{ backgroundColor: operatorBranding.colors.light }} title="Light" />
               </div>
             </div>
           </div>
@@ -507,13 +512,10 @@ export default function BrandingSettings() {
         <div className="space-y-6">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-gray-900">Client Branding</h3>
-                <p className="text-sm text-gray-500">Add client logos for co-branded exports</p>
-              </div>
+              <h3 className="font-semibold text-gray-900">Client Branding</h3>
               <button
                 onClick={addClientBranding}
-                className="btn btn-secondary flex items-center gap-2"
+                className="btn-secondary inline-flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Client
@@ -521,19 +523,28 @@ export default function BrandingSettings() {
             </div>
 
             {clientBrandings.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No client branding configured</p>
-                <p className="text-sm">Add a client to include their logo on exports</p>
+              <div className="text-center py-8">
+                <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <h4 className="font-medium text-gray-900 mb-1">No client branding configured</h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  Add client logos to enable co-branded PDF exports
+                </p>
+                <button
+                  onClick={addClientBranding}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Client
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
-                {clientBrandings.map(client => (
+                {clientBrandings.map((client) => (
                   <div 
-                    key={client.id}
-                    className={`p-4 rounded-lg border transition-colors ${
-                      selectedClient === client.id
-                        ? 'border-aeria-blue bg-aeria-sky/30'
+                    key={client.id} 
+                    className={`p-4 rounded-lg border-2 transition-colors ${
+                      selectedClient === client.id 
+                        ? 'border-aeria-blue bg-blue-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -543,16 +554,15 @@ export default function BrandingSettings() {
                         value={client.name}
                         onChange={(e) => updateClientBranding(client.id, 'name', e.target.value)}
                         className="input font-medium"
-                        placeholder="Client Name"
+                        placeholder="Client name"
                       />
                       <button
                         onClick={() => removeClientBranding(client.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded"
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    
                     <LogoUpload
                       logo={client.logo}
                       onUpload={(logo) => updateClientBranding(client.id, 'logo', logo)}
@@ -589,7 +599,6 @@ export default function BrandingSettings() {
 // HOOK TO GET BRANDING
 // ============================================
 export function useBranding() {
-  const { user } = useAuth()
   const [branding, setBranding] = useState({
     operator: DEFAULT_OPERATOR_BRANDING,
     clients: []
@@ -598,13 +607,8 @@ export function useBranding() {
 
   useEffect(() => {
     const loadBranding = async () => {
-      if (!user?.organizationId) {
-        setLoading(false)
-        return
-      }
-
       try {
-        const brandingDoc = await getDoc(doc(db, 'organizations', user.organizationId, 'settings', 'branding'))
+        const brandingDoc = await getDoc(doc(db, 'settings', 'branding'))
         
         if (brandingDoc.exists()) {
           const data = brandingDoc.data()
@@ -621,7 +625,7 @@ export function useBranding() {
     }
 
     loadBranding()
-  }, [user])
+  }, [])
 
   const getClientBranding = (clientId) => {
     return branding.clients.find(c => c.id === clientId) || null
