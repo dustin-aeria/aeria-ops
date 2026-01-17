@@ -301,7 +301,6 @@ function SiteMapEditor({
             ...prev,
             [currentActiveMarker]: { lat: e.latlng.lat.toFixed(6), lng: e.latlng.lng.toFixed(6) }
           }))
-          }))
         }
       })
 
