@@ -24,11 +24,17 @@ import {
   XCircle,
   ThumbsUp,
   ThumbsDown,
-  ClipboardCheck
+  ClipboardCheck,
+  Download,
+  HardHat,
+  Loader2,
+  Zap
 } from 'lucide-react'
+import { BrandedPDF } from '../../lib/pdfExportService'
 
 export default function ProjectTailgate({ project, onUpdate }) {
   const [copied, setCopied] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     briefing: true,
     checklist: true,
@@ -138,13 +144,59 @@ export default function ProjectTailgate({ project, onUpdate }) {
     })
   }
 
-  const formatTime = (timeStr) => {
-    if (!timeStr) return 'Not set'
-    return timeStr
+  // Get PPE items from project
+  const getPPEItems = () => {
+    const ppe = project.ppe || {}
+    const items = []
+    
+    // Get selected common items
+    if (ppe.selectedItems?.length > 0) {
+      const commonPPE = {
+        'hi_vis_vest': 'High-Visibility Vest',
+        'safety_boots': 'Safety Boots (CSA)',
+        'hard_hat': 'Hard Hat',
+        'safety_glasses': 'Safety Glasses',
+        'ear_plugs': 'Hearing Protection',
+        'work_gloves': 'Work Gloves',
+        'sunscreen': 'Sunscreen',
+        'winter_jacket': 'Winter Jacket',
+        'rain_gear': 'Rain Gear'
+      }
+      ppe.selectedItems.forEach(id => {
+        if (commonPPE[id]) items.push(commonPPE[id])
+        else items.push(id.replace(/_/g, ' '))
+      })
+    }
+    
+    // Get custom items
+    if (ppe.customItems?.length > 0) {
+      ppe.customItems.forEach(item => items.push(item.item))
+    }
+    
+    // Old structure fallback
+    if (ppe.items?.length > 0 && items.length === 0) {
+      ppe.items.forEach(item => items.push(item.item || item.name || item))
+    }
+    
+    // Default if nothing
+    if (items.length === 0) {
+      return ['Safety Vest', 'Safety Boots', 'Safety Glasses (as required)']
+    }
+    
+    return items
+  }
+
+  // Get hazards from project
+  const getHazards = () => {
+    const hazards = project.hseRiskAssessment?.hazards || project.riskAssessment?.hazards || []
+    return hazards.slice(0, 6) // Limit to top 6 for briefing
   }
 
   // Generate plain text version for copying
   const generateBriefingText = () => {
+    const ppeItems = getPPEItems()
+    const hazards = getHazards()
+    
     const lines = [
       `PRE-DEPLOYMENT BRIEFING - ${project.name || 'Untitled Project'}`,
       `═`.repeat(50),
@@ -161,8 +213,9 @@ export default function ProjectTailgate({ project, onUpdate }) {
       `Max Altitude: ${project.flightPlan?.maxAltitudeAGL || project.flightPlan?.maxAltitude || 'N/A'} m AGL`,
       '',
       '─── SITE INFORMATION ───',
-      `Location: ${project.siteSurvey?.general?.siteName || project.siteSurvey?.siteName || 'Not specified'}`,
-      `Coordinates: ${project.siteSurvey?.general?.coordinates?.lat || project.siteSurvey?.latitude || 'N/A'}, ${project.siteSurvey?.general?.coordinates?.lng || project.siteSurvey?.longitude || 'N/A'}`,
+      `Location: ${project.siteSurvey?.location?.siteName || project.siteSurvey?.general?.siteName || 'Not specified'}`,
+      `Coordinates: ${project.siteSurvey?.location?.coordinates?.lat || 'N/A'}, ${project.siteSurvey?.location?.coordinates?.lng || 'N/A'}`,
+      `Access: ${project.siteSurvey?.access?.type || 'Not specified'}`,
       '',
       '─── EMERGENCY CONTACTS ───',
       `Primary: ${project.emergencyPlan?.primaryEmergencyContact?.name || 'Not set'} - ${project.emergencyPlan?.primaryEmergencyContact?.phone || 'N/A'}`,
@@ -172,14 +225,15 @@ export default function ProjectTailgate({ project, onUpdate }) {
       '─── COMMUNICATIONS ───',
       `Primary Channel: ${project.communications?.primaryChannel || 'Not set'}`,
       `Backup: ${project.communications?.backupChannel || 'Not set'}`,
+      `Lost Link: ${project.communications?.lostLinkProcedure || 'RTH'}`,
       '',
-      '─── KEY HAZARDS & MITIGATIONS ───',
-      ...((project.hseRiskAssessment?.hazards || project.riskAssessment?.hazards || []).slice(0, 5).map(h => 
-        `• ${h.description || h.hazard || 'Unnamed hazard'}\n  → Controls: ${h.controls || 'None documented'}`
-      )),
+      '─── KEY HAZARDS & CONTROLS ───',
+      ...(hazards.length > 0 
+        ? hazards.map(h => `• ${h.description || 'Unnamed hazard'}\n  → Controls: ${h.controls || 'None documented'}`)
+        : ['No hazards documented']),
       '',
       '─── PPE REQUIREMENTS ───',
-      ...(project.ppe?.required || ['Safety vest', 'Hard hat (if required)', 'Safety boots']).map(item => `• ${item}`),
+      ...ppeItems.map(item => `• ${item}`),
       '',
       '─── WEATHER BRIEFING ───',
       tailgate.weatherBriefing || 'Not recorded',
@@ -191,6 +245,126 @@ export default function ProjectTailgate({ project, onUpdate }) {
       `Go/No-Go Decision: ${tailgate.goNoGoDecision === true ? 'GO' : tailgate.goNoGoDecision === false ? 'NO-GO' : 'Pending'}`
     ]
     return lines.filter(l => l !== '').join('\n')
+  }
+
+  // Export to PDF
+  const exportToPDF = async () => {
+    setExporting(true)
+    try {
+      const pdf = new BrandedPDF({
+        title: 'Pre-Deployment Briefing',
+        subtitle: 'Tailgate Safety Meeting',
+        projectName: project.name,
+        projectCode: project.projectCode,
+        clientName: project.clientName
+      })
+      
+      await pdf.init()
+      pdf.addCoverPage()
+      pdf.addNewPage()
+      
+      // Project Info
+      pdf.addSectionTitle('Operation Details')
+      pdf.addKeyValueGrid([
+        { label: 'Project', value: project.name },
+        { label: 'Client', value: project.clientName || 'N/A' },
+        { label: 'Date', value: project.startDate || 'Not set' },
+        { label: 'Operation Type', value: project.flightPlan?.operationType || 'Standard' },
+        { label: 'Max Altitude', value: `${project.flightPlan?.maxAltitudeAGL || 'N/A'} m AGL` },
+        { label: 'Briefing Time', value: tailgate.briefingStartTime || new Date().toLocaleTimeString() }
+      ])
+      
+      // Crew
+      if (allCrew.length > 0) {
+        pdf.addSectionTitle('Crew Roster')
+        const crewRows = allCrew.map(c => [
+          c.role || 'N/A',
+          c.name || 'N/A',
+          c.phone || 'N/A',
+          tailgate.crewAttendance?.[c.id || c.name]?.attended ? '✓ Present' : '○ Absent'
+        ])
+        pdf.addTable(['Role', 'Name', 'Phone', 'Attendance'], crewRows)
+      }
+      
+      // Site Info
+      pdf.addSectionTitle('Site Information')
+      pdf.addKeyValueGrid([
+        { label: 'Location', value: project.siteSurvey?.location?.siteName || 'Not specified' },
+        { label: 'Coordinates', value: `${project.siteSurvey?.location?.coordinates?.lat || 'N/A'}, ${project.siteSurvey?.location?.coordinates?.lng || 'N/A'}` },
+        { label: 'Access', value: project.siteSurvey?.access?.type || 'Not specified' },
+        { label: 'Ground Conditions', value: project.siteSurvey?.groundConditions?.type || 'Not specified' }
+      ])
+      
+      // Emergency Info
+      pdf.addSectionTitle('Emergency Information')
+      pdf.addKeyValueGrid([
+        { label: 'Emergency Contact', value: `${project.emergencyPlan?.primaryEmergencyContact?.name || 'Not set'} - ${project.emergencyPlan?.primaryEmergencyContact?.phone || 'N/A'}` },
+        { label: 'Nearest Hospital', value: project.emergencyPlan?.nearestHospital || 'Not set' },
+        { label: 'Rally Point', value: project.emergencyPlan?.rallyPoint || 'Not set' }
+      ])
+      
+      // Communications
+      pdf.addSectionTitle('Communications')
+      pdf.addKeyValueGrid([
+        { label: 'Primary Channel', value: project.communications?.primaryChannel || 'Not set' },
+        { label: 'Backup Channel', value: project.communications?.backupChannel || 'Not set' },
+        { label: 'Lost Link Procedure', value: project.communications?.lostLinkProcedure || 'RTH' }
+      ])
+      
+      // Hazards
+      const hazards = getHazards()
+      if (hazards.length > 0) {
+        pdf.addSectionTitle('Key Hazards & Controls')
+        const hazardRows = hazards.map((h, i) => [
+          String(i + 1),
+          h.description || 'Unnamed',
+          h.controls || 'None documented'
+        ])
+        pdf.addTable(['#', 'Hazard', 'Controls'], hazardRows)
+      }
+      
+      // PPE
+      pdf.addSectionTitle('Required PPE')
+      const ppeItems = getPPEItems()
+      pdf.addParagraph(ppeItems.join(' • '))
+      
+      // Weather
+      if (tailgate.weatherBriefing) {
+        pdf.addSectionTitle('Weather Briefing')
+        pdf.addParagraph(tailgate.weatherBriefing)
+      }
+      
+      // Go/No-Go
+      pdf.addSectionTitle('Go/No-Go Decision')
+      pdf.addKeyValueGrid([
+        { label: 'Decision', value: tailgate.goNoGoDecision === true ? 'GO' : tailgate.goNoGoDecision === false ? 'NO-GO' : 'Pending' },
+        { label: 'Decision Time', value: new Date().toLocaleString() }
+      ])
+      if (tailgate.goNoGoNotes) {
+        pdf.addParagraph(tailgate.goNoGoNotes)
+      }
+      
+      // Checklist Summary
+      const checklist = tailgate.checklistCompleted || {}
+      const completedItems = Object.entries(checklist).filter(([_, v]) => v).length
+      pdf.addSectionTitle('Pre-Flight Checklist')
+      pdf.addParagraph(`${completedItems} of 10 items completed`)
+      
+      // Signatures
+      pdf.addSectionTitle('Briefing Acknowledgment')
+      pdf.addSignatureBlock([
+        { role: 'Pilot in Command', name: pic?.name },
+        { role: 'All Crew Present', name: `${allCrew.filter(c => tailgate.crewAttendance?.[c.id || c.name]?.attended).length} of ${allCrew.length}` }
+      ])
+      
+      const filename = `Tailgate_${project.projectCode || project.name || 'briefing'}_${new Date().toISOString().split('T')[0]}.pdf`
+      pdf.save(filename)
+    } catch (err) {
+      console.error('PDF export failed:', err)
+      alert('Failed to export PDF. Please try again.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   // Calculate checklist progress
@@ -210,6 +384,10 @@ export default function ProjectTailgate({ project, onUpdate }) {
   const isReadyForOps = completedCount === totalChecklistItems && 
                         allCrewAttended && 
                         tailgate.goNoGoDecision === true
+
+  // Get hazards for display
+  const hazards = getHazards()
+  const ppeItems = getPPEItems()
 
   return (
     <div className="space-y-6">
@@ -240,12 +418,47 @@ export default function ProjectTailgate({ project, onUpdate }) {
             {copied ? 'Copied!' : 'Copy'}
           </button>
           <button
-            onClick={() => window.print()}
-            className="btn-secondary inline-flex items-center gap-2"
+            onClick={exportToPDF}
+            disabled={exporting}
+            className="btn-primary inline-flex items-center gap-2"
           >
-            <Printer className="w-4 h-4" />
-            Print
+            {exporting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                Export PDF
+              </>
+            )}
           </button>
+        </div>
+      </div>
+
+      {/* Readiness Status */}
+      <div className={`p-4 rounded-lg border-2 ${
+        isReadyForOps 
+          ? 'bg-green-50 border-green-500' 
+          : 'bg-amber-50 border-amber-300'
+      }`}>
+        <div className="flex items-center gap-3">
+          {isReadyForOps ? (
+            <CheckCircle2 className="w-8 h-8 text-green-600" />
+          ) : (
+            <AlertTriangle className="w-8 h-8 text-amber-600" />
+          )}
+          <div>
+            <h3 className={`font-semibold ${isReadyForOps ? 'text-green-800' : 'text-amber-800'}`}>
+              {isReadyForOps ? 'Ready for Operations' : 'Pre-Flight Items Pending'}
+            </h3>
+            <p className={`text-sm ${isReadyForOps ? 'text-green-600' : 'text-amber-600'}`}>
+              Checklist: {completedCount}/{totalChecklistItems} • 
+              Crew: {attendedCount}/{allCrew.length} • 
+              Decision: {tailgate.goNoGoDecision === true ? 'GO' : tailgate.goNoGoDecision === false ? 'NO-GO' : 'Pending'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -348,13 +561,12 @@ export default function ProjectTailgate({ project, onUpdate }) {
                         <p className="text-sm text-gray-500">{member.role}</p>
                       </div>
                     </div>
-                    
                     <button
                       onClick={() => updateCrewAttendance(member.id || member.name, !hasAttended)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         hasAttended
-                          ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       {hasAttended ? 'Present ✓' : 'Mark Present'}
@@ -363,15 +575,68 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 )
               })
             )}
-            
-            {allCrewAttended && allCrew.length > 0 && (
-              <div className="p-3 bg-green-100 border border-green-200 rounded-lg mt-2">
-                <p className="text-green-800 text-sm font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  All crew members present and accounted for
-                </p>
-              </div>
-            )}
+          </div>
+        )}
+      </div>
+
+      {/* Pre-Flight Checklist */}
+      <div className="card">
+        <button
+          onClick={() => toggleSection('checklist')}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-aeria-blue" />
+            Pre-Flight Checklist
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              completedCount === totalChecklistItems 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {completedCount}/{totalChecklistItems}
+            </span>
+          </h2>
+          {expandedSections.checklist ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+        </button>
+
+        {expandedSections.checklist && (
+          <div className="mt-4 space-y-2">
+            {[
+              { key: 'siteSecured', label: 'Site secured and perimeter established', icon: MapPin },
+              { key: 'equipmentChecked', label: 'Aircraft and equipment pre-flight complete', icon: Plane },
+              { key: 'crewBriefed', label: 'Crew briefed on operation plan', icon: Users },
+              { key: 'commsVerified', label: 'Communications verified', icon: Radio },
+              { key: 'emergencyReviewed', label: 'Emergency procedures reviewed', icon: AlertOctagon },
+              { key: 'notamsChecked', label: 'NOTAMs and airspace checked', icon: Zap },
+              { key: 'weatherConfirmed', label: 'Weather conditions confirmed acceptable', icon: Wind },
+              { key: 'riskReviewed', label: 'Risk assessment reviewed with crew', icon: Shield },
+              { key: 'clientNotified', label: 'Client/stakeholders notified', icon: Phone },
+              { key: 'ppeConfirmed', label: 'All required PPE confirmed', icon: HardHat }
+            ].map(item => {
+              const Icon = item.icon
+              const isChecked = checklistItems[item.key]
+              return (
+                <label
+                  key={item.key}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    isChecked 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => updateChecklist(item.key, e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-green-600"
+                  />
+                  <Icon className={`w-4 h-4 ${isChecked ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className={`text-sm ${isChecked ? 'text-green-800' : 'text-gray-700'}`}>
+                    {item.label}
+                  </span>
+                </label>
+              )
+            })}
           </div>
         )}
       </div>
@@ -384,31 +649,33 @@ export default function ProjectTailgate({ project, onUpdate }) {
         >
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-aeria-blue" />
-            Briefing Content
+            Briefing Summary
           </h2>
           {expandedSections.briefing ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
         </button>
 
         {expandedSections.briefing && (
           <div className="mt-4 space-y-4">
-            {/* Project & Operation Info */}
-            <div className="grid sm:grid-cols-2 gap-4 p-4 bg-aeria-sky rounded-lg">
-              <div>
-                <p className="text-sm text-aeria-navy/70">Project</p>
-                <p className="font-semibold text-aeria-navy">{project.name || 'Untitled'}</p>
-                <p className="text-sm text-gray-600">{project.projectCode}</p>
-              </div>
-              <div>
-                <p className="text-sm text-aeria-navy/70">Client</p>
-                <p className="font-semibold text-aeria-navy">{project.clientName || 'No client'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-aeria-navy/70">Date</p>
-                <p className="font-semibold text-aeria-navy">{formatDate(project.startDate)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-aeria-navy/70">Operation Type</p>
-                <p className="font-semibold text-aeria-navy">{project.flightPlan?.operationType || 'Standard'}</p>
+            {/* Project Header */}
+            <div className="p-4 bg-gradient-to-r from-aeria-navy to-aeria-blue text-white rounded-lg">
+              <h3 className="text-xl font-bold">{project.name || 'Untitled Project'}</h3>
+              <div className="grid sm:grid-cols-4 gap-4 mt-3 text-sm">
+                <div>
+                  <p className="text-white/70">Project Code</p>
+                  <p className="font-semibold">{project.projectCode || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-white/70">Client</p>
+                  <p className="font-semibold">{project.clientName || 'No client'}</p>
+                </div>
+                <div>
+                  <p className="text-white/70">Date</p>
+                  <p className="font-semibold">{formatDate(project.startDate)}</p>
+                </div>
+                <div>
+                  <p className="text-white/70">Operation Type</p>
+                  <p className="font-semibold">{project.flightPlan?.operationType || 'Standard'}</p>
+                </div>
               </div>
             </div>
 
@@ -466,7 +733,7 @@ export default function ProjectTailgate({ project, onUpdate }) {
               <div className="grid sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Location</p>
-                  <p className="font-medium">{project.siteSurvey?.general?.siteName || project.siteSurvey?.siteName || 'Not specified'}</p>
+                  <p className="font-medium">{project.siteSurvey?.location?.siteName || project.siteSurvey?.general?.siteName || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Max Altitude</p>
@@ -515,36 +782,30 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 </div>
                 <div>
                   <p className="text-red-700">Nearest Hospital</p>
-                  <p className="font-medium text-red-900">
-                    {project.emergencyPlan?.nearestHospital || 'Not set'}
-                  </p>
+                  <p className="font-medium text-red-900">{project.emergencyPlan?.nearestHospital || 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-red-700">Rally Point</p>
-                  <p className="font-medium text-red-900">
-                    {project.emergencyPlan?.rallyPoint || 'Not set'}
-                  </p>
+                  <p className="font-medium text-red-900">{project.emergencyPlan?.rallyPoint || 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-red-700">Emergency Procedure</p>
-                  <p className="font-medium text-red-900">
-                    {project.emergencyPlan?.emergencyProcedure || 'Standard ERP'}
-                  </p>
+                  <p className="font-medium text-red-900">{project.emergencyPlan?.emergencyProcedure || 'Standard ERP'}</p>
                 </div>
               </div>
             </div>
 
             {/* Key Hazards */}
-            {((project.hseRiskAssessment?.hazards || project.riskAssessment?.hazards || []).length > 0) && (
+            {hazards.length > 0 && (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" />
                   Key Hazards & Controls
                 </h4>
                 <div className="space-y-2">
-                  {(project.hseRiskAssessment?.hazards || project.riskAssessment?.hazards || []).slice(0, 5).map((hazard, i) => (
+                  {hazards.map((hazard, i) => (
                     <div key={i} className="text-sm">
-                      <p className="font-medium text-amber-900">{hazard.description || hazard.hazard || 'Unnamed hazard'}</p>
+                      <p className="font-medium text-amber-900">{hazard.description || 'Unnamed hazard'}</p>
                       <p className="text-amber-700">→ {hazard.controls || 'No controls documented'}</p>
                     </div>
                   ))}
@@ -553,177 +814,46 @@ export default function ProjectTailgate({ project, onUpdate }) {
             )}
 
             {/* PPE */}
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-aeria-blue" />
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <HardHat className="w-4 h-4" />
                 Required PPE
               </h4>
               <div className="flex flex-wrap gap-2">
-                {(project.ppe?.required || ['Safety vest', 'Appropriate footwear']).map((item, i) => (
-                  <span key={i} className="px-2 py-1 bg-white border border-gray-200 rounded text-sm">
+                {ppeItems.map((item, i) => (
+                  <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                     {item}
                   </span>
                 ))}
               </div>
             </div>
 
-            {/* Weather Briefing */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+            {/* Weather Notes */}
+            <div>
+              <label className="label flex items-center gap-2">
                 <Wind className="w-4 h-4" />
-                Weather Briefing
-              </h4>
+                Weather Briefing Notes
+              </label>
               <textarea
                 value={tailgate.weatherBriefing || ''}
                 onChange={(e) => updateTailgate({ weatherBriefing: e.target.value })}
-                className="input min-h-[80px] bg-white"
-                placeholder="Enter current weather conditions, wind speed/direction, visibility, cloud cover, and any weather-related concerns..."
+                className="input min-h-[80px]"
+                placeholder="Current conditions, forecast, wind, visibility, METAR/TAF..."
               />
-              
-              <label className="flex items-center gap-2 mt-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={tailgate.weatherMinimumsConfirmed || false}
-                  onChange={(e) => updateTailgate({ weatherMinimumsConfirmed: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-blue-800">Weather conditions meet operational minimums</span>
-              </label>
             </div>
 
-            {/* Custom Notes */}
+            {/* Additional Notes */}
             <div>
               <label className="label">Additional Briefing Notes</label>
               <textarea
                 value={tailgate.customNotes || ''}
                 onChange={(e) => updateTailgate({ customNotes: e.target.value })}
-                className="input min-h-[100px]"
-                placeholder="Any additional information for the crew briefing..."
+                className="input min-h-[80px]"
+                placeholder="Any other items to discuss during the briefing..."
               />
             </div>
           </div>
         )}
-      </div>
-
-      {/* Pre-Deployment Checklist */}
-      <div className="card">
-        <button
-          onClick={() => toggleSection('checklist')}
-          className="flex items-center justify-between w-full text-left"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-aeria-blue" />
-            Pre-Deployment Checklist
-            <span className={`px-2 py-0.5 text-xs rounded-full ${
-              completedCount === totalChecklistItems 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-gray-100 text-gray-600'
-            }`}>
-              {completedCount}/{totalChecklistItems}
-            </span>
-          </h2>
-          {expandedSections.checklist ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-        </button>
-
-        {expandedSections.checklist && (
-          <div className="mt-4 space-y-2">
-            {[
-              { key: 'siteSecured', label: 'Site secured and access controlled' },
-              { key: 'equipmentChecked', label: 'All equipment inspected and functional' },
-              { key: 'crewBriefed', label: 'All crew members briefed on operation' },
-              { key: 'commsVerified', label: 'Communications check completed' },
-              { key: 'emergencyReviewed', label: 'Emergency procedures reviewed' },
-              { key: 'notamsChecked', label: 'NOTAMs and airspace checked' },
-              { key: 'weatherConfirmed', label: 'Weather conditions confirmed acceptable' },
-              { key: 'riskReviewed', label: 'Risk assessment reviewed with crew' },
-              { key: 'clientNotified', label: 'Client/landowner notified of operations' },
-              { key: 'ppeConfirmed', label: 'All crew wearing required PPE' }
-            ].map((item) => (
-              <label 
-                key={item.key}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                  checklistItems[item.key] 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={checklistItems[item.key] || false}
-                  onChange={(e) => updateChecklist(item.key, e.target.checked)}
-                  className="w-5 h-5 text-green-600 rounded"
-                />
-                <span className={`text-sm ${checklistItems[item.key] ? 'text-green-800' : 'text-gray-700'}`}>
-                  {item.label}
-                </span>
-              </label>
-            ))}
-
-            {completedCount === totalChecklistItems && (
-              <div className="p-4 bg-green-100 border border-green-200 rounded-lg mt-4">
-                <p className="text-green-800 font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" />
-                  Pre-deployment checklist complete
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Briefing Sign-off */}
-      <div className={`card ${isReadyForOps ? 'bg-green-50 border-2 border-green-300' : 'bg-gray-50'}`}>
-        <h3 className="font-medium text-gray-900 mb-3">Briefing Completion</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          By completing this briefing, the PIC confirms that all crew members have been briefed 
-          on the operation, understand their roles, and are aware of all hazards and emergency procedures.
-        </p>
-        
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div>
-            <label className="label text-xs">Briefing Start</label>
-            <input
-              type="time"
-              value={tailgate.briefingStartTime || ''}
-              onChange={(e) => updateTailgate({ briefingStartTime: e.target.value })}
-              className="input w-32"
-            />
-          </div>
-          <div>
-            <label className="label text-xs">Briefing End</label>
-            <input
-              type="time"
-              value={tailgate.briefingEndTime || ''}
-              onChange={(e) => updateTailgate({ briefingEndTime: e.target.value })}
-              className="input w-32"
-            />
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            {tailgate.briefingStartTime && tailgate.briefingEndTime && (
-              <span>
-                Briefing duration: {tailgate.briefingStartTime} - {tailgate.briefingEndTime}
-              </span>
-            )}
-          </div>
-          {isReadyForOps ? (
-            <div className="flex items-center gap-2 text-green-700 font-medium">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Ready for Operations</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-amber-600 text-sm">
-              <AlertTriangle className="w-4 h-4" />
-              <span>
-                {!allCrewAttended && 'Mark all crew present • '}
-                {completedCount < totalChecklistItems && 'Complete checklist • '}
-                {tailgate.goNoGoDecision !== true && 'Confirm Go decision'}
-              </span>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )
