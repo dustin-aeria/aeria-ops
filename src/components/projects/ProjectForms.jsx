@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { FORM_TEMPLATES, FORM_CATEGORIES } from './formDefinitions'
-import { getOperators } from './firestore'
+import { FORM_TEMPLATES, FORM_CATEGORIES } from '../../lib/formDefinitions'
+import { getOperators } from '../../lib/firestore'
 import { 
   ClipboardList,
   Plus,
