@@ -128,6 +128,7 @@ function SiteMapEditor({
   const mapRef = useRef(null)
   const markersRef = useRef({})
   const boundaryLayerRef = useRef(null)
+  const boundaryVertexMarkersRef = useRef([])  // Store vertex markers for boundary editing
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -211,6 +212,9 @@ function SiteMapEditor({
         .leaflet-control { z-index: 2; }
         .leaflet-control-layers { z-index: 2; }
         .custom-marker { background: transparent !important; border: none !important; }
+        .leaflet-interactive.boundary-vertex { cursor: grab !important; }
+        .leaflet-interactive.boundary-vertex:active { cursor: grabbing !important; }
+        .leaflet-dragging .leaflet-interactive.boundary-vertex { cursor: grabbing !important; }
       `
       document.head.appendChild(style)
     }
@@ -370,6 +374,7 @@ function SiteMapEditor({
         mapRef.current = null
         markersRef.current = {}
         boundaryLayerRef.current = null
+        boundaryVertexMarkersRef.current = []
       }
     }
   }, [isOpen])
@@ -378,15 +383,24 @@ function SiteMapEditor({
   useEffect(() => {
     if (!mapRef.current || !window.L) return
 
-    // Remove existing boundary
+    const L = window.L
+    const map = mapRef.current
+
+    // Remove existing boundary polygon/polyline
     if (boundaryLayerRef.current) {
-      mapRef.current.removeLayer(boundaryLayerRef.current)
+      map.removeLayer(boundaryLayerRef.current)
       boundaryLayerRef.current = null
     }
 
+    // Remove existing vertex markers
+    boundaryVertexMarkersRef.current.forEach(marker => {
+      if (marker) map.removeLayer(marker)
+    })
+    boundaryVertexMarkersRef.current = []
+
     // Draw new boundary if we have enough points
     if (boundaryPoints.length >= 3) {
-      const polygon = window.L.polygon(
+      const polygon = L.polygon(
         boundaryPoints.map(p => [parseFloat(p.lat), parseFloat(p.lng)]),
         {
           color: '#7c3aed',
@@ -395,19 +409,102 @@ function SiteMapEditor({
           weight: 2,
           dashArray: isDrawingBoundary ? '5, 10' : null
         }
-      ).addTo(mapRef.current)
+      ).addTo(map)
       boundaryLayerRef.current = polygon
+
+      // Add draggable vertex markers (only when not actively drawing)
+      if (!isDrawingBoundary) {
+        boundaryPoints.forEach((point, index) => {
+          const vertexMarker = L.circleMarker(
+            [parseFloat(point.lat), parseFloat(point.lng)],
+            {
+              radius: 8,
+              color: '#7c3aed',
+              fillColor: '#ffffff',
+              fillOpacity: 1,
+              weight: 3,
+              className: 'boundary-vertex'
+            }
+          ).addTo(map)
+
+          // Make it draggable using a custom approach
+          vertexMarker.on('mousedown', function(e) {
+            L.DomEvent.stopPropagation(e)
+            L.DomEvent.preventDefault(e)
+            map.dragging.disable()
+            
+            const onMouseMove = (moveEvent) => {
+              const newLatLng = moveEvent.latlng
+              vertexMarker.setLatLng(newLatLng)
+              
+              // Update polygon in real-time
+              const newPoints = [...boundaryPoints]
+              newPoints[index] = { 
+                lat: newLatLng.lat.toFixed(6), 
+                lng: newLatLng.lng.toFixed(6) 
+              }
+              if (boundaryLayerRef.current) {
+                boundaryLayerRef.current.setLatLngs(
+                  newPoints.map(p => [parseFloat(p.lat), parseFloat(p.lng)])
+                )
+              }
+            }
+
+            const onMouseUp = (upEvent) => {
+              map.dragging.enable()
+              map.off('mousemove', onMouseMove)
+              map.off('mouseup', onMouseUp)
+              
+              // Update state with final position
+              const finalLatLng = vertexMarker.getLatLng()
+              setBoundaryPoints(prev => {
+                const newPoints = [...prev]
+                newPoints[index] = { 
+                  lat: finalLatLng.lat.toFixed(6), 
+                  lng: finalLatLng.lng.toFixed(6) 
+                }
+                return newPoints
+              })
+            }
+
+            map.on('mousemove', onMouseMove)
+            map.on('mouseup', onMouseUp)
+          })
+
+          vertexMarker.bindTooltip(`Point ${index + 1} (drag to move)`, { 
+            permanent: false,
+            direction: 'top'
+          })
+
+          boundaryVertexMarkersRef.current.push(vertexMarker)
+        })
+      }
     } else if (boundaryPoints.length >= 1) {
       // Show points as they're being added
       const points = boundaryPoints.map(p => [parseFloat(p.lat), parseFloat(p.lng)])
       if (points.length >= 2) {
-        const polyline = window.L.polyline(points, {
+        const polyline = L.polyline(points, {
           color: '#7c3aed',
           weight: 2,
           dashArray: '5, 10'
-        }).addTo(mapRef.current)
+        }).addTo(map)
         boundaryLayerRef.current = polyline
       }
+      
+      // Show small markers for points being added
+      boundaryPoints.forEach((point, index) => {
+        const vertexMarker = L.circleMarker(
+          [parseFloat(point.lat), parseFloat(point.lng)],
+          {
+            radius: 6,
+            color: '#7c3aed',
+            fillColor: '#7c3aed',
+            fillOpacity: 0.8,
+            weight: 2
+          }
+        ).addTo(map)
+        boundaryVertexMarkersRef.current.push(vertexMarker)
+      })
     }
   }, [boundaryPoints, isDrawingBoundary])
 
