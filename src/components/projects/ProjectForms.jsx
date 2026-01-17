@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { getOperators, getAircraft } from '../../lib/firestore'
 import { 
   FORM_TEMPLATES, 
   FORM_CATEGORIES,
@@ -12,7 +13,6 @@ import {
   JOB_SYSTEM_FACTORS,
   calculateRiskScore
 } from '../../lib/formDefinitions'
-import { getOperators, getAircraft } from '../../lib/firestore'
 import { 
   ClipboardList,
   Plus,
@@ -87,7 +87,8 @@ const riskColors = {
 
 // Convert FORM_TEMPLATES to array format for the library
 const getAvailableForms = () => {
-  return Object.values(FORM_TEMPLATES).map(form => ({
+  const templates = FORM_TEMPLATES || {}
+  return Object.values(templates).map(form => ({
     id: form.id,
     name: form.name,
     shortName: form.shortName,
@@ -1046,7 +1047,7 @@ function FormLibrary({ onSelectForm, onClose }) {
             >
               All Forms
             </button>
-            {FORM_CATEGORIES.map(cat => (
+            {(FORM_CATEGORIES || []).map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
@@ -1112,18 +1113,26 @@ export default function ProjectForms({ project, onUpdate }) {
   const [selectedForm, setSelectedForm] = useState(null)
   const [editingForm, setEditingForm] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [ops, acs] = await Promise.all([
-          getOperators(),
-          getAircraft()
-        ])
-        setOperators(ops)
-        setAircraft(acs)
+        const ops = await getOperators()
+        setOperators(ops || [])
+        
+        // Aircraft is optional - some setups might not have it
+        try {
+          const acs = await getAircraft()
+          setAircraft(acs || [])
+        } catch (e) {
+          console.log('Aircraft not available:', e)
+          setAircraft([])
+        }
       } catch (err) {
-        console.error('Error loading data:', err)
+        console.error('Error loading operators:', err)
+        setOperators([])
+        setError(err.message)
       } finally {
         setLoading(false)
       }
@@ -1162,7 +1171,7 @@ export default function ProjectForms({ project, onUpdate }) {
   }
 
   const handleEditForm = (form) => {
-    const template = FORM_TEMPLATES[form.templateId]
+    const template = (FORM_TEMPLATES || {})[form.templateId]
     if (template) {
       setSelectedForm(template)
       setEditingForm(form)
@@ -1183,11 +1192,15 @@ export default function ProjectForms({ project, onUpdate }) {
     )
   }
 
+  // Defensive check for form definitions
+  const categories = FORM_CATEGORIES || []
+  const templates = FORM_TEMPLATES || {}
+
   // Group forms by category
   const formsByCategory = {}
-  FORM_CATEGORIES.forEach(cat => {
+  categories.forEach(cat => {
     formsByCategory[cat.id] = projectForms.filter(f => {
-      const template = FORM_TEMPLATES[f.templateId]
+      const template = templates[f.templateId]
       return template?.category === cat.id
     })
   })
@@ -1227,8 +1240,8 @@ export default function ProjectForms({ project, onUpdate }) {
         </div>
       ) : (
         <div className="space-y-6">
-          {FORM_CATEGORIES.map(category => {
-            const categoryForms = formsByCategory[category.id]
+          {categories.map(category => {
+            const categoryForms = formsByCategory[category.id] || []
             if (categoryForms.length === 0) return null
             
             return (
@@ -1242,7 +1255,7 @@ export default function ProjectForms({ project, onUpdate }) {
                 
                 <div className="space-y-2">
                   {categoryForms.map(form => {
-                    const template = FORM_TEMPLATES[form.templateId]
+                    const template = templates[form.templateId]
                     const status = formStatuses[form.status] || formStatuses.pending
                     const StatusIcon = status.icon
                     const FormIcon = iconMap[template?.icon] || FileText
