@@ -1,16 +1,199 @@
-// ============================================
-// SETTINGS PAGE
-// Account, Company, and Branding Settings
-// ============================================
+/**
+ * Settings.jsx
+ * Account, Company, and Branding Settings with save functionality
+ * 
+ * @location src/pages/Settings.jsx
+ * @action REPLACE
+ */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Building, Shield, Bell, Palette, ChevronRight } from 'lucide-react'
+import { User, Building, Shield, Bell, Palette, Check, Loader2 } from 'lucide-react'
+import { updateOperator } from '../lib/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
+import { auth } from '../lib/firebase'
 import BrandingSettings from '../components/BrandingSettings'
 
 export default function Settings() {
-  const { userProfile } = useAuth()
+  const { userProfile, user } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
+  
+  // Profile state
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    certifications: ''
+  })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  
+  // Company state
+  const [companyData, setCompanyData] = useState({
+    name: 'Aeria Solutions Ltd.',
+    operatorNumber: '930355',
+    email: 'ops@aeriasolutions.ca',
+    phone: '',
+    address: ''
+  })
+  const [companySaving, setCompanySaving] = useState(false)
+  const [companySaved, setCompanySaved] = useState(false)
+  
+  // Notification state
+  const [notificationData, setNotificationData] = useState({
+    projectUpdates: true,
+    approvalRequests: true,
+    maintenanceReminders: true,
+    weeklySummary: false
+  })
+  const [notificationSaving, setNotificationSaving] = useState(false)
+  const [notificationSaved, setNotificationSaved] = useState(false)
+  
+  // Security state
+  const [passwordData, setPasswordData] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+
+  // Load profile data
+  useEffect(() => {
+    if (userProfile) {
+      setProfileData({
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        phone: userProfile.phone || '',
+        certifications: userProfile.certifications || ''
+      })
+    }
+  }, [userProfile])
+
+  // Load company data
+  useEffect(() => {
+    loadCompanyData()
+  }, [])
+
+  const loadCompanyData = async () => {
+    try {
+      const docRef = doc(db, 'settings', 'company')
+      const snapshot = await getDoc(docRef)
+      if (snapshot.exists()) {
+        setCompanyData(prev => ({ ...prev, ...snapshot.data() }))
+      }
+    } catch (err) {
+      console.error('Error loading company settings:', err)
+    }
+  }
+
+  // Load notification preferences
+  useEffect(() => {
+    if (user) {
+      loadNotificationPrefs()
+    }
+  }, [user])
+
+  const loadNotificationPrefs = async () => {
+    try {
+      const docRef = doc(db, 'userPreferences', user.uid)
+      const snapshot = await getDoc(docRef)
+      if (snapshot.exists() && snapshot.data().notifications) {
+        setNotificationData(prev => ({ ...prev, ...snapshot.data().notifications }))
+      }
+    } catch (err) {
+      console.error('Error loading notification prefs:', err)
+    }
+  }
+
+  // Save handlers
+  const handleSaveProfile = async () => {
+    setProfileSaving(true)
+    setProfileSaved(false)
+    try {
+      await updateOperator(userProfile.id, profileData)
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 3000)
+    } catch (err) {
+      console.error('Error saving profile:', err)
+      alert('Failed to save profile')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const handleSaveCompany = async () => {
+    setCompanySaving(true)
+    setCompanySaved(false)
+    try {
+      const docRef = doc(db, 'settings', 'company')
+      await setDoc(docRef, companyData, { merge: true })
+      setCompanySaved(true)
+      setTimeout(() => setCompanySaved(false), 3000)
+    } catch (err) {
+      console.error('Error saving company settings:', err)
+      alert('Failed to save company settings')
+    } finally {
+      setCompanySaving(false)
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    setNotificationSaving(true)
+    setNotificationSaved(false)
+    try {
+      const docRef = doc(db, 'userPreferences', user.uid)
+      await setDoc(docRef, { notifications: notificationData }, { merge: true })
+      setNotificationSaved(true)
+      setTimeout(() => setNotificationSaved(false), 3000)
+    } catch (err) {
+      console.error('Error saving notification prefs:', err)
+      alert('Failed to save notification preferences')
+    } finally {
+      setNotificationSaving(false)
+    }
+  }
+
+  const handleUpdatePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess(false)
+    
+    if (passwordData.new !== passwordData.confirm) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+    
+    if (passwordData.new.length < 6) {
+      setPasswordError('Password must be at least 6 characters')
+      return
+    }
+    
+    setPasswordSaving(true)
+    try {
+      // Re-authenticate user first
+      const credential = EmailAuthProvider.credential(user.email, passwordData.current)
+      await reauthenticateWithCredential(auth.currentUser, credential)
+      
+      // Update password
+      await updatePassword(auth.currentUser, passwordData.new)
+      
+      setPasswordSuccess(true)
+      setPasswordData({ current: '', new: '', confirm: '' })
+      setTimeout(() => setPasswordSuccess(false), 3000)
+    } catch (err) {
+      console.error('Error updating password:', err)
+      if (err.code === 'auth/wrong-password') {
+        setPasswordError('Current password is incorrect')
+      } else {
+        setPasswordError(err.message)
+      }
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Your personal information' },
@@ -19,6 +202,28 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Alert preferences' },
     { id: 'security', label: 'Security', icon: Shield, description: 'Password & authentication' }
   ]
+
+  const SaveButton = ({ saving, saved, onClick, label = 'Save Changes' }) => (
+    <button 
+      onClick={onClick} 
+      disabled={saving}
+      className="btn-primary inline-flex items-center gap-2"
+    >
+      {saving ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Saving...
+        </>
+      ) : saved ? (
+        <>
+          <Check className="w-4 h-4" />
+          Saved!
+        </>
+      ) : (
+        label
+      )}
+    </button>
+  )
 
   return (
     <div className="space-y-6">
@@ -70,7 +275,8 @@ export default function Settings() {
                   <input 
                     type="text" 
                     className="input" 
-                    defaultValue={userProfile?.firstName || ''} 
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
                     placeholder="First name"
                   />
                 </div>
@@ -79,7 +285,8 @@ export default function Settings() {
                   <input 
                     type="text" 
                     className="input" 
-                    defaultValue={userProfile?.lastName || ''} 
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
                     placeholder="Last name"
                   />
                 </div>
@@ -99,7 +306,8 @@ export default function Settings() {
                 <input 
                   type="tel" 
                   className="input" 
-                  defaultValue={userProfile?.phone || ''} 
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -108,12 +316,17 @@ export default function Settings() {
                 <input 
                   type="text" 
                   className="input" 
-                  defaultValue={userProfile?.certifications || ''} 
+                  value={profileData.certifications}
+                  onChange={(e) => setProfileData({ ...profileData, certifications: e.target.value })}
                   placeholder="Advanced RPAS, etc."
                 />
               </div>
               <div className="pt-4">
-                <button className="btn btn-primary">Save Changes</button>
+                <SaveButton 
+                  saving={profileSaving} 
+                  saved={profileSaved} 
+                  onClick={handleSaveProfile} 
+                />
               </div>
             </div>
           </div>
@@ -137,7 +350,8 @@ export default function Settings() {
                 <input 
                   type="text" 
                   className="input" 
-                  defaultValue="Aeria Solutions Ltd."
+                  value={companyData.name}
+                  onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                 />
               </div>
               <div>
@@ -145,7 +359,8 @@ export default function Settings() {
                 <input 
                   type="text" 
                   className="input" 
-                  defaultValue="930355"
+                  value={companyData.operatorNumber}
+                  onChange={(e) => setCompanyData({ ...companyData, operatorNumber: e.target.value })}
                 />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -154,7 +369,8 @@ export default function Settings() {
                   <input 
                     type="email" 
                     className="input" 
-                    defaultValue="ops@aeriasolutions.ca"
+                    value={companyData.email}
+                    onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
                   />
                 </div>
                 <div>
@@ -162,6 +378,8 @@ export default function Settings() {
                   <input 
                     type="tel" 
                     className="input" 
+                    value={companyData.phone}
+                    onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -170,11 +388,17 @@ export default function Settings() {
                 <label className="label">Address</label>
                 <textarea 
                   className="input min-h-[80px]" 
+                  value={companyData.address}
+                  onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })}
                   placeholder="Street Address, City, Province, Postal Code"
                 />
               </div>
               <div className="pt-4">
-                <button className="btn btn-primary">Save Changes</button>
+                <SaveButton 
+                  saving={companySaving} 
+                  saved={companySaved} 
+                  onClick={handleSaveCompany} 
+                />
               </div>
             </div>
           </div>
@@ -203,31 +427,56 @@ export default function Settings() {
                   <p className="font-medium text-gray-900">Project Updates</p>
                   <p className="text-sm text-gray-500">Get notified when projects are updated</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-aeria-navy rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={notificationData.projectUpdates}
+                  onChange={(e) => setNotificationData({ ...notificationData, projectUpdates: e.target.checked })}
+                  className="w-5 h-5 text-aeria-navy rounded" 
+                />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
                 <div>
                   <p className="font-medium text-gray-900">Approval Requests</p>
                   <p className="text-sm text-gray-500">Get notified when approval is needed</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-aeria-navy rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={notificationData.approvalRequests}
+                  onChange={(e) => setNotificationData({ ...notificationData, approvalRequests: e.target.checked })}
+                  className="w-5 h-5 text-aeria-navy rounded" 
+                />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
                 <div>
                   <p className="font-medium text-gray-900">Maintenance Reminders</p>
                   <p className="text-sm text-gray-500">Get reminders for aircraft maintenance</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-aeria-navy rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={notificationData.maintenanceReminders}
+                  onChange={(e) => setNotificationData({ ...notificationData, maintenanceReminders: e.target.checked })}
+                  className="w-5 h-5 text-aeria-navy rounded" 
+                />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
                 <div>
                   <p className="font-medium text-gray-900">Weekly Summary</p>
                   <p className="text-sm text-gray-500">Receive weekly activity summary</p>
                 </div>
-                <input type="checkbox" className="w-5 h-5 text-aeria-navy rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={notificationData.weeklySummary}
+                  onChange={(e) => setNotificationData({ ...notificationData, weeklySummary: e.target.checked })}
+                  className="w-5 h-5 text-aeria-navy rounded" 
+                />
               </label>
               <div className="pt-4">
-                <button className="btn btn-primary">Save Preferences</button>
+                <SaveButton 
+                  saving={notificationSaving} 
+                  saved={notificationSaved} 
+                  onClick={handleSaveNotifications}
+                  label="Save Preferences" 
+                />
               </div>
             </div>
           </div>
@@ -246,20 +495,61 @@ export default function Settings() {
               </div>
             </div>
             <div className="space-y-4">
+              {passwordError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                  Password updated successfully!
+                </div>
+              )}
               <div>
                 <label className="label">Current Password</label>
-                <input type="password" className="input" placeholder="Enter current password" />
+                <input 
+                  type="password" 
+                  className="input" 
+                  placeholder="Enter current password"
+                  value={passwordData.current}
+                  onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                />
               </div>
               <div>
                 <label className="label">New Password</label>
-                <input type="password" className="input" placeholder="Enter new password" />
+                <input 
+                  type="password" 
+                  className="input" 
+                  placeholder="Enter new password"
+                  value={passwordData.new}
+                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                />
               </div>
               <div>
                 <label className="label">Confirm New Password</label>
-                <input type="password" className="input" placeholder="Confirm new password" />
+                <input 
+                  type="password" 
+                  className="input" 
+                  placeholder="Confirm new password"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                />
               </div>
               <div className="pt-4">
-                <button className="btn btn-primary">Update Password</button>
+                <button 
+                  onClick={handleUpdatePassword}
+                  disabled={passwordSaving || !passwordData.current || !passwordData.new || !passwordData.confirm}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  {passwordSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Password'
+                  )}
+                </button>
               </div>
               
               <div className="border-t border-gray-200 pt-4 mt-6">
@@ -267,7 +557,7 @@ export default function Settings() {
                 <p className="text-sm text-gray-500 mb-3">
                   Add an extra layer of security to your account
                 </p>
-                <button className="btn btn-secondary">Enable 2FA</button>
+                <button className="btn-secondary">Enable 2FA</button>
               </div>
             </div>
           </div>
