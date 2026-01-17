@@ -9,17 +9,12 @@ import {
   Wind,
   Eye,
   Gauge,
-  MapPin,
-  Radio,
-  Shield,
   ChevronDown,
   ChevronUp,
-  Info,
   Award,
   FileCheck,
-  AlertOctagon,
   CheckCircle2,
-  XCircle
+  Zap
 } from 'lucide-react'
 
 const operationTypes = [
@@ -36,10 +31,11 @@ const areaTypes = [
 ]
 
 const groundTypes = [
-  { value: 'controlled_ground', label: 'Controlled Ground Area', overPeopleRisk: 'none', description: 'Access restricted, no bystanders' },
-  { value: 'sparsely_populated', label: 'Sparsely Populated', overPeopleRisk: 'low', description: 'Rural areas, few people' },
-  { value: 'populated', label: 'Populated Area', overPeopleRisk: 'medium', description: 'Residential, commercial' },
-  { value: 'gathering', label: 'Gathering of People', overPeopleRisk: 'high', description: 'Events, crowds, assemblies' }
+  { value: 'controlled_ground', label: 'Controlled Ground Area', description: 'Access restricted, no bystanders' },
+  { value: 'remote', label: 'Remote (< 5 ppl/km²)', description: 'Uninhabited areas' },
+  { value: 'sparsely_populated', label: 'Sparsely Populated (5-25 ppl/km²)', description: 'Rural, few people' },
+  { value: 'populated', label: 'Populated Area (> 25 ppl/km²)', description: 'Residential, commercial' },
+  { value: 'gathering', label: 'Gathering of People / Advertised Event', description: 'Events, crowds, assemblies' }
 ]
 
 const defaultWeatherMinimums = {
@@ -61,7 +57,9 @@ const defaultContingencies = [
 ]
 
 // ============================================
-// CARs LICENSE DETECTION
+// CARs PART 9 CATEGORY DETECTION
+// Divisions: IV (Basic), V (Advanced), VI (Complex Level 1), Subpart 3 (SFOC)
+// General ceiling: 400ft (122m) AGL
 // ============================================
 const detectCARsCategory = (flightPlan, aircraft) => {
   const {
@@ -72,108 +70,234 @@ const detectCARsCategory = (flightPlan, aircraft) => {
     overPeople = false,
     nearAerodrome = false,
     aerodromeDistance = null,
-    nightOperations = false
+    nightOperations = false,
+    distanceFromPeople = 30,
+    distanceFromPopulated = 1000
   } = flightPlan
 
-  // Get primary aircraft specs
+  // Get primary aircraft specs - MTOW is stored in kg in Firestore
   const primaryAircraft = aircraft?.find(a => a.isPrimary) || aircraft?.[0]
-  const mtow = primaryAircraft?.mtow || 0 // in grams
-  const isMicro = mtow > 0 && mtow <= 250
-  const isSmall = mtow > 250 && mtow <= 25000
+  const mtowKg = primaryAircraft?.mtow || 0
+  
+  // RPAS Weight Categories per CARs Part 9 (900.01 definitions)
+  const isMicro = mtowKg > 0 && mtowKg < 0.25
+  const isSmall = mtowKg >= 0.25 && mtowKg <= 25
+  const isMedium = mtowKg > 25 && mtowKg <= 150
+  const isLarge = mtowKg > 150
 
   const reasons = []
   let category = 'basic'
 
-  // SFOC Required (Complex Operations)
-  if (operationType === 'BVLOS') {
-    category = 'complex'
-    reasons.push('BVLOS operations require SFOC')
+  const isControlled = ['controlled', 'restricted'].includes(flightAreaType)
+  const isUncontrolled = !isControlled
+
+  // =====================================================
+  // SFOC REQUIRED (Subpart 3 - 903.02)
+  // =====================================================
+  
+  if (isLarge) {
+    category = 'sfoc'
+    reasons.push('RPAS over 150kg requires SFOC (CARs 903.02)')
   }
   
-  if (nightOperations) {
-    category = 'complex'
-    reasons.push('Night operations require SFOC')
+  if (groundType === 'gathering') {
+    category = 'sfoc'
+    reasons.push('Operations at advertised events require SFOC (CARs 901.41)')
   }
   
-  if (maxAltitudeAGL > 122 && flightAreaType === 'controlled') {
-    category = 'complex'
-    reasons.push('Above 122m (400ft) in controlled airspace requires SFOC')
+  if (operationType === 'BVLOS' && isControlled) {
+    category = 'sfoc'
+    reasons.push('BVLOS in controlled airspace requires SFOC')
   }
   
-  if (mtow > 25000) {
-    category = 'complex'
-    reasons.push('RPAS over 25kg requires SFOC')
+  if (operationType === 'BVLOS' && nearAerodrome) {
+    const distKm = aerodromeDistance || 0
+    if (distKm < 9.26) {
+      category = 'sfoc'
+      reasons.push('BVLOS within 5nm of aerodrome requires SFOC (CARs 901.47)')
+    }
+  }
+  
+  if (maxAltitudeAGL > 122 && isControlled) {
+    category = 'sfoc'
+    reasons.push('Above 400ft in controlled airspace requires SFOC (CARs 903.02)')
   }
 
-  // Advanced Operations
-  if (category !== 'complex') {
-    const isControlled = ['controlled', 'restricted'].includes(flightAreaType)
-    const isOverPeople = overPeople || groundType === 'gathering' || groundType === 'populated'
-    const isNearAerodrome = nearAerodrome && (!aerodromeDistance || aerodromeDistance < 5.6) // 3nm = 5.56km
-    
-    if (isControlled && !isMicro) {
-      category = 'advanced'
-      reasons.push('Controlled airspace requires Advanced certificate')
-    }
-    
-    if (isOverPeople && !isMicro) {
-      category = 'advanced'
-      reasons.push('Operations over/near people require Advanced certificate')
-    }
-    
-    if (isNearAerodrome) {
-      category = 'advanced'
-      reasons.push('Within 3nm of aerodrome requires Advanced certificate or ATC authorization')
+  if (isMedium && operationType === 'BVLOS' && distanceFromPopulated < 1000) {
+    category = 'sfoc'
+    reasons.push('Medium RPAS BVLOS <1km from populated area requires SFOC')
+  }
+
+  // =====================================================
+  // COMPLEX LEVEL 1 (Division VI - 901.87)
+  // =====================================================
+  if (category !== 'sfoc' && operationType === 'BVLOS') {
+    if (isUncontrolled) {
+      if ((isSmall || isMedium) && distanceFromPopulated >= 1000) {
+        category = 'complex1'
+        reasons.push('BVLOS in uncontrolled airspace ≥1km from populated - Complex Level 1 (CARs 901.87a)')
+      }
+      else if (isSmall && (groundType === 'sparsely_populated' || distanceFromPopulated < 1000)) {
+        category = 'complex1'
+        reasons.push('Small RPAS BVLOS over sparsely populated - Complex Level 1 (CARs 901.87b)')
+      }
+      else if ((isSmall || isMedium) && ['remote', 'controlled_ground'].includes(groundType)) {
+        category = 'complex1'
+        reasons.push('BVLOS in remote/controlled ground area - Complex Level 1 (CARs 901.87)')
+      }
     }
   }
 
-  // Basic Operations - remaining cases
+  // =====================================================
+  // ADVANCED OPERATIONS (Division V - 901.62)
+  // =====================================================
+  if (category !== 'sfoc' && category !== 'complex1') {
+    const isNearAirport = nearAerodrome && (!aerodromeDistance || aerodromeDistance < 5.56)
+    const isNearHeliport = nearAerodrome && aerodromeDistance && aerodromeDistance < 1.85
+    
+    if (operationType === 'EVLOS' && isUncontrolled) {
+      category = 'advanced'
+      reasons.push('EVLOS requires Advanced certificate (CARs 901.62b)')
+    }
+    
+    if (isSmall && operationType === 'VLOS' && isControlled) {
+      category = 'advanced'
+      reasons.push('VLOS in controlled airspace requires Advanced (CARs 901.62a-i)')
+    }
+    
+    if (isSmall && distanceFromPeople < 30 && distanceFromPeople >= 5) {
+      category = 'advanced'
+      reasons.push('Operations <30m from people require Advanced (CARs 901.62a-ii)')
+    }
+    
+    if (isSmall && (overPeople || distanceFromPeople < 5)) {
+      category = 'advanced'
+      reasons.push('Operations <5m from people require Advanced (CARs 901.62a-iii)')
+    }
+    
+    if (isNearAirport || isNearHeliport) {
+      category = 'advanced'
+      reasons.push('Within 3nm of airport/1nm of heliport requires Advanced (CARs 901.62a-iv)')
+    }
+    
+    if (isMedium && operationType === 'VLOS') {
+      category = 'advanced'
+      reasons.push('Medium RPAS (25-150kg) requires Advanced minimum (CARs 901.62d-g)')
+    }
+    
+    if (nightOperations && operationType === 'VLOS') {
+      if (category !== 'advanced') {
+        category = 'advanced'
+        reasons.push('Night operations may require Advanced certification')
+      }
+    }
+  }
+
+  // =====================================================
+  // BASIC OPERATIONS (Division IV - 901.53)
+  // =====================================================
   if (category === 'basic') {
-    reasons.push('Standard VLOS operation in uncontrolled airspace')
-    if (isMicro) {
-      reasons.push('Micro RPAS (≤250g) - some restrictions relaxed')
+    if (isMicro && mtowKg > 0) {
+      reasons.push('Micro RPAS (<250g) - some regulatory exemptions apply')
+    } else if (isSmall) {
+      reasons.push('Small RPAS VLOS in uncontrolled airspace (CARs 901.53)')
     }
+    reasons.push('Operations meet Basic requirements: VLOS, uncontrolled airspace, ≥30m from people')
   }
 
-  return { category, reasons, isMicro, isSmall, mtow }
+  if (maxAltitudeAGL > 122 && category !== 'sfoc') {
+    reasons.push('⚠️ Above 400ft (122m) - verify airspace authorization')
+  }
+
+  // Format MTOW display - stored in kg
+  let mtowDisplay = 'Not set'
+  let weightClass = ''
+  if (mtowKg > 0) {
+    if (mtowKg < 1) {
+      mtowDisplay = `${(mtowKg * 1000).toFixed(0)}g`
+    } else {
+      mtowDisplay = `${mtowKg} kg`
+    }
+    if (isMicro) weightClass = 'Micro RPAS'
+    else if (isSmall) weightClass = 'Small RPAS'
+    else if (isMedium) weightClass = 'Medium RPAS'
+    else if (isLarge) weightClass = 'Large RPAS'
+  }
+
+  return { 
+    category, 
+    reasons, 
+    isMicro, 
+    isSmall, 
+    isMedium, 
+    isLarge,
+    mtowKg,
+    mtowDisplay,
+    weightClass
+  }
 }
 
-// License category display config
 const licenseCategories = {
   basic: {
     label: 'Basic Operations',
+    subtitle: 'Division IV (CARs 901.53-901.61)',
     color: 'bg-green-100 text-green-800 border-green-300',
     icon: CheckCircle2,
+    ageReq: '14+',
     requirements: [
-      'Pilot Certificate - Basic',
-      'Registered RPAS',
-      'VLOS operations only',
-      'Below 122m (400ft) AGL',
-      'Uncontrolled airspace or authorization'
+      'Pilot Certificate - Small RPAS (VLOS) Basic Operations',
+      'Registered RPAS (250g - 25kg)',
+      'VLOS only in uncontrolled airspace',
+      'Below 400ft (122m) AGL',
+      '≥30m (100ft) from uninvolved persons'
     ]
   },
   advanced: {
     label: 'Advanced Operations',
+    subtitle: 'Division V (CARs 901.62-901.86)',
     color: 'bg-amber-100 text-amber-800 border-amber-300',
     icon: Award,
+    ageReq: '16+',
     requirements: [
-      'Pilot Certificate - Advanced',
-      'Registered RPAS with safety features',
-      'Flight Review within 24 months',
-      'Can fly in controlled airspace',
-      'Can fly over/near people'
+      'Pilot Certificate - Advanced Operations',
+      'Flight Review required',
+      'VLOS in controlled airspace (with NAV CANADA auth)',
+      'EVLOS in uncontrolled airspace',
+      'Can fly <30m from people (declared aircraft)',
+      'Within 3nm airport / 1nm heliport',
+      'Medium RPAS (25-150kg) VLOS operations'
     ]
   },
-  complex: {
-    label: 'Complex Operations (SFOC)',
+  complex1: {
+    label: 'Complex Level 1 (BVLOS)',
+    subtitle: 'Division VI (CARs 901.87-901.96)',
+    color: 'bg-purple-100 text-purple-800 border-purple-300',
+    icon: Zap,
+    ageReq: '18+',
+    requirements: [
+      'Pilot Certificate - Level 1 Complex Operations',
+      'RPAS Operator Certificate required',
+      'BVLOS in uncontrolled airspace only',
+      'Small/Medium RPAS ≥1km from populated areas',
+      'Small RPAS over sparsely populated areas',
+      '20 hours ground school + flight review',
+      '≥5nm from aerodromes'
+    ]
+  },
+  sfoc: {
+    label: 'SFOC Required',
+    subtitle: 'Subpart 3 (CARs 903.01-903.03)',
     color: 'bg-red-100 text-red-800 border-red-300',
     icon: FileCheck,
+    ageReq: 'Varies',
     requirements: [
       'Special Flight Operations Certificate',
-      'Detailed safety case required',
-      'Transport Canada approval',
-      'Insurance requirements may apply',
-      'Operational limitations per SFOC'
+      'Application to Transport Canada',
+      'Operational Risk Assessment (SORA)',
+      'RPAS >150kg, BVLOS in controlled airspace',
+      'Advertised events, above 400ft controlled',
+      'Within 5nm aerodrome (BVLOS)',
+      'Processing: weeks to months'
     ]
   }
 }
@@ -206,6 +330,8 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           nearAerodrome: false,
           aerodromeDistance: null,
           nightOperations: false,
+          distanceFromPeople: 30,
+          distanceFromPopulated: 1000,
           weatherMinimums: { ...defaultWeatherMinimums },
           contingencies: [...defaultContingencies],
           additionalProcedures: ''
@@ -240,7 +366,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
-  // Aircraft management
   const addAircraft = (aircraftId) => {
     if (!aircraftId) return
     const ac = aircraftList.find(a => a.id === aircraftId)
@@ -277,7 +402,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     updateFlightPlan({ aircraft: newAircraft })
   }
 
-  // Weather minimums
   const updateWeather = (field, value) => {
     updateFlightPlan({
       weatherMinimums: {
@@ -287,7 +411,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     })
   }
 
-  // Contingencies
   const updateContingency = (index, field, value) => {
     const newContingencies = [...(flightPlan.contingencies || defaultContingencies)]
     newContingencies[index] = { ...newContingencies[index], [field]: value }
@@ -313,7 +436,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     !flightPlan.aircraft?.some(a => a.id === ac.id)
   )
 
-  // Calculate license category
   const licenseInfo = useMemo(() => {
     return detectCARsCategory(flightPlan, flightPlan.aircraft)
   }, [flightPlan])
@@ -321,12 +443,16 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
   const categoryConfig = licenseCategories[licenseInfo.category]
   const CategoryIcon = categoryConfig.icon
 
-  // Get primary aircraft for SORA data
-  const primaryAircraft = flightPlan.aircraft?.find(a => a.isPrimary) || flightPlan.aircraft?.[0]
+  // Helper to format MTOW display
+  const formatMtow = (mtow) => {
+    if (!mtow) return 'N/A'
+    if (mtow < 1) return `${(mtow * 1000).toFixed(0)}g`
+    return `${mtow} kg`
+  }
 
   return (
     <div className="space-y-6">
-      {/* License Category Banner */}
+      {/* CARs Category Banner */}
       <div className={`card border-2 ${categoryConfig.color}`}>
         <button
           onClick={() => toggleSection('license')}
@@ -335,8 +461,8 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           <div className="flex items-center gap-3">
             <CategoryIcon className="w-6 h-6" />
             <div>
-              <h2 className="text-lg font-semibold">CARs Category: {categoryConfig.label}</h2>
-              <p className="text-sm opacity-80">Based on your flight parameters</p>
+              <h2 className="text-lg font-semibold">{categoryConfig.label}</h2>
+              <p className="text-sm opacity-80">{categoryConfig.subtitle} • Min age: {categoryConfig.ageReq}</p>
             </div>
           </div>
           {expandedSections.license ? <ChevronUp className="w-5 h-5 opacity-60" /> : <ChevronDown className="w-5 h-5 opacity-60" />}
@@ -355,10 +481,13 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                     </li>
                   ))}
                 </ul>
-                {licenseInfo.mtow > 0 && (
-                  <p className="text-sm mt-2 opacity-80">
-                    Aircraft MTOW: {licenseInfo.mtow}g ({licenseInfo.isMicro ? 'Micro' : licenseInfo.isSmall ? 'Small' : 'Standard'} RPAS)
-                  </p>
+                {licenseInfo.mtowKg > 0 && (
+                  <div className="mt-3 p-2 bg-white/50 rounded">
+                    <p className="text-sm font-medium">
+                      Aircraft MTOW: {licenseInfo.mtowDisplay}
+                    </p>
+                    <p className="text-xs opacity-75">{licenseInfo.weightClass}</p>
+                  </div>
                 )}
               </div>
               <div>
@@ -376,37 +505,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           </div>
         )}
       </div>
-
-      {/* SORA Summary (if applicable) */}
-      {licenseInfo.category !== 'basic' && primaryAircraft && (
-        <div className="card bg-purple-50 border-purple-200">
-          <div className="flex items-center gap-3 mb-3">
-            <Shield className="w-5 h-5 text-purple-600" />
-            <h3 className="font-medium text-purple-900">SORA Data Summary</h3>
-          </div>
-          <div className="grid sm:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-purple-600">Max Dimension</p>
-              <p className="font-semibold text-purple-900">{primaryAircraft.maxDimension || '~1'}m</p>
-            </div>
-            <div>
-              <p className="text-purple-600">Max Speed</p>
-              <p className="font-semibold text-purple-900">{primaryAircraft.maxSpeed || '~25'} m/s</p>
-            </div>
-            <div>
-              <p className="text-purple-600">Max Altitude</p>
-              <p className="font-semibold text-purple-900">{flightPlan.maxAltitudeAGL || 120}m AGL</p>
-            </div>
-            <div>
-              <p className="text-purple-600">Operation Type</p>
-              <p className="font-semibold text-purple-900">{flightPlan.operationType || 'VLOS'}</p>
-            </div>
-          </div>
-          <p className="text-xs text-purple-600 mt-3">
-            These values will be used in SORA assessment. Update aircraft specs in Aircraft Management for accurate calculations.
-          </p>
-        </div>
-      )}
 
       {/* Aircraft Selection */}
       <div className="card">
@@ -445,9 +543,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                         {ac.isPrimary && (
                           <span className="ml-2 px-1.5 py-0.5 text-xs bg-aeria-navy text-white rounded">Primary</span>
                         )}
-                        {ac.mtow && (
-                          <span className="ml-2 text-xs text-gray-500">({ac.mtow}g)</span>
-                        )}
+                        <span className="ml-2 text-xs text-gray-500">MTOW: {formatMtow(ac.mtow)}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -489,7 +585,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                   <option value="">Add aircraft...</option>
                   {availableAircraft.map(ac => (
                     <option key={ac.id} value={ac.id}>
-                      {ac.nickname} - {ac.make} {ac.model} ({ac.mtow || '?'}g)
+                      {ac.nickname} - {ac.make} {ac.model} (MTOW: {formatMtow(ac.mtow)})
                     </option>
                   ))}
                 </select>
@@ -547,9 +643,9 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                   max="400"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {flightPlan.maxAltitudeAGL > 122 
-                    ? '⚠️ Above 400ft may require SFOC' 
-                    : '✓ Within basic operations limit (400ft)'}
+                  {(flightPlan.maxAltitudeAGL || 120) > 122 
+                    ? '⚠️ Above 400ft (122m) - may require authorization' 
+                    : '✓ Within 400ft (122m) standard limit'}
                 </p>
               </div>
 
@@ -577,14 +673,51 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                 >
                   {groundTypes.map(opt => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label} - {opt.description}
+                      {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Toggles */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Min Distance from Uninvolved Persons (m)</label>
+                <input
+                  type="number"
+                  value={flightPlan.distanceFromPeople || 30}
+                  onChange={(e) => updateFlightPlan({ distanceFromPeople: parseFloat(e.target.value) || 30 })}
+                  className="input"
+                  min="0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {(flightPlan.distanceFromPeople || 30) >= 30 
+                    ? '✓ ≥30m (100ft) - Basic eligible' 
+                    : (flightPlan.distanceFromPeople || 30) >= 5
+                      ? '⚠️ <30m requires Advanced + declared aircraft'
+                      : '⚠️ <5m (16.4ft) requires Advanced + declared aircraft'}
+                </p>
+              </div>
+
+              {flightPlan.operationType === 'BVLOS' && (
+                <div>
+                  <label className="label">Distance from Populated Area (m)</label>
+                  <input
+                    type="number"
+                    value={flightPlan.distanceFromPopulated || 1000}
+                    onChange={(e) => updateFlightPlan({ distanceFromPopulated: parseFloat(e.target.value) || 1000 })}
+                    className="input"
+                    min="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(flightPlan.distanceFromPopulated || 1000) >= 1000 
+                      ? '✓ ≥1km - Complex Level 1 eligible (small/medium RPAS)' 
+                      : '⚠️ <1km - Small RPAS only for Complex Level 1'}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="grid sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -596,7 +729,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                 <span className="text-sm">
                   <span className="font-medium">Over People</span>
                   <br />
-                  <span className="text-gray-500">Within 30m horizontal</span>
+                  <span className="text-gray-500">Directly overhead bystanders</span>
                 </span>
               </label>
 
@@ -610,7 +743,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                 <span className="text-sm">
                   <span className="font-medium">Near Aerodrome</span>
                   <br />
-                  <span className="text-gray-500">Within 5.6km (3nm)</span>
+                  <span className="text-gray-500">Within 3nm airport / 1nm heliport</span>
                 </span>
               </label>
 
@@ -624,7 +757,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                 <span className="text-sm">
                   <span className="font-medium">Night Operations</span>
                   <br />
-                  <span className="text-gray-500">Before sunrise/after sunset</span>
+                  <span className="text-gray-500">Before sunrise / after sunset</span>
                 </span>
               </label>
             </div>
@@ -641,6 +774,9 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                   min="0"
                   placeholder="e.g., 4.5"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Reference: 1nm = 1.85km (heliport), 3nm = 5.56km (airport), 5nm = 9.26km (BVLOS limit)
+                </p>
               </div>
             )}
           </div>
