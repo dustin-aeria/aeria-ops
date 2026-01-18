@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   ShieldAlert, Plus, Trash2, Phone, MapPin, Users, Route, Stethoscope, Flame, Plane,
-  AlertTriangle, ChevronDown, ChevronUp, Building, Clock, Navigation, Map, X, Loader2,
-  Layers, CheckCircle2
+  AlertTriangle, ChevronDown, ChevronUp, Building, Navigation, Layers, CheckCircle2
 } from 'lucide-react'
+import { MapPreview, MapEditorModal } from './MapComponents'
 
 const contactTypes = [
   { value: 'emergency', label: 'Emergency Services', icon: Phone },
@@ -23,233 +23,14 @@ const defaultContacts = [
 
 const procedureTypes = [
   { id: 'medical', label: 'Medical Emergency', icon: Stethoscope, 
-    defaultSteps: ['Cease all flight operations', 'Ensure scene safety', 'Call 911 if serious', 'Administer first aid within training', 'Designate someone to meet responders', 'Document incident'] },
+    defaultSteps: ['Cease all flight operations immediately', 'Ensure scene safety before approaching', 'Call 911 if serious injury', 'Administer first aid within training level', 'Designate someone to meet emergency responders', 'Document incident details for reporting'] },
   { id: 'fire', label: 'Fire Emergency', icon: Flame,
-    defaultSteps: ['Alert all personnel - evacuate to muster', 'Call 911', 'Only extinguish small fires if trained', 'Do not re-enter until cleared', 'Account for all personnel'] },
+    defaultSteps: ['Alert all personnel - evacuate to muster point', 'Call 911', 'Only attempt to extinguish small fires if trained', 'Do not re-enter area until cleared', 'Account for all personnel at muster point'] },
   { id: 'aircraft_incident', label: 'Aircraft Incident', icon: Plane,
-    defaultSteps: ['Note last known position/time', 'Do not approach if fire/smoke', 'Secure area', 'Do not disturb wreckage', 'Document scene', 'Report to FIC if fly-away'] },
+    defaultSteps: ['Note last known position and time', 'Do not approach if fire/smoke present', 'Secure the area - prevent unauthorized access', 'Do not disturb wreckage (potential TSB investigation)', 'Document scene with photos', 'Report to FIC Edmonton if fly-away', 'Complete incident report within 24 hours'] },
   { id: 'weather', label: 'Severe Weather', icon: AlertTriangle,
-    defaultSteps: ['Monitor weather continuously', 'Land immediately if conditions deteriorate', 'Seek shelter', 'Wait 30 min after thunder', 'Do not resume until conditions improve'] }
+    defaultSteps: ['Monitor weather continuously during operations', 'Land aircraft immediately if conditions deteriorate', 'Seek shelter in vehicle or substantial structure', 'If lightning: avoid high ground, isolated trees', 'Wait 30 minutes after last thunder before resuming'] }
 ]
-
-// ============================================
-// EMERGENCY MAP EDITOR (Muster + Routes)
-// ============================================
-function EmergencyMapEditor({ site, onUpdate, isOpen, onClose }) {
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeMode, setActiveMode] = useState('muster') // 'muster' or 'route'
-  const [routePoints, setRoutePoints] = useState([])
-  
-  const siteLocation = site?.siteSurvey?.location?.coordinates
-  const boundary = site?.siteSurvey?.boundary || []
-  const musterPoints = site?.emergency?.musterPoints || []
-  const evacuationRoutes = site?.emergency?.evacuationRoutes || []
-  const launchPoint = site?.flightPlan?.launchPoint
-  const recoveryPoint = site?.flightPlan?.recoveryPoint
-
-  useEffect(() => {
-    if (!isOpen || !mapContainerRef.current) return
-    
-    const loadMap = async () => {
-      if (!window.L) {
-        const script = document.createElement('script')
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-        script.onload = () => initMap()
-        document.head.appendChild(script)
-      } else {
-        initMap()
-      }
-    }
-
-    const initMap = () => {
-      if (mapRef.current) mapRef.current.remove()
-      
-      const defaultCenter = siteLocation ? [siteLocation.lat, siteLocation.lng] : [49.2827, -123.1207]
-      mapRef.current = window.L.map(mapContainerRef.current).setView(defaultCenter, 15)
-      
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(mapRef.current)
-
-      // Add site location
-      if (siteLocation) {
-        window.L.marker([siteLocation.lat, siteLocation.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#1e40af;color:white;padding:3px 6px;border-radius:4px;font-size:10px;">📍 Site</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Add boundary
-      if (boundary.length > 0) {
-        window.L.polygon(boundary.map(p => [p.lat, p.lng]), {
-          color: '#3b82f6',
-          fillOpacity: 0.1
-        }).addTo(mapRef.current)
-      }
-
-      // Add launch/recovery points (reference only)
-      if (launchPoint) {
-        window.L.marker([launchPoint.lat, launchPoint.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#059669;color:white;padding:3px 6px;border-radius:4px;font-size:10px;opacity:0.7">🚀</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      if (recoveryPoint) {
-        window.L.marker([recoveryPoint.lat, recoveryPoint.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#dc2626;color:white;padding:3px 6px;border-radius:4px;font-size:10px;opacity:0.7">🎯</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Add existing muster points
-      musterPoints.forEach((mp, i) => {
-        if (mp.coordinates) {
-          window.L.marker([mp.coordinates.lat, mp.coordinates.lng], {
-            icon: window.L.divIcon({
-              className: 'custom-marker',
-              html: `<div style="background:#f59e0b;color:white;padding:3px 6px;border-radius:4px;font-size:10px;">🚨 ${mp.name || 'Muster'}</div>`
-            })
-          }).addTo(mapRef.current)
-        }
-      })
-
-      // Add existing evacuation routes
-      evacuationRoutes.forEach((er, i) => {
-        if (er.coordinates && er.coordinates.length > 1) {
-          window.L.polyline(er.coordinates.map(c => [c.lat, c.lng]), {
-            color: '#ef4444',
-            weight: 4,
-            dashArray: '10, 10'
-          }).addTo(mapRef.current)
-        }
-      })
-
-      // Click handler
-      mapRef.current.on('click', (e) => {
-        const coords = { lat: e.latlng.lat, lng: e.latlng.lng }
-        
-        if (activeMode === 'muster') {
-          // Add new muster point
-          const newMuster = {
-            name: `Muster Point ${musterPoints.length + 1}`,
-            location: `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`,
-            coordinates: coords,
-            description: ''
-          }
-          onUpdate({
-            ...site,
-            emergency: {
-              ...site.emergency,
-              musterPoints: [...musterPoints, newMuster]
-            }
-          })
-        } else {
-          // Add point to route being drawn
-          setRoutePoints(prev => [...prev, coords])
-        }
-      })
-
-      setIsLoading(false)
-      setTimeout(() => mapRef.current?.invalidateSize(), 100)
-    }
-
-    loadMap()
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
-  }, [isOpen, activeMode])
-
-  const saveRoute = () => {
-    if (routePoints.length < 2) return
-    
-    const newRoute = {
-      name: `Evacuation Route ${evacuationRoutes.length + 1}`,
-      description: '',
-      coordinates: routePoints
-    }
-    
-    onUpdate({
-      ...site,
-      emergency: {
-        ...site.emergency,
-        evacuationRoutes: [...evacuationRoutes, newRoute]
-      }
-    })
-    
-    setRoutePoints([])
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">Emergency Map - {site?.name}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Mode Toggle */}
-        <div className="p-4 bg-gray-50 border-b flex gap-2">
-          <button
-            onClick={() => { setActiveMode('muster'); setRoutePoints([]) }}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              activeMode === 'muster' ? 'bg-amber-500 text-white' : 'bg-white border'
-            }`}
-          >
-            🚨 Add Muster Point
-          </button>
-          <button
-            onClick={() => setActiveMode('route')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              activeMode === 'route' ? 'bg-red-500 text-white' : 'bg-white border'
-            }`}
-          >
-            <Route className="w-4 h-4" />
-            Draw Evacuation Route
-          </button>
-          {activeMode === 'route' && routePoints.length >= 2 && (
-            <button onClick={saveRoute} className="px-4 py-2 rounded-lg bg-green-500 text-white">
-              Save Route ({routePoints.length} points)
-            </button>
-          )}
-        </div>
-        
-        <div className="p-4 flex-1 min-h-[400px] relative">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-              <Loader2 className="w-8 h-8 animate-spin text-aeria-blue" />
-            </div>
-          )}
-          <div ref={mapContainerRef} className="w-full h-full rounded-lg" style={{ minHeight: '350px' }} />
-        </div>
-
-        <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            {activeMode === 'muster' ? 'Click map to add muster point' : `Click to draw route (${routePoints.length} points)`}
-          </div>
-          <button onClick={onClose} className="btn-primary">Done</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ============================================
 // MAIN COMPONENT: Multi-Site Emergency Plan
@@ -272,7 +53,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
     }
   }, [project.sites])
 
-  // Also initialize project-level emergency plan for shared contacts
+  // Initialize project-level emergency plan for shared contacts
   useEffect(() => {
     if (!project.emergencyPlan) {
       const defaultProcedures = {}
@@ -293,6 +74,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
 
   const emergencyPlan = project.emergencyPlan || {}
   const activeSite = sites[activeSiteIndex]
+  const siteSurvey = activeSite?.siteSurvey || {}
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -340,66 +122,92 @@ export default function ProjectEmergency({ project, onUpdate }) {
     })
   }
 
-  // Site-specific muster points
-  const updateSiteMuster = (index, field, value) => {
-    const newSites = [...sites]
-    const musterPoints = [...(newSites[activeSiteIndex].emergency?.musterPoints || [])]
-    musterPoints[index] = { ...musterPoints[index], [field]: value }
-    newSites[activeSiteIndex] = {
-      ...newSites[activeSiteIndex],
-      emergency: { ...newSites[activeSiteIndex].emergency, musterPoints }
-    }
-    saveSites(newSites)
-  }
-
-  const removeSiteMuster = (index) => {
-    const newSites = [...sites]
-    const musterPoints = (newSites[activeSiteIndex].emergency?.musterPoints || []).filter((_, i) => i !== index)
-    newSites[activeSiteIndex] = {
-      ...newSites[activeSiteIndex],
-      emergency: { ...newSites[activeSiteIndex].emergency, musterPoints }
-    }
-    saveSites(newSites)
-  }
-
-  // Site-specific evacuation routes
-  const updateSiteRoute = (index, field, value) => {
-    const newSites = [...sites]
-    const routes = [...(newSites[activeSiteIndex].emergency?.evacuationRoutes || [])]
-    routes[index] = { ...routes[index], [field]: value }
-    newSites[activeSiteIndex] = {
-      ...newSites[activeSiteIndex],
-      emergency: { ...newSites[activeSiteIndex].emergency, evacuationRoutes: routes }
-    }
-    saveSites(newSites)
-  }
-
-  const removeSiteRoute = (index) => {
-    const newSites = [...sites]
-    const routes = (newSites[activeSiteIndex].emergency?.evacuationRoutes || []).filter((_, i) => i !== index)
-    newSites[activeSiteIndex] = {
-      ...newSites[activeSiteIndex],
-      emergency: { ...newSites[activeSiteIndex].emergency, evacuationRoutes: routes }
-    }
-    saveSites(newSites)
-  }
-
-  const handleMapUpdate = (updatedSite) => {
-    const siteIndex = sites.findIndex(s => s.id === updatedSite.id)
+  // Handle map save for site-specific emergency data
+  const handleMapSave = (mapData) => {
+    if (!activeSite) return
+    const siteIndex = sites.findIndex(s => s.id === activeSite.id)
     if (siteIndex === -1) return
+
     const newSites = [...sites]
-    newSites[siteIndex] = updatedSite
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      emergency: {
+        ...newSites[siteIndex].emergency,
+        musterPoints: mapData.musterPoints || [],
+        evacuationRoutes: mapData.evacuationRoutes || []
+      }
+    }
+    saveSites(newSites)
+  }
+
+  // Update muster point name/description
+  const updateMusterPoint = (index, field, value) => {
+    if (!activeSite) return
+    const siteIndex = sites.findIndex(s => s.id === activeSite.id)
+    if (siteIndex === -1) return
+
+    const newSites = [...sites]
+    const musterPoints = [...(newSites[siteIndex].emergency?.musterPoints || [])]
+    musterPoints[index] = { ...musterPoints[index], [field]: value }
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      emergency: { ...newSites[siteIndex].emergency, musterPoints }
+    }
+    saveSites(newSites)
+  }
+
+  const deleteMusterPoint = (index) => {
+    if (!activeSite) return
+    const siteIndex = sites.findIndex(s => s.id === activeSite.id)
+    if (siteIndex === -1) return
+
+    const newSites = [...sites]
+    const musterPoints = (newSites[siteIndex].emergency?.musterPoints || []).filter((_, i) => i !== index)
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      emergency: { ...newSites[siteIndex].emergency, musterPoints }
+    }
+    saveSites(newSites)
+  }
+
+  // Update route name/description
+  const updateRoute = (index, field, value) => {
+    if (!activeSite) return
+    const siteIndex = sites.findIndex(s => s.id === activeSite.id)
+    if (siteIndex === -1) return
+
+    const newSites = [...sites]
+    const routes = [...(newSites[siteIndex].emergency?.evacuationRoutes || [])]
+    routes[index] = { ...routes[index], [field]: value }
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      emergency: { ...newSites[siteIndex].emergency, evacuationRoutes: routes }
+    }
+    saveSites(newSites)
+  }
+
+  const deleteRoute = (index) => {
+    if (!activeSite) return
+    const siteIndex = sites.findIndex(s => s.id === activeSite.id)
+    if (siteIndex === -1) return
+
+    const newSites = [...sites]
+    const routes = (newSites[siteIndex].emergency?.evacuationRoutes || []).filter((_, i) => i !== index)
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      emergency: { ...newSites[siteIndex].emergency, evacuationRoutes: routes }
+    }
     saveSites(newSites)
   }
 
   return (
     <div className="space-y-6">
-      {/* Site Selector (for site-specific emergency info) */}
+      {/* Site Selector */}
       {sites.length > 1 && (
         <div className="card">
           <div className="flex items-center gap-2 mb-3">
             <Layers className="w-5 h-5 text-aeria-blue" />
-            <h2 className="text-lg font-semibold">Select Site for Muster Points & Routes</h2>
+            <h2 className="text-lg font-semibold">Select Site for Emergency Points</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {sites.map((site, index) => (
@@ -414,6 +222,9 @@ export default function ProjectEmergency({ project, onUpdate }) {
               >
                 <MapPin className="w-4 h-4" />
                 {site.name}
+                {(site.emergency?.musterPoints?.length > 0 || site.emergency?.evacuationRoutes?.length > 0) && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
               </button>
             ))}
           </div>
@@ -441,7 +252,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
               return (
                 <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start gap-3">
-                    <TypeIcon className="w-5 h-5 text-gray-400 mt-2" />
+                    <TypeIcon className="w-5 h-5 text-gray-400 mt-2 flex-shrink-0" />
                     <div className="flex-1 grid sm:grid-cols-4 gap-2">
                       <select
                         value={contact.type}
@@ -474,14 +285,14 @@ export default function ProjectEmergency({ project, onUpdate }) {
                         placeholder="Notes"
                       />
                     </div>
-                    <button onClick={() => removeContact(index)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                    <button onClick={() => removeContact(index)} className="p-1.5 text-red-500 hover:bg-red-100 rounded flex-shrink-0">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               )
             })}
-            <button onClick={addContact} className="w-full p-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 flex items-center justify-center gap-2">
+            <button onClick={addContact} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" />
               Add Contact
             </button>
@@ -489,7 +300,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
         )}
       </div>
 
-      {/* Nearest Medical Facility */}
+      {/* Medical Facility & First Aid */}
       <div className="card">
         <button
           onClick={() => toggleSection('medical')}
@@ -516,16 +327,17 @@ export default function ProjectEmergency({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Phone</label>
+                <label className="label">Emergency Phone</label>
                 <input
                   type="text"
                   value={emergencyPlan.medicalFacility?.phone || ''}
                   onChange={(e) => updateMedical('phone', e.target.value)}
                   className="input"
-                  placeholder="Hospital phone number"
+                  placeholder="Hospital phone"
                 />
               </div>
             </div>
+            
             <div>
               <label className="label">Address</label>
               <input
@@ -536,6 +348,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
                 placeholder="Full address"
               />
             </div>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Distance</label>
@@ -572,17 +385,15 @@ export default function ProjectEmergency({ project, onUpdate }) {
                     placeholder="e.g., In project vehicle"
                   />
                 </div>
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={emergencyPlan.firstAid?.aedAvailable || false}
-                      onChange={(e) => updateFirstAid('aedAvailable', e.target.checked)}
-                      className="w-4 h-4 rounded"
-                    />
-                    <span className="text-sm">AED Available</span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer mt-6">
+                  <input
+                    type="checkbox"
+                    checked={emergencyPlan.firstAid?.aedAvailable || false}
+                    onChange={(e) => updateFirstAid('aedAvailable', e.target.checked)}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-sm">AED Available</span>
+                </label>
               </div>
             </div>
           </div>
@@ -598,7 +409,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
           >
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Navigation className="w-5 h-5 text-aeria-blue" />
-              Muster Points & Evacuation
+              Muster Points & Evacuation Routes
               <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{activeSite.name}</span>
             </h2>
             {expandedSections.muster ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -606,16 +417,19 @@ export default function ProjectEmergency({ project, onUpdate }) {
 
           {expandedSections.muster && (
             <div className="mt-4 space-y-4">
-              {/* Map Button */}
-              <button
-                onClick={() => setMapEditorOpen(true)}
-                className="w-full p-4 border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg hover:border-amber-400 flex items-center justify-center gap-2 text-amber-700"
-              >
-                <Map className="w-5 h-5" />
-                Open Emergency Map to Set Points & Routes
-              </button>
+              {/* Map Preview with all emergency points */}
+              <MapPreview
+                siteLocation={siteSurvey.location?.coordinates}
+                boundary={siteSurvey.boundary}
+                launchPoint={activeSite.flightPlan?.launchPoint}
+                recoveryPoint={activeSite.flightPlan?.recoveryPoint}
+                musterPoints={activeSite.emergency?.musterPoints || []}
+                evacuationRoutes={activeSite.emergency?.evacuationRoutes || []}
+                height={280}
+                onOpenEditor={() => setMapEditorOpen(true)}
+              />
 
-              {/* Muster Points */}
+              {/* Muster Points List */}
               <div>
                 <h3 className="font-medium text-gray-900 flex items-center gap-2 mb-3">
                   🚨 Muster Points
@@ -625,45 +439,42 @@ export default function ProjectEmergency({ project, onUpdate }) {
                   {(activeSite.emergency?.musterPoints || []).map((point, index) => (
                     <div key={index} className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 grid sm:grid-cols-3 gap-2">
+                        <div className="flex-1 grid sm:grid-cols-2 gap-2">
                           <input
                             type="text"
                             value={point.name}
-                            onChange={(e) => updateSiteMuster(index, 'name', e.target.value)}
+                            onChange={(e) => updateMusterPoint(index, 'name', e.target.value)}
                             className="input text-sm"
                             placeholder="Name"
                           />
                           <input
                             type="text"
-                            value={point.location}
-                            onChange={(e) => updateSiteMuster(index, 'location', e.target.value)}
-                            className="input text-sm"
-                            placeholder="Coordinates"
-                          />
-                          <input
-                            type="text"
                             value={point.description}
-                            onChange={(e) => updateSiteMuster(index, 'description', e.target.value)}
+                            onChange={(e) => updateMusterPoint(index, 'description', e.target.value)}
                             className="input text-sm"
-                            placeholder="Description"
+                            placeholder="Description / landmarks"
                           />
                         </div>
-                        <button onClick={() => removeSiteMuster(index)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                        <button onClick={() => deleteMusterPoint(index)} className="p-1.5 text-red-500 hover:bg-red-100 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                       {point.coordinates && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                          Map coordinates set
+                        <p className="text-xs text-amber-600 mt-2">
+                          📍 {point.coordinates.lat?.toFixed(6)}, {point.coordinates.lng?.toFixed(6)}
                         </p>
                       )}
                     </div>
                   ))}
+                  {(activeSite.emergency?.musterPoints || []).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+                      No muster points set. Click "Edit Map" to add.
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Evacuation Routes */}
+              {/* Evacuation Routes List */}
               <div className="pt-4 border-t">
                 <h3 className="font-medium text-gray-900 flex items-center gap-2 mb-3">
                   <Route className="w-4 h-4" />
@@ -678,29 +489,34 @@ export default function ProjectEmergency({ project, onUpdate }) {
                           <input
                             type="text"
                             value={route.name}
-                            onChange={(e) => updateSiteRoute(index, 'name', e.target.value)}
+                            onChange={(e) => updateRoute(index, 'name', e.target.value)}
                             className="input text-sm"
                             placeholder="Route name"
                           />
                           <textarea
                             value={route.description}
-                            onChange={(e) => updateSiteRoute(index, 'description', e.target.value)}
+                            onChange={(e) => updateRoute(index, 'description', e.target.value)}
                             className="input text-sm min-h-[60px]"
                             placeholder="Route description..."
                           />
                         </div>
-                        <button onClick={() => removeSiteRoute(index)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                        <button onClick={() => deleteRoute(index)} className="p-1.5 text-red-500 hover:bg-red-100 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                       {route.coordinates && route.coordinates.length > 0 && (
-                        <p className="text-xs text-red-600 mt-1">
+                        <p className="text-xs text-red-600 mt-2">
                           <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                          Route mapped ({route.coordinates.length} points)
+                          Route mapped ({route.coordinates.length} waypoints)
                         </p>
                       )}
                     </div>
                   ))}
+                  {(activeSite.emergency?.evacuationRoutes || []).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+                      No routes set. Click "Edit Map" to draw evacuation routes.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -708,7 +524,7 @@ export default function ProjectEmergency({ project, onUpdate }) {
         </div>
       )}
 
-      {/* Emergency Procedures (shared) */}
+      {/* Emergency Procedures */}
       <div className="card">
         <button
           onClick={() => toggleSection('procedures')}
@@ -750,11 +566,18 @@ export default function ProjectEmergency({ project, onUpdate }) {
 
       {/* Map Editor Modal */}
       {activeSite && (
-        <EmergencyMapEditor
-          site={activeSite}
+        <MapEditorModal
           isOpen={mapEditorOpen}
           onClose={() => setMapEditorOpen(false)}
-          onUpdate={handleMapUpdate}
+          onSave={handleMapSave}
+          siteLocation={siteSurvey.location?.coordinates}
+          boundary={siteSurvey.boundary}
+          launchPoint={activeSite.flightPlan?.launchPoint}
+          recoveryPoint={activeSite.flightPlan?.recoveryPoint}
+          musterPoints={activeSite.emergency?.musterPoints || []}
+          evacuationRoutes={activeSite.emergency?.evacuationRoutes || []}
+          mode="emergency"
+          siteName={activeSite.name}
         />
       )}
     </div>
