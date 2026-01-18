@@ -1,3 +1,14 @@
+/**
+ * Projects.jsx
+ * Projects list page with client logo support
+ * 
+ * FIXES APPLIED:
+ * - Issue #3 & #10: Added client logo/icon display in project cards
+ * 
+ * @location src/pages/Projects.jsx
+ * @action REPLACE
+ */
+
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { 
@@ -12,7 +23,7 @@ import {
   Trash2,
   Copy
 } from 'lucide-react'
-import { getProjects, deleteProject } from '../lib/firestore'
+import { getProjects, deleteProject, getClients } from '../lib/firestore'
 import NewProjectModal from '../components/NewProjectModal'
 import { format } from 'date-fns'
 
@@ -34,6 +45,7 @@ const statusLabels = {
 
 export default function Projects() {
   const [projects, setProjects] = useState([])
+  const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -41,8 +53,25 @@ export default function Projects() {
   const [menuOpen, setMenuOpen] = useState(null)
 
   useEffect(() => {
-    loadProjects()
+    loadData()
   }, [])
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      // Load projects and clients in parallel
+      const [projectsData, clientsData] = await Promise.all([
+        getProjects(),
+        getClients()
+      ])
+      setProjects(projectsData)
+      setClients(clientsData)
+    } catch (err) {
+      console.error('Error loading data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadProjects = async () => {
     setLoading(true)
@@ -54,6 +83,12 @@ export default function Projects() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // FIX #3 & #10: Helper to get client data including logo
+  const getClientForProject = (project) => {
+    if (!project.clientId) return null
+    return clients.find(c => c.id === project.clientId) || null
   }
 
   const handleDelete = async (projectId, projectName) => {
@@ -175,100 +210,121 @@ export default function Projects() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredProjects.map((project) => (
-            <div 
-              key={project.id} 
-              className="card hover:shadow-md transition-shadow group"
-            >
-              <div className="flex items-center gap-4">
-                {/* Project icon */}
-                <div className="w-10 h-10 bg-aeria-sky rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FolderKanban className="w-5 h-5 text-aeria-navy" />
-                </div>
-                
-                {/* Project info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Link 
-                      to={`/projects/${project.id}`}
-                      className="font-semibold text-gray-900 hover:text-aeria-blue truncate"
-                    >
-                      {project.name}
-                    </Link>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
-                      {statusLabels[project.status]}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(project.dates)}
-                    </span>
-                    {project.clientName && (
-                      <span className="inline-flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5" />
-                        {project.clientName}
-                      </span>
-                    )}
-                    {project.projectCode && (
-                      <span className="text-gray-400 font-mono text-xs">
-                        {project.projectCode}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <Link
-                    to={`/projects/${project.id}`}
-                    className="p-2 text-gray-400 hover:text-aeria-blue rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </Link>
+          {filteredProjects.map((project) => {
+            // FIX #3 & #10: Get client data for logo
+            const client = getClientForProject(project)
+            
+            return (
+              <div 
+                key={project.id} 
+                className="card hover:shadow-md transition-shadow group"
+              >
+                <div className="flex items-center gap-4">
+                  {/* FIX #3 & #10: Client logo or fallback icon */}
+                  {client?.logo ? (
+                    <div className="w-10 h-10 rounded-lg border bg-white flex items-center justify-center p-1 flex-shrink-0">
+                      <img 
+                        src={client.logo} 
+                        alt={client.name} 
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  ) : project.clientId ? (
+                    <div className="w-10 h-10 bg-gradient-to-br from-aeria-blue to-aeria-navy rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 bg-aeria-sky rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FolderKanban className="w-5 h-5 text-aeria-navy" />
+                    </div>
+                  )}
                   
-                  {/* More menu */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setMenuOpen(menuOpen === project.id ? null : project.id)}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  {/* Project info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Link 
+                        to={`/projects/${project.id}`}
+                        className="font-semibold text-gray-900 hover:text-aeria-blue truncate"
+                      >
+                        {project.name}
+                      </Link>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
+                        {statusLabels[project.status]}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {formatDate(project.dates)}
+                      </span>
+                      {project.clientName && (
+                        <span className="inline-flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5" />
+                          {project.clientName}
+                        </span>
+                      )}
+                      {project.projectCode && (
+                        <span className="text-gray-400 font-mono text-xs">
+                          {project.projectCode}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/projects/${project.id}`}
+                      className="p-2 text-gray-400 hover:text-aeria-blue rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                      <ChevronRight className="w-5 h-5" />
+                    </Link>
                     
-                    {menuOpen === project.id && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-10"
-                          onClick={() => setMenuOpen(null)}
-                        />
-                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                          <button
-                            onClick={() => {
-                              // TODO: Implement duplicate
-                              alert('Duplicate feature coming soon')
-                              setMenuOpen(null)
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <Copy className="w-4 h-4" />
-                            Duplicate
-                          </button>
-                          <button
-                            onClick={() => handleDelete(project.id, project.name)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </>
-                    )}
+                    {/* More menu */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setMenuOpen(menuOpen === project.id ? null : project.id)
+                        }}
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      
+                      {menuOpen === project.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-10"
+                            onClick={() => setMenuOpen(null)}
+                          />
+                          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            <button
+                              onClick={() => {
+                                alert('Duplicate feature coming soon')
+                                setMenuOpen(null)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Copy className="w-4 h-4" />
+                              Duplicate
+                            </button>
+                            <button
+                              onClick={() => handleDelete(project.id, project.name)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -277,7 +333,7 @@ export default function Projects() {
         isOpen={showNewModal} 
         onClose={() => {
           setShowNewModal(false)
-          loadProjects() // Refresh list after creating
+          loadData() // Refresh list after creating
         }} 
       />
     </div>
