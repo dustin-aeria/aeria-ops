@@ -670,12 +670,19 @@ export class BrandedPDF {
   }
 
   save(filename) {
-    this.finalize()
+    // Don't call finalize again if already called
+    if (!this._finalized) {
+      this.finalize()
+      this._finalized = true
+    }
     this.doc.save(filename)
   }
 
   getBlob() {
-    this.finalize()
+    if (!this._finalized) {
+      this.finalize()
+      this._finalized = true
+    }
     return this.doc.output('blob')
   }
 }
@@ -1194,13 +1201,15 @@ export async function generateOperationsPlanPDF(project, branding = {}) {
     'info'
   )
   
-  return pdf.getBlob()
+  // Finalize and return the PDF object (not blob) so .save() works
+  pdf.finalize()
+  return pdf
 }
 
 // ============================================
 // SORA-SPECIFIC PDF
 // ============================================
-export async function generateSORAPDF(project, branding = {}, soraCalculations = {}) {
+export async function generateSORAPDF(project, soraCalculations = {}, branding = {}) {
   const pdf = new BrandedPDF({
     title: 'SORA 2.5 Assessment',
     subtitle: 'Specific Operations Risk Assessment',
@@ -1228,9 +1237,9 @@ export async function generateSORAPDF(project, branding = {}, soraCalculations =
   pdf.addSubsectionTitle('This assessment follows JARUS SORA 2.5 methodology')
   pdf.addParagraph('The Specific Operations Risk Assessment (SORA) provides a systematic methodology for evaluating the risk of unmanned aircraft system operations and determining the robustness requirements for mitigations.')
   
-  // Add full SORA content similar to operations plan...
-  
-  return pdf.getBlob()
+  // Finalize and return PDF object (not blob) so .save() works
+  pdf.finalize()
+  return pdf
 }
 
 // ============================================
@@ -1275,7 +1284,9 @@ export async function generateHSERiskPDF(project, branding = {}) {
     pdf.addTable(['#', 'Category', 'Hazard', 'Initial', 'Controls', 'Residual'], hazardRows)
   }
   
-  return pdf.getBlob()
+  // Finalize and return PDF object (not blob) so .save() works
+  pdf.finalize()
+  return pdf
 }
 
 // ============================================
