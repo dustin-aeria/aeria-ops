@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { getAircraft } from '../../lib/firestore'
 import { 
   Plane, 
@@ -14,28 +14,26 @@ import {
   Award,
   FileCheck,
   CheckCircle2,
-  Zap
+  Zap,
+  MapPin,
+  Users,
+  Radio,
+  ExternalLink,
+  RefreshCw,
+  Navigation,
+  Target,
+  Map,
+  X,
+  Loader2,
+  Search,
+  Info,
+  Link2
 } from 'lucide-react'
 
 const operationTypes = [
   { value: 'VLOS', label: 'VLOS', description: 'Visual Line of Sight' },
   { value: 'EVLOS', label: 'EVLOS', description: 'Extended Visual Line of Sight' },
   { value: 'BVLOS', label: 'BVLOS', description: 'Beyond Visual Line of Sight' }
-]
-
-const areaTypes = [
-  { value: 'uncontrolled', label: 'Uncontrolled Airspace (Class G)', controlled: false },
-  { value: 'controlled', label: 'Controlled Airspace (Class C/D/E)', controlled: true },
-  { value: 'class_f', label: 'Class F - Special Use', controlled: false },
-  { value: 'restricted', label: 'Restricted/Prohibited', controlled: true }
-]
-
-const groundTypes = [
-  { value: 'controlled_ground', label: 'Controlled Ground Area', description: 'Access restricted, no bystanders' },
-  { value: 'remote', label: 'Remote (< 5 ppl/km²)', description: 'Uninhabited areas' },
-  { value: 'sparsely_populated', label: 'Sparsely Populated (5-25 ppl/km²)', description: 'Rural, few people' },
-  { value: 'populated', label: 'Populated Area (> 25 ppl/km²)', description: 'Residential, commercial' },
-  { value: 'gathering', label: 'Gathering of People / Advertised Event', description: 'Events, crowds, assemblies' }
 ]
 
 const defaultWeatherMinimums = {
@@ -59,14 +57,11 @@ const defaultContingencies = [
 // ============================================
 // CARs PART 9 CATEGORY DETECTION
 // Divisions: IV (Basic), V (Advanced), VI (Complex Level 1), Subpart 3 (SFOC)
-// General ceiling: 400ft (122m) AGL
 // ============================================
-const detectCARsCategory = (flightPlan, aircraft) => {
+const detectCARsCategory = (flightPlan, siteSurvey) => {
   const {
     operationType = 'VLOS',
     maxAltitudeAGL = 120,
-    flightAreaType = 'uncontrolled',
-    groundType = 'sparsely_populated',
     overPeople = false,
     nearAerodrome = false,
     aerodromeDistance = null,
@@ -75,11 +70,20 @@ const detectCARsCategory = (flightPlan, aircraft) => {
     distanceFromPopulated = 1000
   } = flightPlan
 
-  // Get primary aircraft specs - MTOW is stored in kg in Firestore
-  const primaryAircraft = aircraft?.find(a => a.isPrimary) || aircraft?.[0]
+  // Get airspace from site survey
+  const airspaceClass = siteSurvey?.airspace?.classification || 'G'
+  const isControlled = ['A', 'B', 'C', 'D', 'E'].includes(airspaceClass.toUpperCase())
+  const isUncontrolled = !isControlled
+
+  // Get population from site survey
+  const populationCategory = siteSurvey?.population?.category || 'sparsely'
+  const isGathering = populationCategory === 'assembly'
+
+  // Get primary aircraft specs
+  const primaryAircraft = flightPlan.aircraft?.find(a => a.isPrimary) || flightPlan.aircraft?.[0]
   const mtowKg = primaryAircraft?.mtow || 0
   
-  // RPAS Weight Categories per CARs Part 9 (900.01 definitions)
+  // RPAS Weight Categories per CARs Part 9
   const isMicro = mtowKg > 0 && mtowKg < 0.25
   const isSmall = mtowKg >= 0.25 && mtowKg <= 25
   const isMedium = mtowKg > 25 && mtowKg <= 150
@@ -87,9 +91,6 @@ const detectCARsCategory = (flightPlan, aircraft) => {
 
   const reasons = []
   let category = 'basic'
-
-  const isControlled = ['controlled', 'restricted'].includes(flightAreaType)
-  const isUncontrolled = !isControlled
 
   // =====================================================
   // SFOC REQUIRED (Subpart 3 - 903.02)
@@ -100,7 +101,7 @@ const detectCARsCategory = (flightPlan, aircraft) => {
     reasons.push('RPAS over 150kg requires SFOC (CARs 903.02)')
   }
   
-  if (groundType === 'gathering') {
+  if (isGathering) {
     category = 'sfoc'
     reasons.push('Operations at advertised events require SFOC (CARs 901.41)')
   }
@@ -137,11 +138,11 @@ const detectCARsCategory = (flightPlan, aircraft) => {
         category = 'complex1'
         reasons.push('BVLOS in uncontrolled airspace ≥1km from populated - Complex Level 1 (CARs 901.87a)')
       }
-      else if (isSmall && (groundType === 'sparsely_populated' || distanceFromPopulated < 1000)) {
+      else if (isSmall && populationCategory === 'sparsely') {
         category = 'complex1'
         reasons.push('Small RPAS BVLOS over sparsely populated - Complex Level 1 (CARs 901.87b)')
       }
-      else if ((isSmall || isMedium) && ['remote', 'controlled_ground'].includes(groundType)) {
+      else if ((isSmall || isMedium) && ['remote', 'controlled'].includes(populationCategory)) {
         category = 'complex1'
         reasons.push('BVLOS in remote/controlled ground area - Complex Level 1 (CARs 901.87)')
       }
@@ -209,7 +210,7 @@ const detectCARsCategory = (flightPlan, aircraft) => {
     reasons.push('⚠️ Above 400ft (122m) - verify airspace authorization')
   }
 
-  // Format MTOW display - stored in kg
+  // Format MTOW display
   let mtowDisplay = 'Not set'
   let weightClass = ''
   if (mtowKg > 0) {
@@ -302,14 +303,551 @@ const licenseCategories = {
   }
 }
 
-export default function ProjectFlightPlan({ project, onUpdate }) {
+// Population category labels for display
+const populationLabels = {
+  controlled: 'Controlled Ground Area',
+  remote: 'Remote (< 5 ppl/km²)',
+  lightly: 'Lightly Populated (< 50 ppl/km²)',
+  sparsely: 'Sparsely Populated (< 500 ppl/km²)',
+  suburban: 'Suburban (< 5,000 ppl/km²)',
+  highdensity: 'High Density (> 5,000 ppl/km²)',
+  assembly: 'Assembly of People'
+}
+
+// Airspace labels for display
+const airspaceLabels = {
+  'G': 'Class G - Uncontrolled',
+  'E': 'Class E - Controlled (above 700ft)',
+  'D': 'Class D - Control Zone',
+  'C': 'Class C - Terminal Control',
+  'B': 'Class B - Terminal (high density)',
+  'F': 'Class F - Special Use',
+  'A': 'Class A - Controlled'
+}
+
+// ============================================
+// LAUNCH/RECOVERY MAP EDITOR
+// Moved from Site Survey - for drone-specific planning
+// ============================================
+function LaunchRecoveryMapEditor({ 
+  siteLocation,
+  launchPoint, 
+  recoveryPoint, 
+  onUpdate,
+  isOpen, 
+  onClose 
+}) {
+  const mapContainerRef = useRef(null)
+  const mapRef = useRef(null)
+  const markersRef = useRef({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [activeMarker, setActiveMarker] = useState('launch')
+  
+  const activeMarkerRef = useRef(activeMarker)
+  useEffect(() => { activeMarkerRef.current = activeMarker }, [activeMarker])
+  
+  const [coords, setCoords] = useState({
+    launch: { lat: launchPoint?.lat || '', lng: launchPoint?.lng || '' },
+    recovery: { lat: recoveryPoint?.lat || '', lng: recoveryPoint?.lng || '' }
+  })
+
+  useEffect(() => {
+    if (isOpen) {
+      setCoords({
+        launch: { lat: launchPoint?.lat || '', lng: launchPoint?.lng || '' },
+        recovery: { lat: recoveryPoint?.lat || '', lng: recoveryPoint?.lng || '' }
+      })
+    }
+  }, [isOpen, launchPoint, recoveryPoint])
+
+  const markerColors = {
+    launch: { color: '#16a34a', label: 'Launch Point', icon: '🛫' },
+    recovery: { color: '#d97706', label: 'Recovery Point', icon: '🛬' }
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    const initMap = async () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+
+      const L = await import('leaflet')
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      if (!mapContainerRef.current) return
+
+      // Default to site location if available, else Canada
+      const defaultLat = siteLocation?.lat || coords.launch.lat || 54.0
+      const defaultLng = siteLocation?.lng || coords.launch.lng || -125.0
+      const hasLocation = siteLocation?.lat || coords.launch.lat
+      const defaultZoom = hasLocation ? 14 : 5
+
+      const map = L.map(mapContainerRef.current, {
+        center: [parseFloat(defaultLat), parseFloat(defaultLng)],
+        zoom: defaultZoom,
+        zoomControl: true
+      })
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map)
+
+      mapRef.current = map
+
+      const createMarkerIcon = (color, emoji) => {
+        return L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="
+            background: ${color};
+            width: 32px;
+            height: 32px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "><span style="transform: rotate(45deg); font-size: 14px;">${emoji}</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        })
+      }
+
+      // Site location marker (reference only, not draggable)
+      if (siteLocation?.lat && siteLocation?.lng) {
+        const siteIcon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="
+            background: #1e40af;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "><span style="font-size: 10px;">📍</span></div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        })
+        L.marker([parseFloat(siteLocation.lat), parseFloat(siteLocation.lng)], { 
+          icon: siteIcon,
+          opacity: 0.7
+        }).addTo(map).bindTooltip('Site Location (from Site Survey)')
+      }
+
+      // Add existing markers
+      Object.entries(markerColors).forEach(([key, config]) => {
+        if (coords[key].lat && coords[key].lng) {
+          const marker = L.marker(
+            [parseFloat(coords[key].lat), parseFloat(coords[key].lng)],
+            { 
+              icon: createMarkerIcon(config.color, config.icon),
+              draggable: true
+            }
+          ).addTo(map)
+          
+          marker.on('dragend', (e) => {
+            const pos = e.target.getLatLng()
+            setCoords(prev => ({
+              ...prev,
+              [key]: { lat: pos.lat.toFixed(6), lng: pos.lng.toFixed(6) }
+            }))
+          })
+          
+          markersRef.current[key] = marker
+        }
+      })
+
+      // Click handler for placing markers
+      map.on('click', (e) => {
+        const lat = e.latlng.lat.toFixed(6)
+        const lng = e.latlng.lng.toFixed(6)
+        const markerType = activeMarkerRef.current
+
+        setCoords(prev => ({
+          ...prev,
+          [markerType]: { lat, lng }
+        }))
+
+        if (markersRef.current[markerType]) {
+          markersRef.current[markerType].setLatLng([parseFloat(lat), parseFloat(lng)])
+        } else {
+          const config = markerColors[markerType]
+          const marker = L.marker(
+            [parseFloat(lat), parseFloat(lng)],
+            { 
+              icon: createMarkerIcon(config.color, config.icon),
+              draggable: true
+            }
+          ).addTo(map)
+          
+          marker.on('dragend', (e) => {
+            const pos = e.target.getLatLng()
+            setCoords(prev => ({
+              ...prev,
+              [markerType]: { lat: pos.lat.toFixed(6), lng: pos.lng.toFixed(6) }
+            }))
+          })
+          
+          markersRef.current[markerType] = marker
+        }
+      })
+
+      setTimeout(() => {
+        map.invalidateSize()
+        setIsLoading(false)
+      }, 200)
+    }
+
+    initMap()
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [isOpen])
+
+  const handleSave = () => {
+    onUpdate({
+      launchPoint: coords.launch.lat && coords.launch.lng 
+        ? { lat: parseFloat(coords.launch.lat), lng: parseFloat(coords.launch.lng) }
+        : null,
+      recoveryPoint: coords.recovery.lat && coords.recovery.lng 
+        ? { lat: parseFloat(coords.recovery.lat), lng: parseFloat(coords.recovery.lng) }
+        : null
+    })
+    onClose()
+  }
+
+  const useSiteLocation = (target) => {
+    if (siteLocation?.lat && siteLocation?.lng) {
+      setCoords(prev => ({
+        ...prev,
+        [target]: { lat: siteLocation.lat.toString(), lng: siteLocation.lng.toString() }
+      }))
+    }
+  }
+
+  const copyLaunchToRecovery = () => {
+    if (coords.launch.lat && coords.launch.lng) {
+      setCoords(prev => ({
+        ...prev,
+        recovery: { ...prev.launch }
+      }))
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Launch & Recovery Points</h2>
+            <p className="text-sm text-gray-500">Set takeoff and landing locations for your flight</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Controls */}
+        <div className="p-4 border-b flex flex-wrap gap-2 items-center">
+          <span className="text-sm font-medium text-gray-700">Click map to set:</span>
+          
+          {Object.entries(markerColors).map(([key, config]) => (
+            <button
+              key={key}
+              onClick={() => setActiveMarker(key)}
+              className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 ${
+                activeMarker === key
+                  ? 'ring-2 ring-offset-2'
+                  : 'opacity-70 hover:opacity-100'
+              }`}
+              style={{ 
+                backgroundColor: `${config.color}20`, 
+                color: config.color,
+                ringColor: config.color
+              }}
+            >
+              <span>{config.icon}</span>
+              {config.label}
+              {coords[key].lat && <CheckCircle2 className="w-3 h-3" />}
+            </button>
+          ))}
+
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+
+          {siteLocation?.lat && (
+            <button
+              onClick={() => useSiteLocation(activeMarker)}
+              className="px-3 py-1.5 rounded-lg text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
+            >
+              <MapPin className="w-4 h-4" />
+              Use Site Location
+            </button>
+          )}
+
+          {coords.launch.lat && activeMarker === 'recovery' && (
+            <button
+              onClick={copyLaunchToRecovery}
+              className="px-3 py-1.5 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2"
+            >
+              Same as Launch
+            </button>
+          )}
+        </div>
+
+        {/* Map */}
+        <div className="flex-1 relative min-h-[350px]">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+              <Loader2 className="w-8 h-8 animate-spin text-aeria-blue" />
+            </div>
+          )}
+          <div ref={mapContainerRef} className="absolute inset-0" />
+        </div>
+
+        {/* Coordinates */}
+        <div className="p-4 border-t bg-gray-50">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🛫</span>
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 mb-1">Launch Point</div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={coords.launch.lat}
+                    onChange={(e) => setCoords(prev => ({ ...prev, launch: { ...prev.launch, lat: e.target.value }}))}
+                    placeholder="Latitude"
+                    className="flex-1 px-2 py-1 border rounded text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={coords.launch.lng}
+                    onChange={(e) => setCoords(prev => ({ ...prev, launch: { ...prev.launch, lng: e.target.value }}))}
+                    placeholder="Longitude"
+                    className="flex-1 px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🛬</span>
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 mb-1">Recovery Point</div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={coords.recovery.lat}
+                    onChange={(e) => setCoords(prev => ({ ...prev, recovery: { ...prev.recovery, lat: e.target.value }}))}
+                    placeholder="Latitude"
+                    className="flex-1 px-2 py-1 border rounded text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={coords.recovery.lng}
+                    onChange={(e) => setCoords(prev => ({ ...prev, recovery: { ...prev.recovery, lng: e.target.value }}))}
+                    placeholder="Longitude"
+                    className="flex-1 px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+            Cancel
+          </button>
+          <button onClick={handleSave} className="px-4 py-2 bg-aeria-blue text-white rounded-lg hover:bg-aeria-navy">
+            Save Points
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// INHERITED DATA PANEL
+// Shows data inherited from Site Survey
+// ============================================
+function InheritedDataPanel({ siteSurvey, onNavigateToSiteSurvey }) {
+  const hasLocation = siteSurvey?.location?.coordinates?.lat && siteSurvey?.location?.coordinates?.lng
+  const hasPopulation = siteSurvey?.population?.category
+  const hasAirspace = siteSurvey?.airspace?.classification
+  const hasBoundary = siteSurvey?.boundary && siteSurvey.boundary.length >= 3
+  const obstacleCount = (siteSurvey?.obstacles || []).length
+
+  const completeness = [hasLocation, hasPopulation, hasAirspace].filter(Boolean).length
+  const isComplete = completeness === 3
+
+  return (
+    <div className={`card border-2 ${isComplete ? 'border-green-200 bg-green-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <Link2 className="w-5 h-5 text-aeria-blue" />
+          Inherited from Site Survey
+          {isComplete ? (
+            <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Complete
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Incomplete
+            </span>
+          )}
+        </h2>
+        <button
+          onClick={onNavigateToSiteSurvey}
+          className="text-sm text-aeria-blue hover:text-aeria-navy flex items-center gap-1"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Edit in Site Survey
+        </button>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Location */}
+        <div className={`p-3 rounded-lg border ${hasLocation ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className={`w-4 h-4 ${hasLocation ? 'text-green-600' : 'text-amber-600'}`} />
+            <span className="text-sm font-medium text-gray-700">Location</span>
+          </div>
+          {hasLocation ? (
+            <div>
+              <p className="text-sm font-medium text-gray-900">{siteSurvey.location?.name || 'Unnamed Site'}</p>
+              <p className="text-xs text-gray-500 font-mono">
+                {siteSurvey.location.coordinates.lat}, {siteSurvey.location.coordinates.lng}
+              </p>
+              {siteSurvey.location?.elevation && (
+                <p className="text-xs text-gray-500">{siteSurvey.location.elevation}m ASL</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-amber-700">Not set in Site Survey</p>
+          )}
+        </div>
+
+        {/* Population */}
+        <div className={`p-3 rounded-lg border ${hasPopulation ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Users className={`w-4 h-4 ${hasPopulation ? 'text-green-600' : 'text-amber-600'}`} />
+            <span className="text-sm font-medium text-gray-700">Population</span>
+          </div>
+          {hasPopulation ? (
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                {populationLabels[siteSurvey.population.category] || siteSurvey.population.category}
+              </p>
+              {siteSurvey.population?.adjacentCategory && (
+                <p className="text-xs text-gray-500">
+                  Adjacent: {populationLabels[siteSurvey.population.adjacentCategory] || siteSurvey.population.adjacentCategory}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-amber-700">Not set in Site Survey</p>
+          )}
+        </div>
+
+        {/* Airspace */}
+        <div className={`p-3 rounded-lg border ${hasAirspace ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Radio className={`w-4 h-4 ${hasAirspace ? 'text-green-600' : 'text-amber-600'}`} />
+            <span className="text-sm font-medium text-gray-700">Airspace</span>
+          </div>
+          {hasAirspace ? (
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                {airspaceLabels[siteSurvey.airspace.classification] || `Class ${siteSurvey.airspace.classification}`}
+              </p>
+              {siteSurvey.airspace?.navCanadaAuth && (
+                <p className="text-xs text-amber-600">NAV CANADA auth required</p>
+              )}
+              {(siteSurvey.airspace?.nearbyAerodromes || []).length > 0 && (
+                <p className="text-xs text-gray-500">
+                  {siteSurvey.airspace.nearbyAerodromes.length} nearby aerodrome(s)
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-amber-700">Not set in Site Survey</p>
+          )}
+        </div>
+
+        {/* Obstacles & Boundary */}
+        <div className="p-3 rounded-lg border bg-white border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Other Data</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600">
+              <span className="font-medium">{obstacleCount}</span> obstacle(s) identified
+            </p>
+            {hasBoundary ? (
+              <p className="text-xs text-green-600">
+                ✓ Work area boundary defined
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                No boundary defined
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {!isComplete && (
+        <div className="mt-4 p-3 bg-amber-100 border border-amber-200 rounded-lg">
+          <p className="text-sm text-amber-800">
+            <strong>Note:</strong> Complete the Site Survey before the Flight Plan for best results. 
+            Population and airspace data are required for accurate CARs category detection and SORA assessment.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSection }) {
   const [aircraftList, setAircraftList] = useState([])
   const [loading, setLoading] = useState(true)
+  const [mapEditorOpen, setMapEditorOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
+    inherited: true,
     license: true,
     aircraft: true,
+    launchRecovery: true,
     parameters: true,
-    weather: true,
+    weather: false,
     contingencies: false
   })
 
@@ -324,14 +862,16 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           aircraft: [],
           operationType: 'VLOS',
           maxAltitudeAGL: 120,
-          flightAreaType: 'uncontrolled',
-          groundType: 'sparsely_populated',
           overPeople: false,
           nearAerodrome: false,
           aerodromeDistance: null,
           nightOperations: false,
           distanceFromPeople: 30,
           distanceFromPopulated: 1000,
+          launchPoint: null,
+          recoveryPoint: null,
+          launchDescription: '',
+          recoveryDescription: '',
           weatherMinimums: { ...defaultWeatherMinimums },
           contingencies: [...defaultContingencies],
           additionalProcedures: ''
@@ -352,6 +892,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
   }
 
   const flightPlan = project.flightPlan || {}
+  const siteSurvey = project.siteSurvey || {}
 
   const updateFlightPlan = (updates) => {
     onUpdate({
@@ -432,26 +973,59 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     updateFlightPlan({ contingencies: newContingencies })
   }
 
+  const handleLaunchRecoverySave = ({ launchPoint, recoveryPoint }) => {
+    updateFlightPlan({
+      launchPoint,
+      recoveryPoint
+    })
+  }
+
   const availableAircraft = aircraftList.filter(ac => 
     !flightPlan.aircraft?.some(a => a.id === ac.id)
   )
 
+  // Use site survey data for CARs detection
   const licenseInfo = useMemo(() => {
-    return detectCARsCategory(flightPlan, flightPlan.aircraft)
-  }, [flightPlan])
+    return detectCARsCategory(flightPlan, siteSurvey)
+  }, [flightPlan, siteSurvey])
 
   const categoryConfig = licenseCategories[licenseInfo.category]
   const CategoryIcon = categoryConfig.icon
 
-  // Helper to format MTOW display
   const formatMtow = (mtow) => {
     if (!mtow) return 'N/A'
     if (mtow < 1) return `${(mtow * 1000).toFixed(0)}g`
     return `${mtow} kg`
   }
 
+  const handleNavigateToSiteSurvey = () => {
+    if (onNavigateToSection) {
+      onNavigateToSection('siteSurvey')
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Info Banner */}
+      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-cyan-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-cyan-900">Flight Plan for RPAS Operations</h3>
+            <p className="text-sm text-cyan-700 mt-1">
+              This plan inherits location, population, and airspace data from Site Survey. 
+              Aircraft selection and flight parameters here drive CARs category detection and SORA calculations.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Inherited Data Panel */}
+      <InheritedDataPanel 
+        siteSurvey={siteSurvey} 
+        onNavigateToSiteSurvey={handleNavigateToSiteSurvey}
+      />
+
       {/* CARs Category Banner */}
       <div className={`card border-2 ${categoryConfig.color}`}>
         <button
@@ -601,6 +1175,89 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
         )}
       </div>
 
+      {/* Launch & Recovery Points */}
+      <div className="card">
+        <button
+          onClick={() => toggleSection('launchRecovery')}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Navigation className="w-5 h-5 text-aeria-blue" />
+            Launch & Recovery Points
+            {(flightPlan.launchPoint || flightPlan.recoveryPoint) && (
+              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Set</span>
+            )}
+          </h2>
+          {expandedSections.launchRecovery ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+        </button>
+
+        {expandedSections.launchRecovery && (
+          <div className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMapEditorOpen(true)}
+                className="btn-primary text-sm flex items-center gap-2"
+              >
+                <Map className="w-4 h-4" />
+                Set Points on Map
+              </button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* Launch Point */}
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🛫</span>
+                  <h3 className="font-medium text-green-800">Launch Point</h3>
+                </div>
+                {flightPlan.launchPoint?.lat ? (
+                  <p className="text-sm font-mono text-green-700 mb-2">
+                    {flightPlan.launchPoint.lat}, {flightPlan.launchPoint.lng}
+                  </p>
+                ) : (
+                  <p className="text-sm text-green-600 mb-2">Not set</p>
+                )}
+                <div>
+                  <label className="text-xs text-green-700">Description</label>
+                  <textarea
+                    value={flightPlan.launchDescription || ''}
+                    onChange={(e) => updateFlightPlan({ launchDescription: e.target.value })}
+                    className="input text-sm mt-1"
+                    rows={2}
+                    placeholder="Describe the launch area..."
+                  />
+                </div>
+              </div>
+
+              {/* Recovery Point */}
+              <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🛬</span>
+                  <h3 className="font-medium text-amber-800">Recovery Point</h3>
+                </div>
+                {flightPlan.recoveryPoint?.lat ? (
+                  <p className="text-sm font-mono text-amber-700 mb-2">
+                    {flightPlan.recoveryPoint.lat}, {flightPlan.recoveryPoint.lng}
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-600 mb-2">Not set</p>
+                )}
+                <div>
+                  <label className="text-xs text-amber-700">Description</label>
+                  <textarea
+                    value={flightPlan.recoveryDescription || ''}
+                    onChange={(e) => updateFlightPlan({ recoveryDescription: e.target.value })}
+                    className="input text-sm mt-1"
+                    rows={2}
+                    placeholder="Describe the recovery area..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Flight Parameters */}
       <div className="card">
         <button
@@ -647,36 +1304,6 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                     ? '⚠️ Above 400ft (122m) - may require authorization' 
                     : '✓ Within 400ft (122m) standard limit'}
                 </p>
-              </div>
-
-              <div>
-                <label className="label">Airspace Classification</label>
-                <select
-                  value={flightPlan.flightAreaType || 'uncontrolled'}
-                  onChange={(e) => updateFlightPlan({ flightAreaType: e.target.value })}
-                  className="input"
-                >
-                  {areaTypes.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label">Ground Area Type</label>
-                <select
-                  value={flightPlan.groundType || 'sparsely_populated'}
-                  onChange={(e) => updateFlightPlan({ groundType: e.target.value })}
-                  className="input"
-                >
-                  {groundTypes.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -967,6 +1594,16 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           placeholder="Any additional flight procedures, special considerations, or notes..."
         />
       </div>
+
+      {/* Launch/Recovery Map Editor Modal */}
+      <LaunchRecoveryMapEditor
+        isOpen={mapEditorOpen}
+        onClose={() => setMapEditorOpen(false)}
+        siteLocation={siteSurvey.location?.coordinates}
+        launchPoint={flightPlan.launchPoint}
+        recoveryPoint={flightPlan.recoveryPoint}
+        onUpdate={handleLaunchRecoverySave}
+      />
     </div>
   )
 }
