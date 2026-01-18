@@ -1,15 +1,36 @@
 // Aeria Ops Form Definitions
 // Complete form specifications with COR/SECOR compliance fields
 
-// Hazard categories from HSE program
+// Hazard categories from HSE program - includes RPAS-specific categories
 export const HAZARD_CATEGORIES = [
-  { value: 'environmental', label: 'Environmental Hazards', description: 'Weather, terrain, wildlife, temperature' },
-  { value: 'overhead', label: 'Overhead Hazards', description: 'Power lines, structures' },
-  { value: 'access_egress', label: 'Access/Egress', description: 'Slips, trips, water hazards' },
-  { value: 'ergonomic', label: 'Ergonomic', description: 'Awkward positions, repetitive tasks' },
-  { value: 'personal_limitations', label: 'Personal Limitations', description: 'Fatigue, distraction, training gaps' },
-  { value: 'equipment', label: 'Equipment', description: 'Malfunction, improper use' },
+  // Standard HSE Categories
+  { value: 'environmental', label: 'Environmental Hazards', description: 'Weather, terrain, wildlife, temperature', category: 'general' },
+  { value: 'overhead', label: 'Overhead Hazards', description: 'Power lines, structures, obstacles', category: 'general' },
+  { value: 'access_egress', label: 'Access/Egress', description: 'Slips, trips, water hazards', category: 'general' },
+  { value: 'ergonomic', label: 'Ergonomic', description: 'Awkward positions, repetitive tasks', category: 'general' },
+  { value: 'personal_limitations', label: 'Personal Limitations', description: 'Fatigue, distraction, training gaps', category: 'general' },
+  { value: 'equipment', label: 'Equipment', description: 'Malfunction, improper use', category: 'general' },
+  { value: 'vehicle', label: 'Vehicle Hazards', description: 'Driving, loading, terrain navigation', category: 'general' },
+  { value: 'chemical', label: 'Chemical/Biological', description: 'Fuel, batteries, contamination', category: 'general' },
+  
+  // RPAS-Specific Categories
+  { value: 'airspace', label: 'Airspace Hazards', description: 'Controlled airspace, NOTAMs, TFRs, airport proximity', category: 'rpas' },
+  { value: 'rf_interference', label: 'RF/Signal Hazards', description: 'Interference, link loss, GPS denial, EMI', category: 'rpas' },
+  { value: 'flyaway', label: 'Loss of Control', description: 'Fly-away risk, GPS failure, compass interference', category: 'rpas' },
+  { value: 'battery_thermal', label: 'Battery Hazards', description: 'Thermal runaway, swelling, cold weather performance', category: 'rpas' },
+  { value: 'public_interaction', label: 'Public/Bystanders', description: 'Spectators, pedestrians, vehicle traffic', category: 'rpas' },
+  { value: 'manned_aircraft', label: 'Manned Aircraft', description: 'Helicopters, fixed-wing, emergency aircraft', category: 'rpas' },
+  { value: 'obstacle_collision', label: 'Obstacle Collision', description: 'Trees, buildings, powerlines, guy wires', category: 'rpas' },
+  { value: 'vlos_limitations', label: 'VLOS Limitations', description: 'Visual line of sight obstructions, lighting', category: 'rpas' },
+  { value: 'payload', label: 'Payload Hazards', description: 'Camera/sensor weight, balance, detachment', category: 'rpas' },
+  { value: 'ground_crew', label: 'Ground Crew Safety', description: 'Prop strike, hand launch/catch, rotor hazards', category: 'rpas' },
 ]
+
+// Standard hazard categories (for filtering)
+export const STANDARD_HAZARD_CATEGORIES = HAZARD_CATEGORIES.filter(h => h.category === 'general')
+
+// RPAS-specific hazard categories (for filtering)
+export const RPAS_HAZARD_CATEGORIES = HAZARD_CATEGORIES.filter(h => h.category === 'rpas')
 
 // Severity ratings (1 = most severe)
 export const SEVERITY_RATINGS = [
