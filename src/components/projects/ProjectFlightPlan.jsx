@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getAircraft } from '../../lib/firestore'
 import { 
   Plane, Plus, Trash2, AlertTriangle, Cloud, Wind, Eye, Gauge, ChevronDown, ChevronUp,
   Award, FileCheck, CheckCircle2, Zap, MapPin, Users, Radio, ExternalLink, RefreshCw,
-  Navigation, Target, Map, X, Loader2, Search, Info, Link2, Layers
+  Navigation, Target, Map, Loader2, Info, Link2, Layers
 } from 'lucide-react'
+import { MapPreview, MapEditorModal } from './MapComponents'
 
 const operationTypes = [
   { value: 'VLOS', label: 'VLOS', description: 'Visual Line of Sight' },
@@ -28,167 +29,6 @@ const defaultContingencies = [
   { trigger: 'Deteriorating Weather', action: 'Land immediately if conditions fall below minimums.', priority: 'medium' },
   { trigger: 'Aircraft in Vicinity', action: 'Descend and hold position or land. Give way to all manned aircraft.', priority: 'high' }
 ]
-
-// ============================================
-// LAUNCH/RECOVERY MAP EDITOR
-// ============================================
-function LaunchRecoveryMapEditor({ site, onUpdate, isOpen, onClose }) {
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeMarker, setActiveMarker] = useState('launch')
-  
-  const siteLocation = site?.siteSurvey?.location?.coordinates
-  const boundary = site?.siteSurvey?.boundary || []
-  const launchPoint = site?.flightPlan?.launchPoint
-  const recoveryPoint = site?.flightPlan?.recoveryPoint
-
-  useEffect(() => {
-    if (!isOpen || !mapContainerRef.current) return
-    
-    const loadMap = async () => {
-      if (!window.L) {
-        const script = document.createElement('script')
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-        script.onload = () => initMap()
-        document.head.appendChild(script)
-      } else {
-        initMap()
-      }
-    }
-
-    const initMap = () => {
-      if (mapRef.current) mapRef.current.remove()
-      
-      const defaultCenter = siteLocation ? [siteLocation.lat, siteLocation.lng] : [49.2827, -123.1207]
-      mapRef.current = window.L.map(mapContainerRef.current).setView(defaultCenter, 15)
-      
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(mapRef.current)
-
-      // Add site marker
-      if (siteLocation) {
-        window.L.marker([siteLocation.lat, siteLocation.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#1e40af;color:white;padding:4px 8px;border-radius:4px;font-size:11px;">📍 Site</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Add boundary
-      if (boundary.length > 0) {
-        window.L.polygon(boundary.map(p => [p.lat, p.lng]), {
-          color: '#3b82f6',
-          fillOpacity: 0.1
-        }).addTo(mapRef.current)
-      }
-
-      // Add launch point
-      if (launchPoint) {
-        window.L.marker([launchPoint.lat, launchPoint.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#059669;color:white;padding:4px 8px;border-radius:4px;font-size:11px;">🚀 Launch</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Add recovery point
-      if (recoveryPoint) {
-        window.L.marker([recoveryPoint.lat, recoveryPoint.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#dc2626;color:white;padding:4px 8px;border-radius:4px;font-size:11px;">🎯 Recovery</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Click handler
-      mapRef.current.on('click', (e) => {
-        const coords = { lat: e.latlng.lat, lng: e.latlng.lng }
-        const newFlightPlan = { ...site.flightPlan }
-        
-        if (activeMarker === 'launch') {
-          newFlightPlan.launchPoint = coords
-        } else {
-          newFlightPlan.recoveryPoint = coords
-        }
-        
-        onUpdate({
-          ...site,
-          flightPlan: newFlightPlan
-        })
-      })
-
-      setIsLoading(false)
-      setTimeout(() => mapRef.current?.invalidateSize(), 100)
-    }
-
-    loadMap()
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
-  }, [isOpen, activeMarker])
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">Set Launch & Recovery Points - {site?.name}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Marker Toggle */}
-        <div className="p-4 bg-gray-50 border-b flex gap-2">
-          <button
-            onClick={() => setActiveMarker('launch')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              activeMarker === 'launch' ? 'bg-green-600 text-white' : 'bg-white border'
-            }`}
-          >
-            🚀 Set Launch Point
-          </button>
-          <button
-            onClick={() => setActiveMarker('recovery')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              activeMarker === 'recovery' ? 'bg-red-600 text-white' : 'bg-white border'
-            }`}
-          >
-            🎯 Set Recovery Point
-          </button>
-        </div>
-        
-        <div className="p-4 flex-1 min-h-[400px] relative">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-              <Loader2 className="w-8 h-8 animate-spin text-aeria-blue" />
-            </div>
-          )}
-          <div ref={mapContainerRef} className="w-full h-full rounded-lg" style={{ minHeight: '350px' }} />
-        </div>
-
-        <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            {launchPoint && <span className="mr-4">✓ Launch: {launchPoint.lat?.toFixed(5)}, {launchPoint.lng?.toFixed(5)}</span>}
-            {recoveryPoint && <span>✓ Recovery: {recoveryPoint.lat?.toFixed(5)}, {recoveryPoint.lng?.toFixed(5)}</span>}
-          </div>
-          <button onClick={onClose} className="btn-primary">Done</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ============================================
 // MAIN COMPONENT: Multi-Site Flight Plan
@@ -225,13 +65,13 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
   // Initialize from project
   useEffect(() => {
     if (project.sites && Array.isArray(project.sites)) {
-      // Filter to only sites with flight plans enabled
       setSites(project.sites)
     }
   }, [project.sites])
 
   // Get sites that have flight plans enabled
-  const sitesWithFlightPlans = sites.filter(s => s.includeFlightPlan)
+  const sitesWithFlightPlans = useMemo(() => 
+    sites.filter(s => s.includeFlightPlan), [sites])
   
   // Find first site with flight plan for initial selection
   useEffect(() => {
@@ -342,11 +182,20 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
     })
   }
 
-  const handleMapUpdate = (updatedSite) => {
-    const siteIndex = sites.findIndex(s => s.id === updatedSite.id)
+  // Handle map save
+  const handleMapSave = (mapData) => {
+    const siteIndex = sites.findIndex(s => s.id === activeSite?.id)
     if (siteIndex === -1) return
+
     const newSites = [...sites]
-    newSites[siteIndex] = updatedSite
+    newSites[siteIndex] = {
+      ...newSites[siteIndex],
+      flightPlan: {
+        ...newSites[siteIndex].flightPlan,
+        launchPoint: mapData.launchPoint,
+        recoveryPoint: mapData.recoveryPoint
+      }
+    }
     saveSites(newSites)
   }
 
@@ -360,7 +209,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
           Enable "Include Flight Plan" for at least one site in the Site Survey section.
         </p>
         <p className="text-sm text-gray-400">
-          Go to Site Survey → Select a site → Check "Include Flight Plan"
+          Go to Site Survey → Select a site → Check "Include Flight Plan & SORA"
         </p>
       </div>
     )
@@ -397,7 +246,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
       {/* Site Info Banner */}
       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-between">
         <div>
-          <p className="font-medium text-blue-900">Flight Plan for: {activeSite?.name}</p>
+          <p className="font-medium text-blue-900">Flight Plan: {activeSite?.name}</p>
           <p className="text-sm text-blue-700">
             Population: {siteSurvey.population?.category || 'Not set'} | 
             Airspace: Class {siteSurvey.airspace?.classification || 'G'}
@@ -432,7 +281,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                     <Plane className={`w-5 h-5 ${ac.isPrimary ? 'text-green-600' : 'text-gray-400'}`} />
                     <div>
                       <p className="font-medium">{ac.name}</p>
-                      <p className="text-sm text-gray-500">{ac.manufacturer} {ac.model}</p>
+                      <p className="text-sm text-gray-500">{ac.manufacturer} {ac.model} | MTOW: {ac.mtow ? `${ac.mtow}kg` : 'N/A'}</p>
                     </div>
                     {ac.isPrimary && (
                       <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Primary</span>
@@ -440,17 +289,11 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                   </div>
                   <div className="flex items-center gap-2">
                     {!ac.isPrimary && (
-                      <button
-                        onClick={() => setPrimaryAircraft(i)}
-                        className="text-xs text-aeria-blue hover:underline"
-                      >
+                      <button onClick={() => setPrimaryAircraft(i)} className="text-xs text-aeria-blue hover:underline">
                         Set Primary
                       </button>
                     )}
-                    <button
-                      onClick={() => removeAircraft(i)}
-                      className="p-1 text-gray-400 hover:text-red-500"
-                    >
+                    <button onClick={() => removeAircraft(i)} className="p-1 text-gray-400 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -541,7 +384,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Estimated Flight Duration (min)</label>
+                <label className="label">Estimated Duration (min)</label>
                 <input
                   type="number"
                   value={flightPlan.estimatedDuration || ''}
@@ -591,42 +434,47 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
 
         {expandedSections.launchRecovery && (
           <div className="mt-4 space-y-4">
+            {/* Map Preview */}
+            <MapPreview
+              siteLocation={siteSurvey.location?.coordinates}
+              boundary={siteSurvey.boundary}
+              launchPoint={flightPlan.launchPoint}
+              recoveryPoint={flightPlan.recoveryPoint}
+              height={250}
+              onOpenEditor={() => setMapEditorOpen(true)}
+            />
+
+            {/* Point Status */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className={`p-4 rounded-lg border-2 ${flightPlan.launchPoint ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">🚀</span>
                   <span className="font-medium">Launch Point</span>
+                  {flightPlan.launchPoint && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                 </div>
                 {flightPlan.launchPoint ? (
                   <p className="text-sm text-gray-600">
                     {flightPlan.launchPoint.lat?.toFixed(6)}, {flightPlan.launchPoint.lng?.toFixed(6)}
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-400">Not set</p>
+                  <p className="text-sm text-gray-400">Click "Edit Map" to set</p>
                 )}
               </div>
               <div className={`p-4 rounded-lg border-2 ${flightPlan.recoveryPoint ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">🎯</span>
                   <span className="font-medium">Recovery Point</span>
+                  {flightPlan.recoveryPoint && <CheckCircle2 className="w-4 h-4 text-red-500" />}
                 </div>
                 {flightPlan.recoveryPoint ? (
                   <p className="text-sm text-gray-600">
                     {flightPlan.recoveryPoint.lat?.toFixed(6)}, {flightPlan.recoveryPoint.lng?.toFixed(6)}
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-400">Not set</p>
+                  <p className="text-sm text-gray-400">Click "Edit Map" to set</p>
                 )}
               </div>
             </div>
-
-            <button
-              onClick={() => setMapEditorOpen(true)}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <Map className="w-4 h-4" />
-              Open Map to Set Points
-            </button>
           </div>
         )}
       </div>
@@ -729,7 +577,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
                         type="text"
                         value={cont.trigger}
                         onChange={(e) => updateContingency(i, 'trigger', e.target.value)}
-                        className="flex-1 text-sm font-medium bg-transparent border-none p-0 focus:ring-0"
+                        className="flex-1 text-sm font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-aeria-blue focus:outline-none px-1"
                         placeholder="Trigger condition..."
                       />
                     </div>
@@ -752,7 +600,7 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
             ))}
             <button
               onClick={addContingency}
-              className="w-full p-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 flex items-center justify-center gap-2"
+              className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add Contingency
@@ -762,11 +610,16 @@ export default function ProjectFlightPlan({ project, onUpdate }) {
       </div>
 
       {/* Map Editor Modal */}
-      <LaunchRecoveryMapEditor
-        site={activeSite}
+      <MapEditorModal
         isOpen={mapEditorOpen}
         onClose={() => setMapEditorOpen(false)}
-        onUpdate={handleMapUpdate}
+        onSave={handleMapSave}
+        siteLocation={siteSurvey.location?.coordinates}
+        boundary={siteSurvey.boundary}
+        launchPoint={flightPlan.launchPoint}
+        recoveryPoint={flightPlan.recoveryPoint}
+        mode="flight"
+        siteName={activeSite?.name}
       />
     </div>
   )
