@@ -248,7 +248,7 @@ export function calculateSafetyKPIs(data) {
   // Near miss to incident ratio
   const nearMissRatio = recordableIncidents.length > 0
     ? (nearMisses.length / recordableIncidents.length).toFixed(1)
-    : nearMisses.length > 0 ? '∞' : 'N/A'
+    : nearMisses.length > 0 ? 'Inf' : 'N/A'
   
   // CAPA rates
   const capaClosureRate = capas.length > 0
@@ -421,7 +421,7 @@ export async function generateCORReport(data, options = {}) {
   pdf.addSubsectionTitle('Key Performance Indicators')
   pdf.addKPIRow([
     { label: 'Audit Readiness', value: String(auditScore) + '%' },
-    { label: 'Days Incident-Free', value: kpis.daysSinceIncident !== null ? String(kpis.daysSinceIncident) : '∞' },
+    { label: 'Days Incident-Free', value: kpis.daysSinceIncident !== null ? String(kpis.daysSinceIncident) : 'None' },
     { label: 'YTD Incidents', value: String(kpis.ytdRecordableIncidents) },
     { label: 'Open CAPAs', value: String(kpis.openCapas) }
   ])
@@ -446,13 +446,16 @@ export async function generateCORReport(data, options = {}) {
   )
   
   pdf.addSubsectionTitle('Organizational Structure')
-  pdf.addBulletList([
-    'Accountable Executive: Overall safety program accountability',
-    'Operations Manager: Day-to-day safety implementation',
-    'Maintenance Manager: Equipment airworthiness',
-    'Pilot in Command (PIC): Flight operation authority',
-    'Visual Observer (VO): Situational awareness support'
-  ])
+  pdf.addTable(
+    ['Role', 'Responsibility'],
+    [
+      ['Accountable Executive', 'Overall safety program accountability'],
+      ['Operations Manager', 'Day-to-day safety implementation'],
+      ['Maintenance Manager', 'Equipment airworthiness'],
+      ['Pilot in Command (PIC)', 'Flight operation authority'],
+      ['Visual Observer (VO)', 'Situational awareness support']
+    ]
+  )
   
   // ============================================
   // SECTION 3: HAZARD ASSESSMENT
@@ -488,25 +491,28 @@ export async function generateCORReport(data, options = {}) {
   pdf.addParagraph('Comprehensive safe work procedures cover all phases of RPAS operations, supported by CRM protocols for human factors management.')
   
   pdf.addSubsectionTitle('RPAS General Procedures (RPAS-GP-001)')
-  pdf.addBulletList([
-    'Operation Planning Flow - Pre-departure documentation',
-    'Kit Preparation Flow - Equipment and battery readiness',
-    'Weather & NOTAM Review Flow - Conditions assessment',
-    'Team Briefing Flow - Objectives, roles, safety alignment',
-    'Site Setup Flow - Area inspection and perimeter',
-    'RPAS Setup Flow - Assembly, calibration, checks',
-    'Take-Off Checklist - Final verification',
-    'During Flight Flow - Active monitoring',
-    'Landing and Post-Flight Flow - Safe recovery',
-    'Team Debrief Flow - Lessons learned'
-  ])
+  pdf.addTable(
+    ['Phase', 'Procedure'],
+    [
+      ['1', 'Operation Planning Flow - Pre-departure documentation'],
+      ['2', 'Kit Preparation Flow - Equipment and battery readiness'],
+      ['3', 'Weather & NOTAM Review Flow - Conditions assessment'],
+      ['4', 'Team Briefing Flow - Objectives, roles, safety alignment'],
+      ['5', 'Site Setup Flow - Area inspection and perimeter'],
+      ['6', 'RPAS Setup Flow - Assembly, calibration, checks'],
+      ['7', 'Take-Off Checklist - Final verification'],
+      ['8', 'During Flight Flow - Active monitoring'],
+      ['9', 'Landing and Post-Flight Flow - Safe recovery'],
+      ['10', 'Team Debrief Flow - Lessons learned']
+    ]
+  )
   
   pdf.addSubsectionTitle('CRM Protocols')
   pdf.addTable(
     ['Protocol', 'Policy', 'Application'],
     [
-      ['P.A.C.E. Escalation', 'CRM1014', 'Probe > Alert > Challenge > Emergency'],
-      ['Situational Awareness', 'CRM1015', 'Perception > Comprehension > Projection'],
+      ['P.A.C.E. Escalation', 'CRM1014', 'Probe - Alert - Challenge - Emergency'],
+      ['Situational Awareness', 'CRM1015', 'Perception - Comprehension - Projection'],
       ['Workload Management', 'CRM1018', 'Task prioritization and delegation'],
       ['Decision Making', 'CRM1019', 'Structured decision matrices']
     ]
@@ -603,14 +609,17 @@ export async function generateCORReport(data, options = {}) {
   pdf.addNewSection('Emergency Preparedness & Response')
   
   pdf.addSubsectionTitle('RPAS Emergency Procedures (RPAS-EP-001)')
-  pdf.addBulletList([
-    'Control Station Failure - Backup procedures and RTH',
-    'RPAS Failure - Emergency landing or termination',
-    'Crash Event - Scene preservation, notification',
-    'Fly-Away - Tracking, notification, recovery',
-    'C2 Link Failure - Automated failsafe activation',
-    'Inadvertent Airspace Entry - ATC notification'
-  ])
+  pdf.addTable(
+    ['Scenario', 'Response'],
+    [
+      ['Control Station Failure', 'Backup procedures and RTH activation'],
+      ['RPAS Failure', 'Emergency landing or flight termination'],
+      ['Crash Event', 'Scene preservation and notification'],
+      ['Fly-Away', 'Tracking, notification, and recovery'],
+      ['C2 Link Failure', 'Automated failsafe activation'],
+      ['Inadvertent Airspace Entry', 'ATC notification protocol']
+    ]
+  )
   
   pdf.addSubsectionTitle('Emergency Contacts')
   pdf.addTable(
@@ -665,21 +674,28 @@ export async function generateCORReport(data, options = {}) {
   pdf.addParagraph('The health and safety program is reviewed annually and updated as required.')
   
   pdf.addSubsectionTitle('Document Control')
-  pdf.addBulletList([
-    'All policies version controlled with revision history',
-    'Annual review cycle with documented amendments',
-    'Electronic distribution through Aeria Ops platform',
-    'Records retained per regulatory requirements'
-  ])
+  pdf.addTable(
+    ['Control', 'Description'],
+    [
+      ['Version Control', 'All policies version controlled with revision history'],
+      ['Review Cycle', 'Annual review cycle with documented amendments'],
+      ['Distribution', 'Electronic distribution through Aeria Ops platform'],
+      ['Retention', 'Records retained per regulatory requirements']
+    ]
+  )
   
   pdf.addSubsectionTitle('Regulatory Compliance')
-  pdf.addBulletList([
-    'BC Workers Compensation Act and OHS Regulation',
-    'Canadian Aviation Regulations Part IX (RPAS)',
-    'Transport Canada Advisory Circulars',
-    'JARUS SORA 2.5 methodology',
-    'ISO 45001:2018 principles'
-  ])
+  pdf.addTable(
+    ['Regulation', 'Application'],
+    [
+      ['BC Workers Compensation Act', 'Workplace safety requirements'],
+      ['BC OHS Regulation', 'Specific safety standards'],
+      ['CARs Part IX', 'RPAS operations requirements'],
+      ['Transport Canada ACs', 'Advisory compliance guidance'],
+      ['JARUS SORA 2.5', 'Risk assessment methodology'],
+      ['ISO 45001:2018', 'SMS framework principles']
+    ]
+  )
   
   // ============================================
   // APPENDICES
