@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   MapPin, Plus, Trash2, AlertTriangle, Navigation, Mountain, TreePine, Building, Radio, Car, Users,
-  Camera, ChevronDown, ChevronUp, ExternalLink, Copy, CheckCircle2, Crosshair, Map, X, Loader2,
-  Navigation2, Target, Search, Info, Clipboard, FileCheck, AlertCircle, Eye, Plane, Layers
+  Camera, ChevronDown, ChevronUp, CheckCircle2, Map, Plane, Layers, ExternalLink
 } from 'lucide-react'
+import { MapPreview, MapEditorModal } from './MapComponents'
 
 // ============================================
 // POPULATION CATEGORIES (SORA-aligned)
 // ============================================
 const populationCategories = {
-  controlled: { label: 'Controlled Ground Area', description: 'No uninvolved people present', density: 0 },
+  controlled: { label: 'Controlled Ground Area', description: 'No uninvolved people present, fully controlled access', density: 0 },
   remote: { label: 'Remote/Sparsely Populated', description: 'Very low density, < 5 people/km²', density: 5 },
   lightly: { label: 'Lightly Populated', description: 'Rural areas, 5-50 people/km²', density: 50 },
   sparsely: { label: 'Sparsely Populated', description: 'Scattered houses, 50-500 people/km²', density: 500 },
@@ -19,14 +19,14 @@ const populationCategories = {
 }
 
 const obstacleTypes = [
-  { value: 'tower', label: 'Tower/Mast', icon: Radio },
-  { value: 'powerline', label: 'Power Lines', icon: Radio },
-  { value: 'building', label: 'Building/Structure', icon: Building },
-  { value: 'tree', label: 'Trees/Vegetation', icon: TreePine },
-  { value: 'terrain', label: 'Terrain Feature', icon: Mountain },
-  { value: 'wire', label: 'Wire/Cable', icon: Radio },
-  { value: 'antenna', label: 'Antenna', icon: Radio },
-  { value: 'other', label: 'Other', icon: AlertTriangle }
+  { value: 'tower', label: 'Tower/Mast' },
+  { value: 'powerline', label: 'Power Lines' },
+  { value: 'building', label: 'Building/Structure' },
+  { value: 'tree', label: 'Trees/Vegetation' },
+  { value: 'terrain', label: 'Terrain Feature' },
+  { value: 'wire', label: 'Wire/Cable' },
+  { value: 'antenna', label: 'Antenna' },
+  { value: 'other', label: 'Other' }
 ]
 
 const accessTypes = [
@@ -76,139 +76,15 @@ const createEmptySite = (index) => ({
   flightPlan: null,
   sora: null,
   emergency: {
-    musterPoints: [{ name: 'Primary Muster', location: '', coordinates: null }],
-    evacuationRoutes: [{ name: 'Primary Route', description: '' }]
+    musterPoints: [],
+    evacuationRoutes: []
   }
 })
-
-// ============================================
-// SITE MAP EDITOR COMPONENT (simplified)
-// ============================================
-function SiteMapEditor({ site, onUpdate, isOpen, onClose }) {
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  
-  const siteLocation = site?.siteSurvey?.location?.coordinates
-  const boundary = site?.siteSurvey?.boundary || []
-
-  useEffect(() => {
-    if (!isOpen || !mapContainerRef.current) return
-    
-    // Load Leaflet
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link')
-      link.id = 'leaflet-css'
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
-    }
-
-    const loadMap = async () => {
-      if (!window.L) {
-        const script = document.createElement('script')
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-        script.onload = () => initMap()
-        document.head.appendChild(script)
-      } else {
-        initMap()
-      }
-    }
-
-    const initMap = () => {
-      if (mapRef.current) mapRef.current.remove()
-      
-      const defaultCenter = siteLocation ? [siteLocation.lat, siteLocation.lng] : [49.2827, -123.1207]
-      mapRef.current = window.L.map(mapContainerRef.current).setView(defaultCenter, 14)
-      
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(mapRef.current)
-
-      // Add site marker if exists
-      if (siteLocation) {
-        window.L.marker([siteLocation.lat, siteLocation.lng], {
-          icon: window.L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:#1e40af;color:white;padding:4px 8px;border-radius:4px;font-size:12px;">📍 Site</div>'
-          })
-        }).addTo(mapRef.current)
-      }
-
-      // Add boundary polygon if exists
-      if (boundary.length > 0) {
-        window.L.polygon(boundary.map(p => [p.lat, p.lng]), {
-          color: '#3b82f6',
-          fillOpacity: 0.2
-        }).addTo(mapRef.current)
-      }
-
-      // Click handler to set site location
-      mapRef.current.on('click', (e) => {
-        const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng }
-        onUpdate({
-          ...site,
-          siteSurvey: {
-            ...site.siteSurvey,
-            location: {
-              ...site.siteSurvey.location,
-              coordinates: newCoords
-            }
-          }
-        })
-      })
-
-      setIsLoading(false)
-      setTimeout(() => mapRef.current?.invalidateSize(), 100)
-    }
-
-    loadMap()
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
-  }, [isOpen])
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">Edit Site Location - {site?.name}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="p-4 flex-1 min-h-[500px]">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-              <Loader2 className="w-8 h-8 animate-spin text-aeria-blue" />
-            </div>
-          )}
-          <div ref={mapContainerRef} className="w-full h-full rounded-lg" style={{ minHeight: '400px' }} />
-        </div>
-
-        <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-          <p className="text-sm text-gray-600">Click on map to set site location</p>
-          <button onClick={onClose} className="btn-primary">Done</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ============================================
 // MAIN COMPONENT: Multi-Site Survey
 // ============================================
 export default function ProjectSiteSurvey({ project, onUpdate }) {
-  // Initialize sites array if not present
   const [sites, setSites] = useState([])
   const [activeSiteIndex, setActiveSiteIndex] = useState(0)
   const [mapEditorOpen, setMapEditorOpen] = useState(false)
@@ -241,9 +117,13 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         }
       }
       setSites([migratedSite])
+      // Save the migrated structure
+      onUpdate({ sites: [migratedSite] })
     } else {
       // Create default site
-      setSites([createEmptySite(0)])
+      const defaultSite = createEmptySite(0)
+      setSites([defaultSite])
+      onUpdate({ sites: [defaultSite] })
     }
   }, [])
 
@@ -269,7 +149,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
   }
 
   const removeSite = (index) => {
-    if (sites.length <= 1) return // Keep at least one site
+    if (sites.length <= 1) return
     const newSites = sites.filter((_, i) => i !== index)
     saveSites(newSites)
     if (activeSiteIndex >= newSites.length) {
@@ -358,9 +238,20 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     })
   }
 
-  const handleMapUpdate = (updatedSite) => {
+  // Handle map editor save
+  const handleMapSave = (mapData) => {
     const newSites = [...sites]
-    newSites[activeSiteIndex] = updatedSite
+    newSites[activeSiteIndex] = {
+      ...newSites[activeSiteIndex],
+      siteSurvey: {
+        ...newSites[activeSiteIndex].siteSurvey,
+        location: {
+          ...newSites[activeSiteIndex].siteSurvey.location,
+          coordinates: mapData.siteLocation
+        },
+        boundary: mapData.boundary || []
+      }
+    }
     saveSites(newSites)
   }
 
@@ -376,6 +267,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Layers className="w-5 h-5 text-aeria-blue" />
             Project Sites
+            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{sites.length}</span>
           </h2>
           <button onClick={addSite} className="btn-secondary text-sm flex items-center gap-1">
             <Plus className="w-4 h-4" />
@@ -406,8 +298,9 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
 
         {/* Active Site Configuration */}
         <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">Site Name</label>
               <input
                 type="text"
                 value={activeSite?.name || ''}
@@ -416,23 +309,23 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                 placeholder="Site name"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border">
                 <input
                   type="checkbox"
                   checked={activeSite?.includeFlightPlan || false}
                   onChange={() => toggleFlightPlan(activeSiteIndex)}
-                  className="w-4 h-4 text-aeria-navy rounded"
+                  className="w-4 h-4 text-green-600 rounded"
                 />
                 <span className="text-sm flex items-center gap-1">
-                  <Plane className="w-4 h-4 text-gray-500" />
-                  Include Flight Plan
+                  <Plane className="w-4 h-4 text-green-600" />
+                  Include Flight Plan & SORA
                 </span>
               </label>
               {sites.length > 1 && (
                 <button
                   onClick={() => removeSite(activeSiteIndex)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg border border-red-200"
                   title="Remove site"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -440,17 +333,10 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               )}
             </div>
           </div>
-          
-          {activeSite?.includeFlightPlan && (
-            <p className="text-sm text-green-600 flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4" />
-              This site will have a Flight Plan and SORA assessment
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Site Location */}
+      {/* Site Location & Map */}
       <div className="card">
         <button
           onClick={() => toggleSection('location')}
@@ -458,7 +344,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         >
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-aeria-blue" />
-            Site Location
+            Site Location & Boundary
           </h2>
           {expandedSections.location ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
         </button>
@@ -476,48 +362,49 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Latitude</label>
-                <input
-                  type="text"
-                  value={siteSurvey.location?.coordinates?.lat || ''}
-                  onChange={(e) => updateLocation('coordinates', {
-                    ...siteSurvey.location?.coordinates,
-                    lat: parseFloat(e.target.value) || ''
-                  })}
-                  className="input"
-                  placeholder="49.2827"
-                />
-              </div>
-              <div>
-                <label className="label">Longitude</label>
-                <input
-                  type="text"
-                  value={siteSurvey.location?.coordinates?.lng || ''}
-                  onChange={(e) => updateLocation('coordinates', {
-                    ...siteSurvey.location?.coordinates,
-                    lng: parseFloat(e.target.value) || ''
-                  })}
-                  className="input"
-                  placeholder="-123.1207"
-                />
-              </div>
+            {/* Inline Map Preview */}
+            <div>
+              <label className="label mb-2">Site Map</label>
+              <MapPreview
+                siteLocation={siteSurvey.location?.coordinates}
+                boundary={siteSurvey.boundary}
+                launchPoint={activeSite?.flightPlan?.launchPoint}
+                recoveryPoint={activeSite?.flightPlan?.recoveryPoint}
+                height={250}
+                onOpenEditor={() => setMapEditorOpen(true)}
+              />
             </div>
 
-            <button
-              onClick={() => setMapEditorOpen(true)}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <Map className="w-4 h-4" />
-              Open Map Editor
-            </button>
-
+            {/* Coordinate Display */}
             {siteSurvey.location?.coordinates && (
-              <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-700">
-                  <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                  Site location set: {siteSurvey.location.coordinates.lat?.toFixed(6)}, {siteSurvey.location.coordinates.lng?.toFixed(6)}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Latitude</label>
+                  <input
+                    type="text"
+                    value={siteSurvey.location?.coordinates?.lat || ''}
+                    readOnly
+                    className="input bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="label">Longitude</label>
+                  <input
+                    type="text"
+                    value={siteSurvey.location?.coordinates?.lng || ''}
+                    readOnly
+                    className="input bg-gray-50"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Boundary Status */}
+            {(siteSurvey.boundary || []).length > 0 && (
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <p className="text-sm text-purple-700 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Work area boundary defined ({siteSurvey.boundary.length} points)
                 </p>
               </div>
             )}
@@ -540,32 +427,30 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         </button>
 
         {expandedSections.population && (
-          <div className="mt-4 space-y-4">
-            <div className="grid gap-2">
-              {Object.entries(populationCategories).map(([key, cat]) => (
-                <label
-                  key={key}
-                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                    siteSurvey.population?.category === key
-                      ? 'border-aeria-blue bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="populationCategory"
-                    value={key}
-                    checked={siteSurvey.population?.category === key}
-                    onChange={(e) => updatePopulation('category', e.target.value)}
-                    className="mt-1"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900">{cat.label}</p>
-                    <p className="text-sm text-gray-600">{cat.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+          <div className="mt-4 space-y-2">
+            {Object.entries(populationCategories).map(([key, cat]) => (
+              <label
+                key={key}
+                className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  siteSurvey.population?.category === key
+                    ? 'border-aeria-blue bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="populationCategory"
+                  value={key}
+                  checked={siteSurvey.population?.category === key}
+                  onChange={(e) => updatePopulation('category', e.target.value)}
+                  className="mt-1"
+                />
+                <div>
+                  <p className="font-medium text-gray-900">{cat.label}</p>
+                  <p className="text-sm text-gray-600">{cat.description}</p>
+                </div>
+              </label>
+            ))}
           </div>
         )}
       </div>
@@ -600,24 +485,24 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               </select>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={siteSurvey.airspace?.nearAerodrome || false}
                   onChange={(e) => updateAirspace('nearAerodrome', e.target.checked)}
                   className="w-4 h-4 rounded"
                 />
-                <span className="text-sm">Near Aerodrome (within 5.6km)</span>
+                <span className="text-sm">Near Aerodrome (within 5.6km / 3nm)</span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={siteSurvey.airspace?.nearHeliport || false}
                   onChange={(e) => updateAirspace('nearHeliport', e.target.checked)}
                   className="w-4 h-4 rounded"
                 />
-                <span className="text-sm">Near Heliport (within 1.8km)</span>
+                <span className="text-sm">Near Heliport (within 1.8km / 1nm)</span>
               </label>
             </div>
 
@@ -634,6 +519,17 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                 />
               </div>
             )}
+
+            {/* NAV Canada Link */}
+            <a
+              href="https://www.navcanada.ca/en/flight-planning/drone-flight-planning.aspx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-aeria-blue hover:underline flex items-center gap-1"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Check NAV CANADA Drone Flight Planning
+            </a>
           </div>
         )}
       </div>
@@ -646,7 +542,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
         >
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-aeria-blue" />
-            Obstacles
+            Obstacles & Hazards
             <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
               {(siteSurvey.obstacles || []).length}
             </span>
@@ -681,7 +577,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                       value={obs.height}
                       onChange={(e) => updateObstacle(i, 'height', e.target.value)}
                       className="input text-sm"
-                      placeholder="Height (m)"
+                      placeholder="Height (m AGL)"
                     />
                     <input
                       type="text"
@@ -691,13 +587,13 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                       placeholder="Distance (m)"
                     />
                   </div>
-                  <button onClick={() => removeObstacle(i)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                  <button onClick={() => removeObstacle(i)} className="p-1.5 text-red-500 hover:bg-red-100 rounded">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ))}
-            <button onClick={addObstacle} className="w-full p-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 flex items-center justify-center gap-2">
+            <button onClick={addObstacle} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-amber-400 hover:text-amber-600 flex items-center justify-center gap-2 transition-colors">
               <Plus className="w-4 h-4" />
               Add Obstacle
             </button>
@@ -744,13 +640,36 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                 />
               </div>
             </div>
+
             <div>
-              <label className="label">Directions</label>
+              <label className="label">Directions to Site</label>
               <textarea
                 value={siteSurvey.access?.directions || ''}
                 onChange={(e) => updateAccess('directions', e.target.value)}
                 className="input min-h-[80px]"
-                placeholder="Turn-by-turn directions..."
+                placeholder="Turn-by-turn directions from nearest landmark..."
+              />
+            </div>
+
+            <div>
+              <label className="label">Parking Location</label>
+              <input
+                type="text"
+                value={siteSurvey.access?.parkingLocation || ''}
+                onChange={(e) => updateAccess('parkingLocation', e.target.value)}
+                className="input"
+                placeholder="Where to park vehicles"
+              />
+            </div>
+
+            <div>
+              <label className="label">On-Site Contact</label>
+              <input
+                type="text"
+                value={siteSurvey.access?.contactOnSite || ''}
+                onChange={(e) => updateAccess('contactOnSite', e.target.value)}
+                className="input"
+                placeholder="Name and phone"
               />
             </div>
           </div>
@@ -772,25 +691,37 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
 
         {expandedSections.ground && (
           <div className="mt-4 space-y-4">
-            <div>
-              <label className="label">Surface Type</label>
-              <select
-                value={siteSurvey.groundConditions?.type || 'grass'}
-                onChange={(e) => updateGroundConditions('type', e.target.value)}
-                className="input"
-              >
-                {groundConditions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Surface Type</label>
+                <select
+                  value={siteSurvey.groundConditions?.type || 'grass'}
+                  onChange={(e) => updateGroundConditions('type', e.target.value)}
+                  className="input"
+                >
+                  {groundConditions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer mt-6">
+                <input
+                  type="checkbox"
+                  checked={siteSurvey.groundConditions?.suitableForVehicle ?? true}
+                  onChange={(e) => updateGroundConditions('suitableForVehicle', e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <span className="text-sm">Suitable for vehicle access</span>
+              </label>
             </div>
+
             <div>
               <label className="label">Ground Hazards</label>
               <textarea
                 value={siteSurvey.groundConditions?.hazards || ''}
                 onChange={(e) => updateGroundConditions('hazards', e.target.value)}
                 className="input min-h-[60px]"
-                placeholder="Uneven terrain, holes, debris..."
+                placeholder="Uneven terrain, holes, debris, water hazards..."
               />
             </div>
           </div>
@@ -814,7 +745,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
           <div className="mt-4 space-y-4">
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <label className="label">Survey Date</label>
+                <label className="label">Survey Date *</label>
                 <input
                   type="date"
                   value={siteSurvey.surveyDate || ''}
@@ -823,7 +754,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Surveyed By</label>
+                <label className="label">Surveyed By *</label>
                 <input
                   type="text"
                   value={siteSurvey.surveyedBy || ''}
@@ -845,13 +776,14 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                 </select>
               </div>
             </div>
+
             <div>
               <label className="label">Additional Notes</label>
               <textarea
                 value={siteSurvey.notes || ''}
                 onChange={(e) => updateSiteSurvey({ notes: e.target.value })}
                 className="input min-h-[100px]"
-                placeholder="Any additional observations..."
+                placeholder="Any additional observations, recommendations, or notes..."
               />
             </div>
           </div>
@@ -859,11 +791,16 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
       </div>
 
       {/* Map Editor Modal */}
-      <SiteMapEditor
-        site={activeSite}
+      <MapEditorModal
         isOpen={mapEditorOpen}
         onClose={() => setMapEditorOpen(false)}
-        onUpdate={handleMapUpdate}
+        onSave={handleMapSave}
+        siteLocation={siteSurvey.location?.coordinates}
+        boundary={siteSurvey.boundary}
+        launchPoint={activeSite?.flightPlan?.launchPoint}
+        recoveryPoint={activeSite?.flightPlan?.recoveryPoint}
+        mode="site"
+        siteName={activeSite?.name}
       />
     </div>
   )
