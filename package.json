@@ -18,7 +18,7 @@
     "zustand": "^4.5.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
-    "lucide-react": "^0.330.0"
+    "lucide-react": "^0.330.0",
     "mapbox-gl": "^3.3.0",
     "@mapbox/mapbox-gl-draw": "^1.4.3"
   },
