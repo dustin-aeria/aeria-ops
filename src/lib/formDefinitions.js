@@ -1186,6 +1186,305 @@ export const FORM_TEMPLATES = {
       }
     ]
   },
+
+  // ========================================
+  // FORMAL HAZARD ASSESSMENT (FHA)
+  // ========================================
+  formal_hazard_assessment: {
+    id: 'formal_hazard_assessment',
+    name: 'Formal Hazard Assessment',
+    shortName: 'FHA',
+    category: 'pre_operation',
+    description: 'Comprehensive hazard analysis for project planning - feeds FLHA',
+    icon: 'Shield',
+    version: '1.0',
+    sections: [
+      {
+        id: 'header',
+        title: 'Assessment Information',
+        fields: [
+          { id: 'form_id', type: 'auto_id', label: 'Form ID', required: true },
+          { id: 'project', type: 'project_select', label: 'Project', required: true },
+          { id: 'assessment_date', type: 'date', label: 'Assessment Date', required: true, defaultToday: true },
+          { id: 'assessor', type: 'operator_select', label: 'Assessor', required: true },
+          { id: 'assessment_type', type: 'select', label: 'Assessment Type', required: true, options: [
+            { value: 'initial', label: 'Initial Assessment' },
+            { value: 'revision', label: 'Revision' },
+            { value: 'periodic_review', label: 'Periodic Review' },
+          ]},
+          { id: 'scope_description', type: 'textarea', label: 'Scope of Work', required: true, helpText: 'Describe the operations covered by this assessment' },
+        ]
+      },
+      {
+        id: 'tasks',
+        title: 'Task Inventory',
+        description: 'List all tasks involved in this project/operation',
+        repeatable: true,
+        repeatLabel: 'Add Task',
+        fields: [
+          { id: 'task_name', type: 'text', label: 'Task Name', required: true },
+          { id: 'task_description', type: 'textarea', label: 'Task Description', required: true },
+          { id: 'task_category', type: 'select', label: 'Task Category', required: true, options: [
+            { value: 'rpas_operation', label: 'RPAS Operation' },
+            { value: 'ground_support', label: 'Ground Support' },
+            { value: 'equipment_handling', label: 'Equipment Handling' },
+            { value: 'vehicle_operation', label: 'Vehicle Operation' },
+            { value: 'site_setup', label: 'Site Setup/Teardown' },
+            { value: 'data_collection', label: 'Data Collection' },
+            { value: 'environmental', label: 'Environmental Work' },
+            { value: 'other', label: 'Other' },
+          ]},
+          { id: 'frequency', type: 'select', label: 'Task Frequency', required: true, options: [
+            { value: 'every_flight', label: 'Every Flight' },
+            { value: 'daily', label: 'Daily' },
+            { value: 'weekly', label: 'Weekly' },
+            { value: 'as_needed', label: 'As Needed' },
+            { value: 'one_time', label: 'One Time' },
+          ]},
+          { id: 'personnel_required', type: 'text', label: 'Personnel Required', required: true },
+          { id: 'equipment_required', type: 'textarea', label: 'Equipment Required', required: false },
+        ]
+      },
+      {
+        id: 'hazards',
+        title: 'Hazard Identification',
+        description: 'Identify all hazards associated with the tasks',
+        repeatable: true,
+        repeatLabel: 'Add Hazard',
+        fields: [
+          { id: 'related_task', type: 'text', label: 'Related Task(s)', required: true },
+          { id: 'hazard_category', type: 'select', label: 'Hazard Category', required: true, options: 'HAZARD_CATEGORIES' },
+          { id: 'hazard_description', type: 'textarea', label: 'Hazard Description', required: true },
+          { id: 'source_identification', type: 'textarea', label: 'Source/Cause', required: true, helpText: 'What creates this hazard?' },
+          { id: 'who_affected', type: 'multiselect', label: 'Who Could Be Affected', required: true, options: [
+            { value: 'crew', label: 'Flight Crew' },
+            { value: 'ground_crew', label: 'Ground Crew' },
+            { value: 'client', label: 'Client Personnel' },
+            { value: 'public', label: 'Public' },
+            { value: 'emergency_responders', label: 'Emergency Responders' },
+          ]},
+          { id: 'severity', type: 'select', label: 'Severity (Uncontrolled)', required: true, options: 'SEVERITY_RATINGS' },
+          { id: 'probability', type: 'select', label: 'Probability (Uncontrolled)', required: true, options: 'PROBABILITY_RATINGS' },
+          { id: 'initial_risk', type: 'risk_matrix', label: 'Initial Risk Level', calculated: true },
+        ]
+      },
+      {
+        id: 'controls',
+        title: 'Control Measures',
+        description: 'Define controls following the Hierarchy of Controls',
+        repeatable: true,
+        repeatLabel: 'Add Control',
+        fields: [
+          { id: 'related_hazard', type: 'text', label: 'Related Hazard', required: true },
+          { id: 'control_type', type: 'select', label: 'Control Type (Hierarchy)', required: true, options: 'CONTROL_TYPES' },
+          { id: 'control_description', type: 'textarea', label: 'Control Description', required: true },
+          { id: 'responsible_party', type: 'text', label: 'Responsible Party', required: true },
+          { id: 'verification_method', type: 'select', label: 'Verification Method', required: true, options: [
+            { value: 'visual_inspection', label: 'Visual Inspection' },
+            { value: 'checklist', label: 'Checklist Verification' },
+            { value: 'testing', label: 'Testing/Demonstration' },
+            { value: 'documentation', label: 'Documentation Review' },
+            { value: 'training_confirmation', label: 'Training Confirmation' },
+          ]},
+          { id: 'residual_severity', type: 'select', label: 'Residual Severity', required: true, options: 'SEVERITY_RATINGS' },
+          { id: 'residual_probability', type: 'select', label: 'Residual Probability', required: true, options: 'PROBABILITY_RATINGS' },
+          { id: 'residual_risk', type: 'risk_matrix', label: 'Residual Risk Level', calculated: true },
+          { id: 'acceptable', type: 'yesno', label: 'Residual Risk Acceptable?', required: true },
+          { id: 'additional_controls_needed', type: 'textarea', label: 'Additional Controls Needed', required: false, showIf: 'acceptable === false' },
+        ]
+      },
+      {
+        id: 'ppe_requirements',
+        title: 'PPE Requirements',
+        fields: [
+          { id: 'required_ppe', type: 'checklist', label: 'Required PPE', required: true, options: [
+            { value: 'hard_hat', label: 'Hard Hat' },
+            { value: 'safety_glasses', label: 'Safety Glasses' },
+            { value: 'high_vis', label: 'High Visibility Vest' },
+            { value: 'safety_boots', label: 'Safety Boots' },
+            { value: 'gloves', label: 'Gloves' },
+            { value: 'hearing_protection', label: 'Hearing Protection' },
+            { value: 'sun_protection', label: 'Sun Protection' },
+            { value: 'cold_weather', label: 'Cold Weather Gear' },
+            { value: 'rain_gear', label: 'Rain Gear' },
+            { value: 'respirator', label: 'Respirator' },
+          ]},
+          { id: 'ppe_notes', type: 'textarea', label: 'PPE Notes/Special Requirements', required: false },
+        ]
+      },
+      {
+        id: 'training_requirements',
+        title: 'Training Requirements',
+        fields: [
+          { id: 'required_training', type: 'checklist', label: 'Required Training/Certifications', required: true, options: [
+            { value: 'rpas_pilot', label: 'RPAS Pilot Certificate (Basic/Advanced)' },
+            { value: 'first_aid', label: 'First Aid Certification' },
+            { value: 'defensive_driving', label: 'Defensive Driving' },
+            { value: 'whmis', label: 'WHMIS' },
+            { value: 'ground_disturbance', label: 'Ground Disturbance' },
+            { value: 'wildlife_awareness', label: 'Wildlife Awareness' },
+            { value: 'bear_aware', label: 'Bear Aware' },
+            { value: 'h2s_alive', label: 'H2S Alive' },
+            { value: 'confined_space', label: 'Confined Space Entry' },
+            { value: 'fall_protection', label: 'Fall Protection' },
+          ]},
+          { id: 'training_notes', type: 'textarea', label: 'Additional Training Notes', required: false },
+        ]
+      },
+      {
+        id: 'review',
+        title: 'Review & Approval',
+        fields: [
+          { id: 'review_date', type: 'date', label: 'Review Date', required: true },
+          { id: 'next_review', type: 'date', label: 'Next Review Date', required: true },
+          { id: 'assessor_signature', type: 'signature', label: 'Assessor Signature', required: true },
+          { id: 'reviewer_signature', type: 'signature', label: 'Reviewer/Supervisor Signature', required: true },
+          { id: 'approval_notes', type: 'textarea', label: 'Review Notes', required: false },
+        ]
+      }
+    ]
+  },
+
+  // ========================================
+  // FIRST AID ASSESSMENT
+  // ========================================
+  first_aid_assessment: {
+    id: 'first_aid_assessment',
+    name: 'First Aid Assessment',
+    shortName: 'First Aid',
+    category: 'pre_operation',
+    description: 'OHS first aid requirements assessment for worksites',
+    icon: 'Shield',
+    version: '1.0',
+    sections: [
+      {
+        id: 'header',
+        title: 'Assessment Information',
+        fields: [
+          { id: 'form_id', type: 'auto_id', label: 'Form ID', required: true },
+          { id: 'project', type: 'project_select', label: 'Project', required: true },
+          { id: 'assessment_date', type: 'date', label: 'Assessment Date', required: true, defaultToday: true },
+          { id: 'assessor', type: 'operator_select', label: 'Assessor', required: true },
+          { id: 'work_location', type: 'text', label: 'Work Location', required: true },
+          { id: 'location_gps', type: 'gps', label: 'GPS Coordinates', required: true },
+        ]
+      },
+      {
+        id: 'worksite_classification',
+        title: 'Worksite Classification',
+        description: 'Per OHS First Aid Regulation',
+        fields: [
+          { id: 'hazard_rating', type: 'select', label: 'Worksite Hazard Rating', required: true, options: [
+            { value: 'low', label: 'Low Hazard - Office/clerical type work' },
+            { value: 'moderate', label: 'Moderate Hazard - Light industrial, warehousing' },
+            { value: 'high', label: 'High Hazard - Construction, forestry, mining' },
+          ]},
+          { id: 'workers_per_shift', type: 'number', label: 'Number of Workers Per Shift', required: true },
+          { id: 'travel_time_medical', type: 'select', label: 'Travel Time to Medical Facility', required: true, options: [
+            { value: 'under_20', label: 'Under 20 minutes' },
+            { value: '20_to_40', label: '20-40 minutes' },
+            { value: 'over_40', label: 'Over 40 minutes' },
+          ]},
+          { id: 'remote_worksite', type: 'yesno', label: 'Is this a Remote Worksite?', required: true, helpText: 'More than 40 minutes from medical facility' },
+        ]
+      },
+      {
+        id: 'medical_facilities',
+        title: 'Nearest Medical Facilities',
+        fields: [
+          { id: 'nearest_hospital', type: 'text', label: 'Nearest Hospital Name', required: true },
+          { id: 'hospital_address', type: 'textarea', label: 'Hospital Address', required: true },
+          { id: 'hospital_phone', type: 'phone', label: 'Hospital Phone', required: true },
+          { id: 'hospital_distance', type: 'text', label: 'Distance (km)', required: true },
+          { id: 'hospital_time', type: 'text', label: 'Travel Time (minutes)', required: true },
+          { id: 'nearest_clinic', type: 'text', label: 'Nearest Walk-In Clinic', required: false },
+          { id: 'clinic_address', type: 'textarea', label: 'Clinic Address', required: false },
+          { id: 'clinic_phone', type: 'phone', label: 'Clinic Phone', required: false },
+        ]
+      },
+      {
+        id: 'first_aid_requirements',
+        title: 'First Aid Requirements',
+        description: 'Based on worksite classification',
+        fields: [
+          { id: 'kit_level_required', type: 'select', label: 'First Aid Kit Level Required', required: true, options: [
+            { value: 'level_1', label: 'Level 1 - Personal Kit' },
+            { value: 'level_2', label: 'Level 2 - Basic Kit' },
+            { value: 'level_3', label: 'Level 3 - Intermediate Kit' },
+          ]},
+          { id: 'first_aiders_required', type: 'number', label: 'Number of First Aiders Required', required: true },
+          { id: 'first_aid_level_required', type: 'select', label: 'First Aid Certification Level Required', required: true, options: [
+            { value: 'ofa_1', label: 'OFA Level 1 (8 hours)' },
+            { value: 'ofa_2', label: 'OFA Level 2 (16 hours)' },
+            { value: 'ofa_3', label: 'OFA Level 3 (70 hours)' },
+            { value: 'emt', label: 'Emergency Medical Technician' },
+          ]},
+          { id: 'first_aid_room', type: 'yesno', label: 'First Aid Room Required?', required: true },
+          { id: 'transportation_required', type: 'yesno', label: 'Emergency Transportation Required?', required: true },
+        ]
+      },
+      {
+        id: 'current_resources',
+        title: 'Current First Aid Resources',
+        fields: [
+          { id: 'kit_available', type: 'yesno', label: 'First Aid Kit Available?', required: true },
+          { id: 'kit_location', type: 'text', label: 'Kit Location', required: true },
+          { id: 'kit_last_inspected', type: 'date', label: 'Kit Last Inspected', required: true },
+          { id: 'aed_available', type: 'yesno', label: 'AED Available?', required: false },
+          { id: 'aed_location', type: 'text', label: 'AED Location', required: false, showIf: 'aed_available === true' },
+        ]
+      },
+      {
+        id: 'first_aiders',
+        title: 'Designated First Aiders',
+        repeatable: true,
+        repeatLabel: 'Add First Aider',
+        fields: [
+          { id: 'name', type: 'operator_select', label: 'First Aider Name', required: true },
+          { id: 'certification_level', type: 'select', label: 'Certification Level', required: true, options: [
+            { value: 'ofa_1', label: 'OFA Level 1' },
+            { value: 'ofa_2', label: 'OFA Level 2' },
+            { value: 'ofa_3', label: 'OFA Level 3' },
+            { value: 'emt', label: 'EMT' },
+            { value: 'other', label: 'Other' },
+          ]},
+          { id: 'certificate_number', type: 'text', label: 'Certificate Number', required: true },
+          { id: 'expiry_date', type: 'date', label: 'Expiry Date', required: true },
+          { id: 'renewal_required', type: 'calculated', label: 'Renewal Status' },
+        ]
+      },
+      {
+        id: 'emergency_communication',
+        title: 'Emergency Communication',
+        fields: [
+          { id: 'cell_coverage', type: 'yesno', label: 'Cell Phone Coverage Available?', required: true },
+          { id: 'sat_phone_required', type: 'yesno', label: 'Satellite Phone Required?', required: true },
+          { id: 'sat_phone_available', type: 'yesno', label: 'Satellite Phone Available?', required: false, showIf: 'sat_phone_required === true' },
+          { id: 'radio_available', type: 'yesno', label: 'Two-Way Radio Available?', required: false },
+          { id: 'emergency_contacts', type: 'repeatable_person', label: 'Emergency Contact List', required: true },
+        ]
+      },
+      {
+        id: 'gaps_actions',
+        title: 'Gaps & Action Items',
+        fields: [
+          { id: 'gaps_identified', type: 'textarea', label: 'Gaps Identified', required: false },
+          { id: 'action_items', type: 'textarea', label: 'Action Items Required', required: false },
+          { id: 'action_due_date', type: 'date', label: 'Action Items Due Date', required: false },
+          { id: 'compliance_confirmed', type: 'yesno', label: 'First Aid Requirements Met?', required: true },
+        ]
+      },
+      {
+        id: 'signoff',
+        title: 'Sign-Off',
+        fields: [
+          { id: 'assessor_signature', type: 'signature', label: 'Assessor Signature', required: true },
+          { id: 'supervisor_signature', type: 'signature', label: 'Supervisor Approval', required: true },
+          { id: 'assessment_notes', type: 'textarea', label: 'Additional Notes', required: false },
+        ]
+      }
+    ]
+  },
 }
 
 export default FORM_TEMPLATES
