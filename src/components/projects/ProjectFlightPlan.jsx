@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getAircraft } from '../../lib/firestore'
 import { 
   Plane, Plus, Trash2, AlertTriangle, Cloud, Wind, Eye, Gauge, ChevronDown, ChevronUp, Award, FileCheck,
-  CheckCircle2, Zap, MapPin, Users, Radio, ExternalLink, RefreshCw, Navigation, Target, Map, X, Loader2, Search, Info, Link2, Layers
+  CheckCircle2, Zap, MapPin, Users, Radio, ExternalLink, RefreshCw, Navigation, Target, Map, X, Loader2, Search, Info, Link2, Layers, Route
 } from 'lucide-react'
 
 const operationTypes = [
@@ -11,14 +11,7 @@ const operationTypes = [
   { value: 'BVLOS', label: 'BVLOS', description: 'Beyond Visual Line of Sight' }
 ]
 
-const defaultWeatherMinimums = {
-  minVisibility: 3,
-  minCeiling: 500,
-  maxWind: 10,
-  maxGust: 15,
-  precipitation: false,
-  notes: ''
-}
+const defaultWeatherMinimums = { minVisibility: 3, minCeiling: 500, maxWind: 10, maxGust: 15, precipitation: false, notes: '' }
 
 const defaultContingencies = [
   { trigger: 'Loss of C2 Link', action: 'Return to Home (RTH) automatically engages. If no RTH within 30 seconds, land in place.', priority: 'high' },
@@ -30,9 +23,13 @@ const defaultContingencies = [
 ]
 
 // ============================================
-// MAP PREVIEW
+// UNIFIED MAP PREVIEW - Shows ALL project data
 // ============================================
-function MapPreview({ siteLocation, boundary, launchPoint, recoveryPoint, height = 200, onEdit }) {
+function UnifiedMapPreview({ 
+  siteLocation, boundary, launchPoint, recoveryPoint, 
+  musterPoints, evacuationRoutes, 
+  height = 200, onEdit, editLabel = "Edit Map" 
+}) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const [loading, setLoading] = useState(true)
@@ -83,21 +80,32 @@ function MapPreview({ siteLocation, boundary, launchPoint, recoveryPoint, height
         iconAnchor: [size/2, size]
       })
 
-      // Reference markers
-      if (siteLocation?.lat) L.marker([siteLocation.lat, siteLocation.lng], { icon: icon('#1e40af', '📍', 20), opacity: 0.6 }).addTo(map)
+      // All markers
+      if (siteLocation?.lat) L.marker([siteLocation.lat, siteLocation.lng], { icon: icon('#1e40af', '📍', 24) }).addTo(map)
       if (Array.isArray(boundary) && boundary.length >= 3) {
-        L.polygon(boundary.map(p => [p.lat, p.lng]), { color: '#9333ea', fillOpacity: 0.1, weight: 2, dashArray: '5,5' }).addTo(map)
+        L.polygon(boundary.map(p => [p.lat, p.lng]), { color: '#9333ea', fillOpacity: 0.15, weight: 2 }).addTo(map)
       }
-
-      // Main markers
       if (launchPoint?.lat) L.marker([launchPoint.lat, launchPoint.lng], { icon: icon('#16a34a', '🚀', 28) }).addTo(map)
       if (recoveryPoint?.lat) L.marker([recoveryPoint.lat, recoveryPoint.lng], { icon: icon('#dc2626', '🎯', 28) }).addTo(map)
+      if (Array.isArray(musterPoints)) {
+        musterPoints.forEach(mp => {
+          if (mp.coordinates?.lat) L.marker([mp.coordinates.lat, mp.coordinates.lng], { icon: icon('#f59e0b', '🚨', 24) }).addTo(map)
+        })
+      }
+      if (Array.isArray(evacuationRoutes)) {
+        evacuationRoutes.forEach(route => {
+          if (Array.isArray(route.coordinates) && route.coordinates.length >= 2) {
+            L.polyline(route.coordinates.map(c => [c.lat, c.lng]), { color: '#ef4444', weight: 3, dashArray: '8,8' }).addTo(map)
+          }
+        })
+      }
 
       const pts = []
       if (siteLocation?.lat) pts.push([siteLocation.lat, siteLocation.lng])
       if (Array.isArray(boundary)) boundary.forEach(p => pts.push([p.lat, p.lng]))
       if (launchPoint?.lat) pts.push([launchPoint.lat, launchPoint.lng])
       if (recoveryPoint?.lat) pts.push([recoveryPoint.lat, recoveryPoint.lng])
+      if (Array.isArray(musterPoints)) musterPoints.forEach(mp => { if (mp.coordinates?.lat) pts.push([mp.coordinates.lat, mp.coordinates.lng]) })
       if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30] })
 
       setLoading(false)
@@ -105,16 +113,16 @@ function MapPreview({ siteLocation, boundary, launchPoint, recoveryPoint, height
     
     init()
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
-  }, [siteLocation, boundary, launchPoint, recoveryPoint])
+  }, [siteLocation, boundary, launchPoint, recoveryPoint, musterPoints, evacuationRoutes])
 
-  const hasContent = launchPoint?.lat || recoveryPoint?.lat
+  const hasContent = launchPoint?.lat || recoveryPoint?.lat || siteLocation?.lat
 
   return (
     <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-100" style={{ height }}>
       {loading && <div className="absolute inset-0 flex items-center justify-center z-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>}
       <div ref={containerRef} className="w-full h-full" />
       <button onClick={onEdit} className="absolute bottom-3 right-3 px-4 py-2 bg-white hover:bg-gray-50 text-sm font-medium rounded-lg shadow-md border flex items-center gap-2" style={{ zIndex: 1000 }}>
-        <Map className="w-4 h-4" /> Edit Map
+        <Map className="w-4 h-4" /> {editLabel}
       </button>
       {!hasContent && !loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 pointer-events-none" style={{ zIndex: 5 }}>
@@ -124,14 +132,22 @@ function MapPreview({ siteLocation, boundary, launchPoint, recoveryPoint, height
           </div>
         </div>
       )}
+      
+      {/* Legend */}
+      <div className="absolute top-2 left-2 bg-white/90 rounded-lg px-2 py-1.5 text-xs space-y-1 shadow" style={{ zIndex: 1000 }}>
+        {siteLocation?.lat && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-700"></span> Site</div>}
+        {launchPoint?.lat && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-600"></span> Launch</div>}
+        {recoveryPoint?.lat && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-600"></span> Recovery</div>}
+        {Array.isArray(musterPoints) && musterPoints.length > 0 && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-500"></span> Muster</div>}
+      </div>
     </div>
   )
 }
 
 // ============================================
-// MAP EDITOR MODAL
+// FLIGHT MAP EDITOR
 // ============================================
-function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, onSave, isOpen, onClose }) {
+function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, musterPoints, evacuationRoutes, onSave, isOpen, onClose }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef({})
@@ -197,18 +213,29 @@ function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, o
         iconAnchor: [size/2, size]
       })
 
-      // Reference: site location
-      if (siteLocation?.lat) {
-        L.marker([siteLocation.lat, siteLocation.lng], { icon: createIcon('#1e40af', '📍', 24), opacity: 0.6 })
-          .addTo(map).bindTooltip('Site Location (from Site Survey)')
-      }
-
-      // Reference: boundary
+      // Reference: site location (read-only)
+      if (siteLocation?.lat) L.marker([siteLocation.lat, siteLocation.lng], { icon: createIcon('#1e40af', '📍', 24), opacity: 0.5 }).addTo(map).bindTooltip('Site (edit in Site Survey)')
       if (Array.isArray(boundary) && boundary.length >= 3) {
         L.polygon(boundary.map(p => [p.lat, p.lng]), { color: '#9333ea', fillOpacity: 0.1, weight: 2, dashArray: '5,5' }).addTo(map)
       }
 
-      // Draggable launch marker
+      // Reference: muster points (read-only)
+      if (Array.isArray(musterPoints)) {
+        musterPoints.forEach(mp => {
+          if (mp.coordinates?.lat) L.marker([mp.coordinates.lat, mp.coordinates.lng], { icon: createIcon('#f59e0b', '🚨', 22), opacity: 0.5 }).addTo(map).bindTooltip('Muster (edit in Emergency)')
+        })
+      }
+
+      // Reference: routes (read-only)
+      if (Array.isArray(evacuationRoutes)) {
+        evacuationRoutes.forEach(route => {
+          if (Array.isArray(route.coordinates) && route.coordinates.length >= 2) {
+            L.polyline(route.coordinates.map(c => [c.lat, c.lng]), { color: '#ef4444', weight: 3, dashArray: '8,8', opacity: 0.5 }).addTo(map)
+          }
+        })
+      }
+
+      // Editable: launch marker
       if (launchPoint?.lat) {
         const m = L.marker([launchPoint.lat, launchPoint.lng], { icon: createIcon('#16a34a', '🚀'), draggable: true }).addTo(map)
         m.on('dragend', e => {
@@ -218,7 +245,7 @@ function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, o
         markersRef.current.launch = m
       }
 
-      // Draggable recovery marker
+      // Editable: recovery marker
       if (recoveryPoint?.lat) {
         const m = L.marker([recoveryPoint.lat, recoveryPoint.lng], { icon: createIcon('#dc2626', '🎯'), draggable: true }).addTo(map)
         m.on('dragend', e => {
@@ -282,19 +309,19 @@ function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, o
   const copyLaunchToRecovery = () => {
     if (launchCoords.lat && launchCoords.lng) {
       setRecoveryCoords({ ...launchCoords })
-      if (mapRef.current && window.L) {
+      if (mapRef.current && window.L && markersRef.current.launch) {
         const L = window.L
         const lat = parseFloat(launchCoords.lat)
         const lng = parseFloat(launchCoords.lng)
+        const createIcon = (color, emoji, size = 32) => L.divIcon({
+          className: 'custom-icon',
+          html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:${size*0.45}px">${emoji}</span></div>`,
+          iconSize: [size, size],
+          iconAnchor: [size/2, size]
+        })
         if (markersRef.current.recovery) {
           markersRef.current.recovery.setLatLng([lat, lng])
         } else {
-          const createIcon = (color, emoji, size = 32) => L.divIcon({
-            className: 'custom-icon',
-            html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:${size*0.45}px">${emoji}</span></div>`,
-            iconSize: [size, size],
-            iconAnchor: [size/2, size]
-          })
           const m = L.marker([lat, lng], { icon: createIcon('#dc2626', '🎯'), draggable: true }).addTo(mapRef.current)
           m.on('dragend', e => {
             const p = e.target.getLatLng()
@@ -322,7 +349,7 @@ function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, o
         <div className="p-4 border-b flex justify-between items-center">
           <div>
             <h2 className="text-lg font-semibold">Launch & Recovery Points</h2>
-            <p className="text-sm text-gray-500">Click to place, drag to move markers</p>
+            <p className="text-sm text-gray-500">Click to place, drag to move. Other markers shown as reference.</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
         </div>
@@ -337,15 +364,9 @@ function FlightMapEditor({ siteLocation, boundary, launchPoint, recoveryPoint, o
 
         <div className="p-3 border-b flex flex-wrap gap-2 items-center">
           <span className="text-xs font-medium text-gray-500 mr-2">CLICK TO SET:</span>
-          <button onClick={() => setMode('launch')} className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 ${mode === 'launch' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
-            🚀 Launch Point
-          </button>
-          <button onClick={() => setMode('recovery')} className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 ${mode === 'recovery' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
-            🎯 Recovery Point
-          </button>
-          <button onClick={copyLaunchToRecovery} disabled={!launchCoords.lat} className="px-3 py-1.5 rounded-lg text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50 flex items-center gap-1">
-            <Link2 className="w-3 h-3" /> Same as Launch
-          </button>
+          <button onClick={() => setMode('launch')} className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 ${mode === 'launch' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>🚀 Launch Point</button>
+          <button onClick={() => setMode('recovery')} className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 ${mode === 'recovery' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>🎯 Recovery Point</button>
+          <button onClick={copyLaunchToRecovery} disabled={!launchCoords.lat} className="px-3 py-1.5 rounded-lg text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50 flex items-center gap-1"><Link2 className="w-3 h-3" /> Same as Launch</button>
         </div>
 
         <div className="flex-1 relative" style={{ minHeight: 400 }}>
@@ -394,12 +415,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
   const [mapEditorOpen, setMapEditorOpen] = useState(false)
   const [activeSiteIndex, setActiveSiteIndex] = useState(0)
   const [expandedSections, setExpandedSections] = useState({
-    inherited: true,
-    aircraft: true,
-    launchRecovery: true,
-    parameters: true,
-    weather: false,
-    contingencies: false
+    inherited: true, aircraft: true, launchRecovery: true, parameters: true, weather: false, contingencies: false
   })
 
   useEffect(() => { loadAircraft() }, [])
@@ -412,26 +428,21 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
     finally { setLoading(false) }
   }
 
-  // Handle both multi-site and legacy single-site structure
+  // Handle both multi-site and legacy
   const sites = project.sites && Array.isArray(project.sites) ? project.sites.filter(s => s.includeFlightPlan) : []
-  const useLegacy = sites.length === 0
+  const useLegacy = sites.length === 0 && project.flightPlan
 
-  // Legacy mode uses project.flightPlan directly
-  // Multi-site mode uses sites[activeSiteIndex].flightPlan
-  const activeSite = !useLegacy ? sites[activeSiteIndex] : null
+  const activeSite = !useLegacy && sites.length > 0 ? sites[activeSiteIndex] : null
   const flightPlan = useLegacy ? (project.flightPlan || {}) : (activeSite?.flightPlan || {})
   const siteSurvey = useLegacy ? (project.siteSurvey || {}) : (activeSite?.siteSurvey || {})
+  const emergency = useLegacy ? (project.emergencyPlan || {}) : (activeSite?.emergency || {})
 
-  // Initialize legacy flightPlan if needed
   useEffect(() => {
     if (useLegacy && !project.flightPlan) {
       onUpdate({
         flightPlan: {
-          aircraft: [],
-          operationType: 'VLOS',
-          maxAltitudeAGL: 120,
-          weatherMinimums: { ...defaultWeatherMinimums },
-          contingencies: [...defaultContingencies]
+          aircraft: [], operationType: 'VLOS', maxAltitudeAGL: 120,
+          weatherMinimums: { ...defaultWeatherMinimums }, contingencies: [...defaultContingencies]
         }
       })
     }
@@ -440,7 +451,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
   const updateFlightPlan = (updates) => {
     if (useLegacy) {
       onUpdate({ flightPlan: { ...flightPlan, ...updates } })
-    } else {
+    } else if (activeSite) {
       const newSites = [...project.sites]
       const siteIdx = project.sites.findIndex(s => s.id === activeSite.id)
       if (siteIdx >= 0) {
@@ -476,34 +487,27 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
     updateFlightPlan({ aircraft: newList })
   }
 
-  const handleMapSave = ({ launchPoint, recoveryPoint }) => {
-    updateFlightPlan({ launchPoint, recoveryPoint })
-  }
+  const handleMapSave = ({ launchPoint, recoveryPoint }) => updateFlightPlan({ launchPoint, recoveryPoint })
 
   if (loading) return <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
 
-  // No sites with flight plans
   if (!useLegacy && sites.length === 0) {
     return (
       <div className="card text-center py-12">
         <Plane className="w-12 h-12 text-gray-300 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-600 mb-2">No Flight Plans</h3>
         <p className="text-gray-500 mb-4">Enable "Include Flight Plan & SORA" on at least one site in Site Survey.</p>
-        {onNavigateToSection && (
-          <button onClick={() => onNavigateToSection('siteSurvey')} className="btn-primary">Go to Site Survey</button>
-        )}
+        {onNavigateToSection && <button onClick={() => onNavigateToSection('siteSurvey')} className="btn-primary">Go to Site Survey</button>}
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Site selector for multi-site */}
+      {/* Site selector */}
       {!useLegacy && sites.length > 1 && (
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Layers className="w-5 h-5 text-blue-600" /> Select Site
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4"><Layers className="w-5 h-5 text-blue-600" /> Select Site</h2>
           <div className="flex flex-wrap gap-2">
             {sites.map((s, i) => (
               <button key={s.id} onClick={() => setActiveSiteIndex(i)} className={`px-4 py-2 rounded-lg border-2 ${activeSiteIndex === i ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -514,32 +518,24 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         </div>
       )}
 
-      {/* Current site indicator */}
-      {!useLegacy && (
-        <div className="text-sm text-gray-500 flex items-center gap-2">
-          <MapPin className="w-4 h-4" /> Flight Plan for: <span className="font-medium text-gray-700">{activeSite?.name}</span>
-        </div>
+      {!useLegacy && activeSite && (
+        <div className="text-sm text-gray-500 flex items-center gap-2"><MapPin className="w-4 h-4" /> Flight Plan for: <span className="font-medium text-gray-700">{activeSite.name}</span></div>
       )}
 
-      {/* Aircraft Selection */}
+      {/* Aircraft */}
       <div className="card">
         <button onClick={() => toggleSection('aircraft')} className="flex items-center justify-between w-full text-left">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Plane className="w-5 h-5 text-blue-600" /> Aircraft
-            <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{(flightPlan.aircraft || []).length}</span>
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Plane className="w-5 h-5 text-blue-600" /> Aircraft <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{(flightPlan.aircraft || []).length}</span></h2>
           {expandedSections.aircraft ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
         </button>
         {expandedSections.aircraft && (
           <div className="mt-4 space-y-4">
-            <div className="flex gap-2">
-              <select onChange={e => addAircraft(e.target.value)} value="" className="input flex-1">
-                <option value="">Select aircraft to add...</option>
-                {aircraftList.filter(ac => !(flightPlan.aircraft || []).some(a => a.id === ac.id)).map(ac => (
-                  <option key={ac.id} value={ac.id}>{ac.nickname} - {ac.make} {ac.model}</option>
-                ))}
-              </select>
-            </div>
+            <select onChange={e => addAircraft(e.target.value)} value="" className="input">
+              <option value="">Select aircraft to add...</option>
+              {aircraftList.filter(ac => !(flightPlan.aircraft || []).some(a => a.id === ac.id)).map(ac => (
+                <option key={ac.id} value={ac.id}>{ac.nickname} - {ac.make} {ac.model}</option>
+              ))}
+            </select>
             {(flightPlan.aircraft || []).map((ac, i) => (
               <div key={ac.id} className={`p-4 rounded-lg border ${ac.isPrimary ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-start">
@@ -571,26 +567,25 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         </button>
         {expandedSections.launchRecovery && (
           <div className="mt-4 space-y-4">
-            <MapPreview
+            <UnifiedMapPreview
               siteLocation={siteSurvey.location?.coordinates}
               boundary={siteSurvey.boundary}
               launchPoint={flightPlan.launchPoint}
               recoveryPoint={flightPlan.recoveryPoint}
-              height={250}
+              musterPoints={emergency?.musterPoints}
+              evacuationRoutes={emergency?.evacuationRoutes}
+              height={280}
               onEdit={() => setMapEditorOpen(true)}
+              editLabel="Edit Launch & Recovery"
             />
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center gap-2 mb-2"><span className="text-lg">🚀</span><h3 className="font-medium text-green-800">Launch Point</h3></div>
-                {flightPlan.launchPoint?.lat ? (
-                  <p className="text-sm font-mono text-green-700">{flightPlan.launchPoint.lat}, {flightPlan.launchPoint.lng}</p>
-                ) : <p className="text-sm text-green-600">Click "Edit Map" to set</p>}
+                {flightPlan.launchPoint?.lat ? <p className="text-sm font-mono text-green-700">{flightPlan.launchPoint.lat}, {flightPlan.launchPoint.lng}</p> : <p className="text-sm text-green-600">Click "Edit Map" to set</p>}
               </div>
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <div className="flex items-center gap-2 mb-2"><span className="text-lg">🎯</span><h3 className="font-medium text-red-800">Recovery Point</h3></div>
-                {flightPlan.recoveryPoint?.lat ? (
-                  <p className="text-sm font-mono text-red-700">{flightPlan.recoveryPoint.lat}, {flightPlan.recoveryPoint.lng}</p>
-                ) : <p className="text-sm text-red-600">Click "Edit Map" to set</p>}
+                {flightPlan.recoveryPoint?.lat ? <p className="text-sm font-mono text-red-700">{flightPlan.recoveryPoint.lat}, {flightPlan.recoveryPoint.lng}</p> : <p className="text-sm text-red-600">Click "Edit Map" to set</p>}
               </div>
             </div>
           </div>
@@ -645,7 +640,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         )}
       </div>
 
-      {/* Weather Minimums */}
+      {/* Weather */}
       <div className="card">
         <button onClick={() => toggleSection('weather')} className="flex items-center justify-between w-full text-left">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Cloud className="w-5 h-5 text-blue-600" /> Weather Minimums</h2>
@@ -653,22 +648,10 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         </button>
         {expandedSections.weather && (
           <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="label">Min Visibility (km)</label>
-              <input type="number" value={flightPlan.weatherMinimums?.minVisibility || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, minVisibility: parseFloat(e.target.value) || 0 } })} className="input" />
-            </div>
-            <div>
-              <label className="label">Min Ceiling (ft AGL)</label>
-              <input type="number" value={flightPlan.weatherMinimums?.minCeiling || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, minCeiling: parseInt(e.target.value) || 0 } })} className="input" />
-            </div>
-            <div>
-              <label className="label">Max Wind (km/h)</label>
-              <input type="number" value={flightPlan.weatherMinimums?.maxWind || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, maxWind: parseInt(e.target.value) || 0 } })} className="input" />
-            </div>
-            <div>
-              <label className="label">Max Gust (km/h)</label>
-              <input type="number" value={flightPlan.weatherMinimums?.maxGust || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, maxGust: parseInt(e.target.value) || 0 } })} className="input" />
-            </div>
+            <div><label className="label">Min Visibility (km)</label><input type="number" value={flightPlan.weatherMinimums?.minVisibility || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, minVisibility: parseFloat(e.target.value) || 0 } })} className="input" /></div>
+            <div><label className="label">Min Ceiling (ft AGL)</label><input type="number" value={flightPlan.weatherMinimums?.minCeiling || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, minCeiling: parseInt(e.target.value) || 0 } })} className="input" /></div>
+            <div><label className="label">Max Wind (km/h)</label><input type="number" value={flightPlan.weatherMinimums?.maxWind || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, maxWind: parseInt(e.target.value) || 0 } })} className="input" /></div>
+            <div><label className="label">Max Gust (km/h)</label><input type="number" value={flightPlan.weatherMinimums?.maxGust || ''} onChange={e => updateFlightPlan({ weatherMinimums: { ...flightPlan.weatherMinimums, maxGust: parseInt(e.target.value) || 0 } })} className="input" /></div>
           </div>
         )}
       </div>
@@ -676,10 +659,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
       {/* Contingencies */}
       <div className="card">
         <button onClick={() => toggleSection('contingencies')} className="flex items-center justify-between w-full text-left">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-blue-600" /> Contingency Procedures
-            <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{(flightPlan.contingencies || []).length}</span>
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-blue-600" /> Contingency Procedures <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{(flightPlan.contingencies || []).length}</span></h2>
           {expandedSections.contingencies ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
         </button>
         {expandedSections.contingencies && (
@@ -694,7 +674,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         )}
       </div>
 
-      {/* Map Editor Modal */}
+      {/* Map Editor */}
       <FlightMapEditor
         isOpen={mapEditorOpen}
         onClose={() => setMapEditorOpen(false)}
@@ -702,6 +682,8 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         boundary={siteSurvey.boundary}
         launchPoint={flightPlan.launchPoint}
         recoveryPoint={flightPlan.recoveryPoint}
+        musterPoints={emergency?.musterPoints}
+        evacuationRoutes={emergency?.evacuationRoutes}
         onSave={handleMapSave}
       />
     </div>
