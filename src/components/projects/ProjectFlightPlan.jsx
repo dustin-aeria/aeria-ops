@@ -81,31 +81,31 @@ function UnifiedMapPreview({
       })
 
       // All markers
-      if (siteLocation?.lat) L.marker([siteLocation.lat, siteLocation.lng], { icon: icon('#1e40af', '📍', 24) }).addTo(map)
+      if (siteLocation?.lat) L.marker([parseFloat(siteLocation.lat), parseFloat(siteLocation.lng)], { icon: icon('#1e40af', '📍', 24) }).addTo(map)
       if (Array.isArray(boundary) && boundary.length >= 3) {
-        L.polygon(boundary.map(p => [p.lat, p.lng]), { color: '#9333ea', fillOpacity: 0.15, weight: 2 }).addTo(map)
+        L.polygon(boundary.map(p => [parseFloat(p.lat), parseFloat(p.lng)]), { color: '#9333ea', fillOpacity: 0.15, weight: 2 }).addTo(map)
       }
-      if (launchPoint?.lat) L.marker([launchPoint.lat, launchPoint.lng], { icon: icon('#16a34a', '🚀', 28) }).addTo(map)
-      if (recoveryPoint?.lat) L.marker([recoveryPoint.lat, recoveryPoint.lng], { icon: icon('#dc2626', '🎯', 28) }).addTo(map)
+      if (launchPoint?.lat) L.marker([parseFloat(launchPoint.lat), parseFloat(launchPoint.lng)], { icon: icon('#16a34a', '🚀', 28) }).addTo(map)
+      if (recoveryPoint?.lat) L.marker([parseFloat(recoveryPoint.lat), parseFloat(recoveryPoint.lng)], { icon: icon('#dc2626', '🎯', 28) }).addTo(map)
       if (Array.isArray(musterPoints)) {
         musterPoints.forEach(mp => {
-          if (mp.coordinates?.lat) L.marker([mp.coordinates.lat, mp.coordinates.lng], { icon: icon('#f59e0b', '🚨', 24) }).addTo(map)
+          if (mp.coordinates?.lat) L.marker([parseFloat(mp.coordinates.lat), parseFloat(mp.coordinates.lng)], { icon: icon('#f59e0b', '🚨', 24) }).addTo(map)
         })
       }
       if (Array.isArray(evacuationRoutes)) {
         evacuationRoutes.forEach(route => {
           if (Array.isArray(route.coordinates) && route.coordinates.length >= 2) {
-            L.polyline(route.coordinates.map(c => [c.lat, c.lng]), { color: '#ef4444', weight: 3, dashArray: '8,8' }).addTo(map)
+            L.polyline(route.coordinates.map(c => [parseFloat(c.lat), parseFloat(c.lng)]), { color: '#ef4444', weight: 3, dashArray: '8,8' }).addTo(map)
           }
         })
       }
 
       const pts = []
-      if (siteLocation?.lat) pts.push([siteLocation.lat, siteLocation.lng])
-      if (Array.isArray(boundary)) boundary.forEach(p => pts.push([p.lat, p.lng]))
-      if (launchPoint?.lat) pts.push([launchPoint.lat, launchPoint.lng])
-      if (recoveryPoint?.lat) pts.push([recoveryPoint.lat, recoveryPoint.lng])
-      if (Array.isArray(musterPoints)) musterPoints.forEach(mp => { if (mp.coordinates?.lat) pts.push([mp.coordinates.lat, mp.coordinates.lng]) })
+      if (siteLocation?.lat) pts.push([parseFloat(siteLocation.lat), parseFloat(siteLocation.lng)])
+      if (Array.isArray(boundary)) boundary.forEach(p => pts.push([parseFloat(p.lat), parseFloat(p.lng)]))
+      if (launchPoint?.lat) pts.push([parseFloat(launchPoint.lat), parseFloat(launchPoint.lng)])
+      if (recoveryPoint?.lat) pts.push([parseFloat(recoveryPoint.lat), parseFloat(recoveryPoint.lng)])
+      if (Array.isArray(musterPoints)) musterPoints.forEach(mp => { if (mp.coordinates?.lat) pts.push([parseFloat(mp.coordinates.lat), parseFloat(mp.coordinates.lng)]) })
       if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30] })
 
       setLoading(false)
@@ -569,6 +569,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         {expandedSections.launchRecovery && (
           <div className="mt-4 space-y-4">
             <UnifiedMapPreview
+              key={`fp-map-${activeSite?.id || activeSiteIndex}`}
               siteLocation={siteSurvey.location?.coordinates}
               boundary={siteSurvey.boundary}
               launchPoint={flightPlan.launchPoint}
