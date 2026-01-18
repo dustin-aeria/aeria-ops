@@ -36,7 +36,11 @@ import {
   Loader2,
   AlertCircle,
   Download,
-  Copy
+  Copy,
+  Wrench,
+  Camera,
+  PhoneCall,
+  Bell
 } from 'lucide-react'
 
 // Extract with fallbacks
@@ -50,6 +54,7 @@ const SUBSTANDARD_ACTS = formDefs.SUBSTANDARD_ACTS || []
 const SUBSTANDARD_CONDITIONS = formDefs.SUBSTANDARD_CONDITIONS || []
 const PERSONAL_FACTORS = formDefs.PERSONAL_FACTORS || []
 const JOB_SYSTEM_FACTORS = formDefs.JOB_SYSTEM_FACTORS || []
+const RPAS_INCIDENT_TRIGGERS = formDefs.RPAS_INCIDENT_TRIGGERS || {}
 const calculateRiskScore = formDefs.calculateRiskScore || (() => 'unknown')
 
 // Map icon names to components
@@ -66,7 +71,8 @@ const iconMap = {
   CheckSquare: ClipboardCheck,
   Search: Search,
   GraduationCap: GraduationCap,
-  HardHat: HardHat
+  HardHat: HardHat,
+  Wrench: Wrench
 }
 
 // Generate unique form ID
@@ -121,6 +127,86 @@ const formStatuses = {
 }
 
 // ============================================
+// HELPER: Calculate time duration
+// ============================================
+const calculateDuration = (startTime, endTime) => {
+  if (!startTime || !endTime) return null
+  const [startH, startM] = startTime.split(':').map(Number)
+  const [endH, endM] = endTime.split(':').map(Number)
+  let totalMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+  if (totalMinutes < 0) totalMinutes += 24 * 60 // Handle overnight
+  const hours = Math.floor(totalMinutes / 60)
+  const mins = totalMinutes % 60
+  return `${hours}h ${mins}m`
+}
+
+// ============================================
+// HELPER: Check if date needs renewal
+// ============================================
+const checkRenewalRequired = (expiryDate, daysWarning = 30) => {
+  if (!expiryDate) return null
+  const expiry = new Date(expiryDate)
+  const today = new Date()
+  const warningDate = new Date()
+  warningDate.setDate(warningDate.getDate() + daysWarning)
+  
+  if (expiry < today) return 'EXPIRED'
+  if (expiry <= warningDate) return 'DUE SOON'
+  return 'Current'
+}
+
+// ============================================
+// HELPER: Determine triggered notifications
+// ============================================
+const getTriggeredNotifications = (classificationData) => {
+  const triggered = []
+  
+  // Check TSB IMMEDIATE triggers
+  if (classificationData?.fatality === true || 
+      classificationData?.serious_injury === true ||
+      classificationData?.collision_manned === true ||
+      classificationData?.rpas_over_25kg === true) {
+    triggered.push({
+      ...RPAS_INCIDENT_TRIGGERS.TSB_IMMEDIATE,
+      key: 'TSB_IMMEDIATE',
+      severity: 'critical'
+    })
+  }
+  
+  // Check Transport Canada triggers
+  if (classificationData?.fly_away === true ||
+      classificationData?.boundary_violation === true ||
+      classificationData?.unintended_contact === true ||
+      classificationData?.equipment_damage === true ||
+      classificationData?.near_miss === true) {
+    triggered.push({
+      ...RPAS_INCIDENT_TRIGGERS.TRANSPORT_CANADA,
+      key: 'TRANSPORT_CANADA',
+      severity: 'high'
+    })
+  }
+  
+  // Check WorkSafeBC triggers
+  if (classificationData?.fatality === true ||
+      classificationData?.serious_injury === true) {
+    triggered.push({
+      ...RPAS_INCIDENT_TRIGGERS.WORKSAFEBC,
+      key: 'WORKSAFEBC',
+      severity: 'high'
+    })
+  }
+  
+  // Always include Aeria Internal
+  triggered.push({
+    ...RPAS_INCIDENT_TRIGGERS.AERIA_INTERNAL,
+    key: 'AERIA_INTERNAL',
+    severity: 'normal'
+  })
+  
+  return triggered
+}
+
+// ============================================
 // FORM MODAL - Main form filling interface
 // ============================================
 function FormModal({ form, formTemplate, project, operators = [], aircraft = [], onSave, onClose, onBackToLibrary }) {
@@ -160,6 +246,17 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
               if (field.defaultNow && !initial[section.id][field.id]) {
                 const now = new Date()
                 initial[section.id][field.id] = now.toTimeString().slice(0, 5)
+              }
+              // Auto-fill from project if specified
+              if (field.autoFill && project) {
+                const path = field.autoFill.replace('project.', '').split('.')
+                let value = project
+                for (const key of path) {
+                  value = value?.[key]
+                }
+                if (value && !initial[section.id][field.id]) {
+                  initial[section.id][field.id] = value
+                }
               }
             })
           }
@@ -336,7 +433,6 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
         )
       
       case 'battery_select':
-        // Batteries aren't tracked separately yet - use text input
         return (
           <input
             type="text"
@@ -516,7 +612,74 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
           </div>
         )
       
+      // NEW: Multiselect with text option
+      case 'multiselect_text':
+        const msTextOptions = getOptions(field.options) || []
+        const msTextValue = value || { selected: [], other: '' }
+        return (
+          <div className="space-y-2">
+            <div className="max-h-40 overflow-y-auto border rounded-lg p-2">
+              {msTextOptions.map(opt => (
+                <label key={opt.value || opt} className="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                  <input
+                    type="checkbox"
+                    checked={(msTextValue.selected || []).includes(opt.value || opt)}
+                    onChange={(e) => {
+                      const optValue = opt.value || opt
+                      const currentSelected = msTextValue.selected || []
+                      const newSelected = e.target.checked 
+                        ? [...currentSelected, optValue]
+                        : currentSelected.filter(v => v !== optValue)
+                      updateField(sectionId, field.id, { ...msTextValue, selected: newSelected }, repeatIndex)
+                    }}
+                    className="w-4 h-4 rounded mt-0.5"
+                  />
+                  <span className="text-sm">{opt.label || opt}</span>
+                </label>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={msTextValue.other || ''}
+              onChange={(e) => updateField(sectionId, field.id, { ...msTextValue, other: e.target.value }, repeatIndex)}
+              className="input"
+              placeholder="Other (please specify)"
+            />
+          </div>
+        )
+      
       case 'yesno':
+        return (
+          <div className="flex gap-4">
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+              value === true ? 'bg-green-100 border-green-500 text-green-700' : 'hover:bg-gray-50'
+            }`}>
+              <input
+                type="radio"
+                name={fieldKey}
+                checked={value === true}
+                onChange={() => updateField(sectionId, field.id, true, repeatIndex)}
+                className="w-4 h-4"
+              />
+              <span>Yes</span>
+            </label>
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+              value === false ? 'bg-red-100 border-red-500 text-red-700' : 'hover:bg-gray-50'
+            }`}>
+              <input
+                type="radio"
+                name={fieldKey}
+                checked={value === false}
+                onChange={() => updateField(sectionId, field.id, false, repeatIndex)}
+                className="w-4 h-4"
+              />
+              <span>No</span>
+            </label>
+          </div>
+        )
+      
+      case 'yesno_conditional':
+        // Special yes/no that checks a condition before showing
         return (
           <div className="flex gap-4">
             <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
@@ -644,6 +807,38 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
             {(Array.isArray(aircraft) ? aircraft : []).map(ac => (
               <option key={ac.id} value={ac.id}>
                 {ac.nickname || ac.model} - {ac.serialNumber}
+              </option>
+            ))}
+          </select>
+        )
+      
+      // NEW: Equipment select
+      case 'equipment_select':
+        // For now, use text input - can be enhanced with equipment database
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+            placeholder="Equipment ID or description"
+          />
+        )
+      
+      // NEW: Incident select (for linking investigation to incident)
+      case 'incident_select':
+        const projectForms = Array.isArray(project?.forms) ? project.forms : []
+        const incidentForms = projectForms.filter(f => f.templateId === 'incident_report')
+        return (
+          <select
+            value={value}
+            onChange={(e) => updateField(sectionId, field.id, e.target.value, repeatIndex)}
+            className="input"
+          >
+            <option value="">Select incident report...</option>
+            {incidentForms.map(form => (
+              <option key={form.id} value={form.id}>
+                {form.data?.header?.form_id || form.id} - {form.data?.occurrence?.occurrence_date || 'No date'}
               </option>
             ))}
           </select>
@@ -848,8 +1043,12 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
         // Get severity and probability from sibling fields
         const severityFieldId = field.id.includes('residual') ? 'residual_severity' : 'severity'
         const probabilityFieldId = field.id.includes('residual') ? 'residual_probability' : 'probability'
-        const severity = getFieldValue(sectionId, severityFieldId, repeatIndex)
-        const probability = getFieldValue(sectionId, probabilityFieldId, repeatIndex)
+        // Also check for potential_ prefix (used in near_miss)
+        const altSeverityId = field.id.includes('potential') ? 'potential_severity' : severityFieldId
+        const altProbabilityId = field.id.includes('potential') ? 'potential_probability' : probabilityFieldId
+        
+        const severity = getFieldValue(sectionId, severityFieldId, repeatIndex) || getFieldValue(sectionId, altSeverityId, repeatIndex)
+        const probability = getFieldValue(sectionId, probabilityFieldId, repeatIndex) || getFieldValue(sectionId, altProbabilityId, repeatIndex)
         const riskLevel = calculateRiskScore(severity, probability)
         
         return (
@@ -905,10 +1104,265 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
           </div>
         )
       
-      case 'calculated':
+      // NEW: Repeatable text (array of strings)
+      case 'repeatable_text':
+        const textItems = value || []
         return (
-          <div className="input bg-gray-50 text-gray-500 italic">
-            Auto-calculated
+          <div className="space-y-2">
+            {textItems.map((item, idx) => (
+              <div key={idx} className="flex gap-2">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newItems = [...textItems]
+                    newItems[idx] = e.target.value
+                    updateField(sectionId, field.id, newItems, repeatIndex)
+                  }}
+                  className="input flex-1"
+                  placeholder={field.placeholder || `Item ${idx + 1}`}
+                />
+                <button
+                  onClick={() => updateField(sectionId, field.id, textItems.filter((_, i) => i !== idx), repeatIndex)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => updateField(sectionId, field.id, [...textItems, ''], repeatIndex)}
+              className="btn-secondary text-sm flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Add {field.itemLabel || 'Item'}
+            </button>
+          </div>
+        )
+      
+      // NEW: Repeatable person (array of {name, role, contact})
+      case 'repeatable_person':
+        const persons = value || []
+        return (
+          <div className="space-y-3">
+            {persons.map((person, idx) => (
+              <div key={idx} className="p-3 border rounded-lg bg-gray-50 relative">
+                <button
+                  onClick={() => updateField(sectionId, field.id, persons.filter((_, i) => i !== idx), repeatIndex)}
+                  className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="grid sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    value={person.name || ''}
+                    onChange={(e) => {
+                      const newPersons = [...persons]
+                      newPersons[idx] = { ...person, name: e.target.value }
+                      updateField(sectionId, field.id, newPersons, repeatIndex)
+                    }}
+                    className="input"
+                    placeholder="Name"
+                  />
+                  <input
+                    type="text"
+                    value={person.role || ''}
+                    onChange={(e) => {
+                      const newPersons = [...persons]
+                      newPersons[idx] = { ...person, role: e.target.value }
+                      updateField(sectionId, field.id, newPersons, repeatIndex)
+                    }}
+                    className="input"
+                    placeholder="Role"
+                  />
+                  <input
+                    type="text"
+                    value={person.contact || ''}
+                    onChange={(e) => {
+                      const newPersons = [...persons]
+                      newPersons[idx] = { ...person, contact: e.target.value }
+                      updateField(sectionId, field.id, newPersons, repeatIndex)
+                    }}
+                    className="input"
+                    placeholder="Contact info"
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => updateField(sectionId, field.id, [...persons, { name: '', role: '', contact: '' }], repeatIndex)}
+              className="btn-secondary text-sm flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Add Person
+            </button>
+          </div>
+        )
+      
+      // NEW: Repeatable witness (array of {name, statement})
+      case 'repeatable_witness':
+        const witnesses = value || []
+        return (
+          <div className="space-y-3">
+            {witnesses.map((witness, idx) => (
+              <div key={idx} className="p-3 border rounded-lg bg-gray-50 relative">
+                <button
+                  onClick={() => updateField(sectionId, field.id, witnesses.filter((_, i) => i !== idx), repeatIndex)}
+                  className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={witness.name || ''}
+                    onChange={(e) => {
+                      const newWitnesses = [...witnesses]
+                      newWitnesses[idx] = { ...witness, name: e.target.value }
+                      updateField(sectionId, field.id, newWitnesses, repeatIndex)
+                    }}
+                    className="input"
+                    placeholder="Witness name"
+                  />
+                  <textarea
+                    value={witness.statement || ''}
+                    onChange={(e) => {
+                      const newWitnesses = [...witnesses]
+                      newWitnesses[idx] = { ...witness, statement: e.target.value }
+                      updateField(sectionId, field.id, newWitnesses, repeatIndex)
+                    }}
+                    className="input"
+                    rows={2}
+                    placeholder="Statement summary"
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => updateField(sectionId, field.id, [...witnesses, { name: '', statement: '' }], repeatIndex)}
+              className="btn-secondary text-sm flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Add Witness
+            </button>
+          </div>
+        )
+      
+      // NEW: Hazard summary (read-only display from project)
+      case 'hazard_summary':
+        const projectHazards = project?.hseRisk?.hazards || project?.siteSurvey?.hazards || []
+        if (projectHazards.length === 0) {
+          return <p className="text-sm text-gray-500 italic">No hazards identified in project assessment</p>
+        }
+        return (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {projectHazards.map((hazard, idx) => (
+              <div key={idx} className="p-2 bg-amber-50 border border-amber-200 rounded text-sm">
+                <span className="font-medium">{hazard.category || hazard.type}:</span> {hazard.description || hazard.hazard}
+                {hazard.risk && <span className={`ml-2 px-2 py-0.5 rounded text-xs ${riskColors[hazard.risk?.toLowerCase()] || 'bg-gray-200'}`}>{hazard.risk}</span>}
+              </div>
+            ))}
+          </div>
+        )
+      
+      // NEW: Control summary (read-only display from project)
+      case 'control_summary':
+        const projectControls = project?.hseRisk?.controls || project?.siteSurvey?.controls || []
+        if (projectControls.length === 0) {
+          return <p className="text-sm text-gray-500 italic">No controls defined in project assessment</p>
+        }
+        return (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {projectControls.map((control, idx) => (
+              <div key={idx} className="p-2 bg-green-50 border border-green-200 rounded text-sm">
+                <span className="font-medium">{control.type || 'Control'}:</span> {control.description || control.control}
+              </div>
+            ))}
+          </div>
+        )
+      
+      // NEW: Contact summary (emergency contacts)
+      case 'contact_summary':
+        const contacts = project?.emergency?.contacts || []
+        const defaultContacts = [
+          { role: 'Emergency Services', number: '911' },
+          { role: 'Poison Control', number: '1-800-567-8911' },
+          { role: 'Aeria Accountable Executive', number: RPAS_INCIDENT_TRIGGERS?.AERIA_INTERNAL?.phone || '604-849-2345' }
+        ]
+        const displayContacts = contacts.length > 0 ? contacts : defaultContacts
+        return (
+          <div className="space-y-2">
+            {displayContacts.map((contact, idx) => (
+              <div key={idx} className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded">
+                <span className="text-sm font-medium">{contact.role || contact.name}</span>
+                <span className="text-sm font-mono flex items-center gap-1">
+                  <PhoneCall className="w-3 h-3" />
+                  {contact.number || contact.phone}
+                </span>
+              </div>
+            ))}
+          </div>
+        )
+      
+      case 'calculated':
+        // Handle specific calculated fields
+        let calculatedValue = 'Auto-calculated'
+        
+        if (field.id === 'flight_duration') {
+          const takeoff = getFieldValue(sectionId, 'takeoff_time', repeatIndex)
+          const landing = getFieldValue(sectionId, 'landing_time', repeatIndex)
+          calculatedValue = calculateDuration(takeoff, landing) || 'Enter times'
+        }
+        else if (field.id === 'total_flights') {
+          const flights = formData.flights || []
+          calculatedValue = `${flights.length} flight${flights.length !== 1 ? 's' : ''}`
+        }
+        else if (field.id === 'total_flight_time') {
+          const flights = formData.flights || []
+          let totalMinutes = 0
+          flights.forEach(flight => {
+            if (flight.takeoff_time && flight.landing_time) {
+              const [startH, startM] = flight.takeoff_time.split(':').map(Number)
+              const [endH, endM] = flight.landing_time.split(':').map(Number)
+              let mins = (endH * 60 + endM) - (startH * 60 + startM)
+              if (mins < 0) mins += 24 * 60
+              totalMinutes += mins
+            }
+          })
+          const hours = Math.floor(totalMinutes / 60)
+          const mins = totalMinutes % 60
+          calculatedValue = flights.length > 0 ? `${hours}h ${mins}m` : 'No flights'
+        }
+        else if (field.id === 'renewal_required') {
+          const expiry = getFieldValue(sectionId, 'expiry_date', repeatIndex)
+          const status = checkRenewalRequired(expiry)
+          if (status === 'EXPIRED') {
+            return <div className="px-3 py-2 bg-red-100 text-red-700 rounded font-medium">EXPIRED</div>
+          } else if (status === 'DUE SOON') {
+            return <div className="px-3 py-2 bg-amber-100 text-amber-700 rounded font-medium">Renewal Due Soon</div>
+          }
+          calculatedValue = status || 'Enter expiry date'
+        }
+        else if (field.id === 'rpas_weight') {
+          const aircraftId = getFieldValue('rpas_info', 'aircraft', repeatIndex)
+          const selectedAircraft = aircraft.find(a => a.id === aircraftId)
+          calculatedValue = selectedAircraft?.weight ? `${selectedAircraft.weight} kg` : 'Select aircraft'
+        }
+        else if (field.id === 'registration') {
+          const aircraftId = getFieldValue('rpas_info', 'aircraft', repeatIndex)
+          const selectedAircraft = aircraft.find(a => a.id === aircraftId)
+          calculatedValue = selectedAircraft?.registration || 'Select aircraft'
+        }
+        else if (field.id === 'pic_cert') {
+          const picId = getFieldValue('personnel', 'pic', repeatIndex)
+          const selectedPic = operators.find(o => o.id === picId)
+          calculatedValue = selectedPic?.certNumber || 'Select PIC'
+        }
+        
+        return (
+          <div className="input bg-gray-50 text-gray-700">
+            {calculatedValue}
           </div>
         )
       
@@ -926,10 +1380,101 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
   }
 
   // ============================================
+  // TRIGGER CHECKLIST RENDERER (for incident reports)
+  // ============================================
+  const renderTriggerChecklist = () => {
+    const classificationData = formData.classification || {}
+    const triggeredNotifications = getTriggeredNotifications(classificationData)
+    
+    const hasCritical = triggeredNotifications.some(t => t.severity === 'critical')
+    
+    return (
+      <div className="space-y-4">
+        {hasCritical && (
+          <div className="p-4 bg-red-600 text-white rounded-lg animate-pulse">
+            <div className="flex items-center gap-3">
+              <Bell className="w-8 h-8" />
+              <div>
+                <h4 className="font-bold text-lg">IMMEDIATE ACTION REQUIRED</h4>
+                <p className="text-sm">Based on your answers, regulatory notification is required IMMEDIATELY</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="space-y-3">
+          {triggeredNotifications.map((notification, idx) => (
+            <div 
+              key={notification.key}
+              className={`p-4 rounded-lg border-2 ${
+                notification.severity === 'critical' 
+                  ? 'bg-red-50 border-red-500' 
+                  : notification.severity === 'high'
+                    ? 'bg-orange-50 border-orange-400'
+                    : 'bg-blue-50 border-blue-300'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`p-2 rounded-full ${
+                  notification.severity === 'critical' ? 'bg-red-500 text-white' :
+                  notification.severity === 'high' ? 'bg-orange-500 text-white' :
+                  'bg-blue-500 text-white'
+                }`}>
+                  {notification.severity === 'critical' ? (
+                    <AlertOctagon className="w-5 h-5" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900">{notification.label}</h4>
+                  {notification.phone && (
+                    <p className="text-lg font-mono font-bold mt-1 flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4" />
+                      {notification.phone}
+                      {notification.altPhone && <span className="text-sm font-normal">or {notification.altPhone}</span>}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-600 mt-2">{notification.instructions}</p>
+                  
+                  {/* Completion checkbox */}
+                  <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.notification_checklist?.[notification.key] === true}
+                      onChange={(e) => updateField('notification_checklist', notification.key, e.target.checked)}
+                      className="w-5 h-5 rounded"
+                    />
+                    <span className="text-sm font-medium">
+                      {notification.key === 'AERIA_INTERNAL' ? 'Accountable Executive notified' : 'Notification completed'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================
   // SECTION RENDERER
   // ============================================
   const renderSection = (section, sectionIndex) => {
     const isActive = activeSection === sectionIndex
+    
+    // Handle trigger_checklist section type
+    if (section.type === 'trigger_checklist') {
+      return (
+        <div key={section.id} className={`${isActive ? '' : 'hidden'}`}>
+          {section.description && (
+            <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg mb-4">{section.description}</p>
+          )}
+          {renderTriggerChecklist()}
+        </div>
+      )
+    }
     
     // Handle repeatable sections
     if (section.repeatable) {
@@ -1014,14 +1559,6 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
   const sections = Array.isArray(formTemplate.sections) ? formTemplate.sections : []
   const currentSection = sections[activeSection]
   const IconComponent = iconMap[formTemplate.icon] || FileText
-
-  // Debug log for troubleshooting
-  console.log('FormModal rendering:', { 
-    formName: formTemplate.name, 
-    sectionsCount: sections.length,
-    activeSection,
-    hasSections: sections.length > 0
-  })
 
   // Handle case where form has no sections defined
   if (sections.length === 0) {
