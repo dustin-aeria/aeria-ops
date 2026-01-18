@@ -435,7 +435,8 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
   const activeSite = !useLegacy && sites.length > 0 ? sites[activeSiteIndex] : null
   const flightPlan = useLegacy ? (project.flightPlan || {}) : (activeSite?.flightPlan || {})
   const siteSurvey = useLegacy ? (project.siteSurvey || {}) : (activeSite?.siteSurvey || {})
-  const emergency = useLegacy ? (project.emergencyPlan || {}) : (activeSite?.emergency || {})
+  // Emergency is always at project level (not per-site)
+  const emergency = project.emergencyPlan || {}
 
   useEffect(() => {
     if (useLegacy && !project.flightPlan) {
