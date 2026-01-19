@@ -10,12 +10,16 @@
  * - Linked CAPAs
  * - Regulatory notification tracking
  * 
+ * Batch 5 Fix:
+ * - Fixed TODO: Now uses auth context for current user name (L-04)
+ * 
  * @location src/pages/IncidentDetail.jsx
- * @action NEW FILE
+ * @action REPLACE
  */
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { 
   ArrowLeft,
   Edit,
@@ -230,6 +234,12 @@ function NotificationCard({ type, required, notified, notifiedDate, reference, o
 export default function IncidentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { userProfile } = useAuth()
+  
+  // Get display name for current user
+  const currentUserName = userProfile 
+    ? `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() || userProfile.email
+    : 'Unknown User'
   
   const [incident, setIncident] = useState(null)
   const [linkedCapas, setLinkedCapas] = useState([])
@@ -297,7 +307,7 @@ export default function IncidentDetail() {
       await updateIncident(id, {
         status: newStatus,
         _previousStatus: incident.status,
-        _changedBy: 'Current User', // TODO: Get from auth context
+        _changedBy: currentUserName,
         _statusChangeNotes: ''
       })
       await loadIncident()
@@ -342,7 +352,7 @@ export default function IncidentDetail() {
         },
         status: incident.status === 'reported' ? 'under_investigation' : incident.status,
         _previousStatus: incident.status,
-        _changedBy: 'Current User'
+        _changedBy: currentUserName
       })
       await loadIncident()
       setShowInvestigationForm(false)
@@ -359,7 +369,7 @@ export default function IncidentDetail() {
     
     setSaving(true)
     try {
-      await closeIncident(id, 'Current User', 'Incident closed')
+      await closeIncident(id, currentUserName, 'Incident closed')
       await loadIncident()
     } catch (err) {
       console.error('Error closing incident:', err)
