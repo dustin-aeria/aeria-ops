@@ -9,11 +9,12 @@
  * - Drawing tools for markers, polygons, and lines
  * - Offline tile caching support
  * - Responsive design
+ * - Fullscreen mode
  * 
- * PHASE 1 FIX:
- * - Fixed stale closure bug in map click handlers
- * - Drawing state now uses refs that stay in sync with current values
- * - Map click/dblclick handlers use refs instead of stale state
+ * FIXES APPLIED:
+ * - Fixed stale closure bug in map click handlers (refs sync with state)
+ * - Fixed layers disappearing after basemap change (styleVersion + style.load)
+ * - Added fullscreen toggle with Escape key support
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
  * @action REPLACE
@@ -128,6 +129,7 @@ export function UnifiedProjectMap({
   const [mapError, setMapError] = useState(null)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [styleVersion, setStyleVersion] = useState(0) // Increments when style changes to force layer re-render
   
   // Map data hook
   const mapData = useMapData(project, onUpdate, {
@@ -292,14 +294,29 @@ export function UnifiedProjectMap({
 
   // ============================================
   // UPDATE BASEMAP
+  // When basemap changes, setStyle removes all custom layers.
+  // We listen for style.load and increment styleVersion to
+  // force the layer rendering effects to re-run.
   // ============================================
   
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
     
+    const map = mapRef.current
     const newStyle = MAP_BASEMAPS[basemap]?.style
-    if (newStyle) {
-      mapRef.current.setStyle(newStyle)
+    if (!newStyle) return
+    
+    // Handler to re-add layers after style loads
+    const handleStyleLoad = () => {
+      setStyleVersion(v => v + 1)
+    }
+    
+    // Listen for style.load before changing style
+    map.once('style.load', handleStyleLoad)
+    map.setStyle(newStyle)
+    
+    return () => {
+      map.off('style.load', handleStyleLoad)
     }
   }, [basemap, mapLoaded])
 
@@ -498,7 +515,7 @@ export function UnifiedProjectMap({
       })
     }
     
-  }, [visibleMapElements, mapLoaded])
+  }, [visibleMapElements, mapLoaded, styleVersion]) // styleVersion forces re-render after basemap change
 
   // ============================================
   // RENDER DRAWING PREVIEW
@@ -589,7 +606,7 @@ export function UnifiedProjectMap({
       }
     })
     
-  }, [isDrawing, drawingPoints, drawingMode, mapLoaded])
+  }, [isDrawing, drawingPoints, drawingMode, mapLoaded, styleVersion])
 
   // ============================================
   // CURSOR STYLE
