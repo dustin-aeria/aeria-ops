@@ -174,7 +174,7 @@ function SiteStatusCard({ site, index, calculations, onNavigate, onSelect }) {
       {/* Footer Actions */}
       <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          {site.flightPlan?.operationType || 'VLOS'} • GRC: {calc.fGRC ?? '?'}
+          {site.flightPlan?.operationType || 'VLOS'} â€¢ GRC: {calc.fGRC ?? '?'}
         </span>
         <button
           onClick={() => onSelect?.(site.id)}
@@ -405,6 +405,352 @@ function QuickActions({ onNavigate, onExport }) {
 }
 
 // ============================================
+// DOCUMENT CHECKLIST
+// ============================================
+
+function DocumentChecklist({ project, sites, calculations }) {
+  const maxSAIL = useMemo(() => {
+    const sails = Object.values(calculations).map(c => c.sail).filter(Boolean)
+    if (sails.length === 0) return null
+    const sailOrder = ['I', 'II', 'III', 'IV', 'V', 'VI']
+    return sails.reduce((max, s) => sailOrder.indexOf(s) > sailOrder.indexOf(max) ? s : max, 'I')
+  }, [calculations])
+  
+  // Define required documents based on SAIL level
+  const documents = [
+    { 
+      id: 'ops_manual', 
+      name: 'Operations Manual', 
+      required: true,
+      sailRequired: 'I',
+      present: !!project?.documents?.opsManual
+    },
+    { 
+      id: 'emergency_plan', 
+      name: 'Emergency Response Plan', 
+      required: true,
+      sailRequired: 'I',
+      present: !!project?.documents?.emergencyPlan || sites.every(s => s.emergency?.localEmergencyNotes)
+    },
+    { 
+      id: 'risk_assessment', 
+      name: 'Risk Assessment', 
+      required: true,
+      sailRequired: 'I',
+      present: sites.some(s => s.soraAssessment?.sail)
+    },
+    { 
+      id: 'pilot_certs', 
+      name: 'Pilot Certifications', 
+      required: true,
+      sailRequired: 'I',
+      present: (project?.crew || []).some(c => c.certifications?.length > 0)
+    },
+    { 
+      id: 'insurance', 
+      name: 'Insurance Certificate', 
+      required: true,
+      sailRequired: 'I',
+      present: !!project?.documents?.insurance
+    },
+    { 
+      id: 'maintenance_log', 
+      name: 'Maintenance Records', 
+      required: maxSAIL && ['III', 'IV', 'V', 'VI'].includes(maxSAIL),
+      sailRequired: 'III',
+      present: !!project?.documents?.maintenanceLog
+    },
+    { 
+      id: 'training_records', 
+      name: 'Training Records', 
+      required: maxSAIL && ['II', 'III', 'IV', 'V', 'VI'].includes(maxSAIL),
+      sailRequired: 'II',
+      present: !!project?.documents?.trainingRecords
+    },
+    { 
+      id: 'flight_auth', 
+      name: 'Flight Authorization (SFOC)', 
+      required: maxSAIL && ['IV', 'V', 'VI'].includes(maxSAIL),
+      sailRequired: 'IV',
+      present: !!project?.documents?.sfoc
+    }
+  ]
+  
+  const requiredDocs = documents.filter(d => d.required)
+  const completedDocs = requiredDocs.filter(d => d.present)
+  
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Document Checklist
+        </h3>
+        <span className="text-sm text-gray-500">
+          {completedDocs.length}/{requiredDocs.length} complete
+        </span>
+      </div>
+      
+      <div className="space-y-2">
+        {documents.map(doc => (
+          <div 
+            key={doc.id}
+            className={`flex items-center justify-between py-1.5 px-2 rounded ${
+              !doc.required ? 'opacity-50' : ''
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {doc.present ? (
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+              ) : doc.required ? (
+                <XCircle className="w-4 h-4 text-red-500" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+              )}
+              <span className={`text-sm ${doc.present ? 'text-gray-700' : doc.required ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                {doc.name}
+              </span>
+            </div>
+            {doc.sailRequired && (
+              <span className="text-xs text-gray-400">SAIL {doc.sailRequired}+</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// TEAM SUMMARY
+// ============================================
+
+function TeamSummary({ project, onNavigate }) {
+  const crew = project?.crew || []
+  const roles = {
+    pic: crew.filter(c => c.role === 'PIC' || c.role === 'pic'),
+    vo: crew.filter(c => c.role === 'VO' || c.role === 'vo'),
+    other: crew.filter(c => !['PIC', 'pic', 'VO', 'vo'].includes(c.role))
+  }
+  
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          Crew Assignment
+        </h3>
+        <button
+          onClick={() => onNavigate?.('crew')}
+          className="text-xs text-aeria-navy hover:underline"
+        >
+          Manage
+        </button>
+      </div>
+      
+      {crew.length === 0 ? (
+        <p className="text-sm text-gray-500">No crew assigned yet</p>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Pilots in Command (PIC)</span>
+            <span className="font-medium">{roles.pic.length}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Visual Observers (VO)</span>
+            <span className="font-medium">{roles.vo.length}</span>
+          </div>
+          {roles.other.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Other Crew</span>
+              <span className="font-medium">{roles.other.length}</span>
+            </div>
+          )}
+          <div className="pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between text-sm font-medium">
+              <span className="text-gray-900">Total Crew</span>
+              <span>{crew.length}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// REGULATORY CHECKLIST
+// ============================================
+
+function RegulatoryChecklist({ project, sites, calculations }) {
+  const maxSAIL = useMemo(() => {
+    const sails = Object.values(calculations).map(c => c.sail).filter(Boolean)
+    if (sails.length === 0) return null
+    const sailOrder = ['I', 'II', 'III', 'IV', 'V', 'VI']
+    return sails.reduce((max, s) => sailOrder.indexOf(s) > sailOrder.indexOf(max) ? s : max, 'I')
+  }, [calculations])
+  
+  // Check various regulatory requirements
+  const checks = [
+    {
+      id: 'rpas_reg',
+      name: 'RPAS Registration',
+      description: 'Aircraft registered with Transport Canada',
+      status: (project?.aircraft || []).every(a => a.registration) ? 'complete' : 'incomplete'
+    },
+    {
+      id: 'pilot_cert',
+      name: 'Pilot Certificate',
+      description: 'Valid Advanced Operations certificate',
+      status: (project?.crew || []).some(c => c.certifications?.includes('advanced')) ? 'complete' : 'incomplete'
+    },
+    {
+      id: 'sora_complete',
+      name: 'SORA Assessment',
+      description: 'All sites have valid SORA assessment',
+      status: sites.every(s => calculations[s.id]?.sail) ? 'complete' : 'incomplete'
+    },
+    {
+      id: 'airspace_auth',
+      name: 'Airspace Authorization',
+      description: 'Required for controlled airspace',
+      status: sites.some(s => s.flightPlan?.airspace?.controlled && !s.flightPlan?.airspace?.atcCoordinationRequired) 
+        ? 'required' 
+        : sites.some(s => s.flightPlan?.airspace?.controlled) 
+          ? 'complete' 
+          : 'not_required'
+    },
+    {
+      id: 'notam',
+      name: 'NOTAM Filed',
+      description: 'Notice to Airmen if required',
+      status: sites.some(s => s.flightPlan?.airspace?.notamRequired && !project?.notamFiled)
+        ? 'required'
+        : 'not_required'
+    },
+    {
+      id: 'sfoc',
+      name: 'SFOC Application',
+      description: 'Special Flight Operations Certificate',
+      status: maxSAIL && ['IV', 'V', 'VI'].includes(maxSAIL)
+        ? (project?.sfocStatus === 'approved' ? 'complete' : 'required')
+        : 'not_required'
+    }
+  ]
+  
+  const statusIcons = {
+    complete: <CheckCircle2 className="w-4 h-4 text-green-500" />,
+    incomplete: <XCircle className="w-4 h-4 text-red-500" />,
+    required: <AlertCircle className="w-4 h-4 text-amber-500" />,
+    not_required: <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+  }
+  
+  const statusColors = {
+    complete: 'text-green-700 bg-green-50',
+    incomplete: 'text-red-700 bg-red-50',
+    required: 'text-amber-700 bg-amber-50',
+    not_required: 'text-gray-500 bg-gray-50'
+  }
+  
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+          <Shield className="w-4 h-4" />
+          Regulatory Compliance
+        </h3>
+        {maxSAIL && (
+          <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+            Max SAIL {maxSAIL}
+          </span>
+        )}
+      </div>
+      
+      <div className="space-y-2">
+        {checks.map(check => (
+          <div 
+            key={check.id}
+            className={`flex items-center justify-between py-1.5 px-2 rounded ${statusColors[check.status]}`}
+          >
+            <div className="flex items-center gap-2">
+              {statusIcons[check.status]}
+              <div>
+                <span className="text-sm font-medium">{check.name}</span>
+                <p className="text-xs opacity-75">{check.description}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// PROJECT TIMELINE
+// ============================================
+
+function ProjectTimeline({ project }) {
+  const timeline = project?.timeline || {}
+  
+  const milestones = [
+    { id: 'created', label: 'Project Created', date: project?.createdAt, status: 'complete' },
+    { id: 'survey', label: 'Site Surveys', date: timeline.surveyComplete, status: timeline.surveyComplete ? 'complete' : 'pending' },
+    { id: 'sora', label: 'SORA Assessment', date: timeline.soraComplete, status: timeline.soraComplete ? 'complete' : 'pending' },
+    { id: 'review', label: 'Review & Approval', date: timeline.reviewComplete, status: timeline.reviewComplete ? 'complete' : 'pending' },
+    { id: 'operation', label: 'Operation Date', date: project?.operationDate || project?.startDate, status: 'upcoming' }
+  ]
+  
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <h3 className="font-medium text-gray-900 flex items-center gap-2 mb-4">
+        <Calendar className="w-4 h-4" />
+        Project Timeline
+      </h3>
+      
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-gray-200" />
+        
+        <div className="space-y-4">
+          {milestones.map((milestone, idx) => (
+            <div key={milestone.id} className="flex items-start gap-3 relative">
+              <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 z-10 ${
+                milestone.status === 'complete' 
+                  ? 'bg-green-500 border-green-500' 
+                  : milestone.status === 'upcoming'
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'bg-white border-gray-300'
+              }`}>
+                {milestone.status === 'complete' && (
+                  <Check className="w-3 h-3 text-white" style={{ marginLeft: '0.5px', marginTop: '0.5px' }} />
+                )}
+              </div>
+              <div className="flex-1 -mt-0.5">
+                <p className={`text-sm font-medium ${
+                  milestone.status === 'complete' ? 'text-gray-900' : 'text-gray-500'
+                }`}>
+                  {milestone.label}
+                </p>
+                {milestone.date && (
+                  <p className="text-xs text-gray-400">
+                    {new Date(milestone.date).toLocaleDateString('en-CA', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -497,6 +843,27 @@ export default function ProjectOverview({
         onNavigate={onNavigateToSection}
         onExport={onExport}
       />
+      
+      {/* Overview Grid - Documents, Team, Regulatory, Timeline */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DocumentChecklist 
+          project={project} 
+          sites={sites} 
+          calculations={calculations} 
+        />
+        <TeamSummary 
+          project={project} 
+          onNavigate={onNavigateToSection} 
+        />
+        <RegulatoryChecklist 
+          project={project} 
+          sites={sites} 
+          calculations={calculations} 
+        />
+        <ProjectTimeline 
+          project={project} 
+        />
+      </div>
       
       {/* Site Cards */}
       <div>
