@@ -8,12 +8,13 @@
  * - Population assessment with SORA categories
  * - Airspace classification
  * - Access and surroundings documentation
+ * - Photo upload for site documentation
  * 
  * @location src/components/projects/ProjectSiteSurvey.jsx
  * @action NEW
  */
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import {
   MapPin,
   Plus,
@@ -38,7 +39,10 @@ import {
   Copy,
   MoreVertical,
   Pencil,
-  Eye
+  Eye,
+  Upload,
+  Image,
+  Loader2
 } from 'lucide-react'
 import UnifiedProjectMap from '../map/UnifiedProjectMap'
 import { SiteSelector } from '../map/MapControls'
@@ -48,6 +52,7 @@ import {
   getSiteStats,
   validateSiteCompleteness
 } from '../../lib/mapDataStructures'
+import { uploadSitePhoto, deleteSitePhoto } from '../../lib/storageHelpers'
 
 // ============================================
 // CONSTANTS
@@ -535,6 +540,211 @@ function ObstaclesList({ obstacles = [], onUpdate, onRemove, onAdd }) {
 }
 
 // ============================================
+// PHOTO UPLOAD COMPONENT
+// ============================================
+
+const PHOTO_CATEGORIES = [
+  { value: 'site_overview', label: 'Site Overview' },
+  { value: 'launch_area', label: 'Launch/Recovery Area' },
+  { value: 'obstacle', label: 'Obstacle' },
+  { value: 'hazard', label: 'Hazard' },
+  { value: 'access', label: 'Access Route' },
+  { value: 'airspace', label: 'Airspace Reference' },
+  { value: 'other', label: 'Other' }
+]
+
+function PhotoUpload({ photos = [], projectId, siteId, onPhotosChange }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
+  const [error, setError] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('site_overview')
+  const fileInputRef = useRef(null)
+
+  const handleFileSelect = async (e) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    
+    setUploading(true)
+    setError(null)
+    setUploadProgress(`Uploading 0/${files.length}...`)
+    
+    const newPhotos = [...photos]
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      setUploadProgress(`Uploading ${i + 1}/${files.length}: ${file.name}`)
+      
+      try {
+        const result = await uploadSitePhoto(file, projectId, siteId, selectedCategory)
+        newPhotos.push({
+          id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          ...result,
+          category: selectedCategory,
+          caption: ''
+        })
+      } catch (err) {
+        console.error('Upload error:', err)
+        setError(`Failed to upload ${file.name}: ${err.message}`)
+      }
+    }
+    
+    onPhotosChange(newPhotos)
+    setUploading(false)
+    setUploadProgress('')
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeletePhoto = async (photo) => {
+    if (!confirm('Delete this photo?')) return
+    
+    try {
+      if (photo.path) {
+        await deleteSitePhoto(photo.path)
+      }
+      const updatedPhotos = photos.filter(p => p.id !== photo.id)
+      onPhotosChange(updatedPhotos)
+    } catch (err) {
+      console.error('Delete error:', err)
+      setError(`Failed to delete photo: ${err.message}`)
+    }
+  }
+
+  const handleUpdateCaption = (photoId, caption) => {
+    const updatedPhotos = photos.map(p => 
+      p.id === photoId ? { ...p, caption } : p
+    )
+    onPhotosChange(updatedPhotos)
+  }
+
+  const handleUpdateCategory = (photoId, category) => {
+    const updatedPhotos = photos.map(p => 
+      p.id === photoId ? { ...p, category } : p
+    )
+    onPhotosChange(updatedPhotos)
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Upload Area */}
+      <div className="flex items-center gap-4">
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="input text-sm"
+          disabled={uploading}
+        >
+          {PHOTO_CATEGORIES.map(cat => (
+            <option key={cat.value} value={cat.value}>{cat.label}</option>
+          ))}
+        </select>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          disabled={uploading}
+        />
+        
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading || !projectId || !siteId}
+          className="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-aeria-navy hover:text-aeria-navy hover:bg-aeria-sky/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {uploadProgress}
+            </>
+          ) : (
+            <>
+              <Upload className="w-5 h-5" />
+              Upload Photos
+            </>
+          )}
+        </button>
+      </div>
+      
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
+      
+      {/* Photo Grid */}
+      {photos.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <Image className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <p className="text-sm">No photos uploaded yet</p>
+          <p className="text-xs mt-1">Upload site photos to document conditions</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {photos.map((photo) => (
+            <div key={photo.id} className="group relative">
+              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                <img
+                  src={photo.url}
+                  alt={photo.caption || photo.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Overlay controls */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                <a
+                  href={photo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-white rounded-full text-gray-700 hover:bg-gray-100"
+                >
+                  <Eye className="w-4 h-4" />
+                </a>
+                <button
+                  onClick={() => handleDeletePhoto(photo)}
+                  className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {/* Category badge */}
+              <div className="absolute top-2 left-2">
+                <span className="px-2 py-0.5 text-xs bg-black/60 text-white rounded">
+                  {PHOTO_CATEGORIES.find(c => c.value === photo.category)?.label || 'Other'}
+                </span>
+              </div>
+              
+              {/* Caption input */}
+              <input
+                type="text"
+                value={photo.caption || ''}
+                onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
+                placeholder="Add caption..."
+                className="mt-2 w-full text-xs px-2 py-1 border border-gray-200 rounded focus:border-aeria-navy focus:outline-none"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {photos.length > 0 && (
+        <p className="text-xs text-gray-500 text-center">
+          {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -745,6 +955,26 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             ...site.mapData?.siteSurvey,
             obstacles: [...obstacles, newObstacle]
           }
+        },
+        updatedAt: new Date().toISOString()
+      }
+    })
+    
+    onUpdate({ sites: updatedSites })
+  }, [sites, activeSiteId, onUpdate])
+  
+  // Update site photos
+  const handlePhotosChange = useCallback((photos) => {
+    if (!activeSiteId) return
+    
+    const updatedSites = sites.map(site => {
+      if (site.id !== activeSiteId) return site
+      
+      return {
+        ...site,
+        siteSurvey: {
+          ...site.siteSurvey,
+          photos: photos
         },
         updatedAt: new Date().toISOString()
       }
@@ -1255,10 +1485,18 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               />
             </div>
             
-            {/* Photo upload placeholder */}
-            <div className="mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
-              <Camera className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500">Photo upload coming soon</p>
+            {/* Photo Upload Section */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Site Photos
+              </h4>
+              <PhotoUpload
+                photos={surveyData.photos || []}
+                projectId={project?.id}
+                siteId={activeSiteId}
+                onPhotosChange={handlePhotosChange}
+              />
             </div>
           </CollapsibleSection>
         </div>
