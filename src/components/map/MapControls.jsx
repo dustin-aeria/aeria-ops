@@ -2,12 +2,10 @@
  * MapControls.jsx
  * Control panel for the unified project map
  * 
- * BATCH 6 FINAL - All issues fixed:
- * - Fixed scroll not working in control panels
- * - Fixed expand/collapse buttons not responding
- * - Fixed click events being intercepted by map
- * - Added fullscreen toggle support
- * - Increased z-index for reliable layering
+ * PHASE 1 FIX v2:
+ * - Removed aggressive onMouseDown handlers that blocked expand/collapse
+ * - Simplified event handling - only stopPropagation on click, not mousedown
+ * - Kept pointer-events-auto on panels for interactivity
  * 
  * @location src/components/map/MapControls.jsx
  * @action REPLACE
@@ -47,30 +45,13 @@ import { MAP_LAYERS, MAP_BASEMAPS, SITE_STATUS } from '../../lib/mapDataStructur
 import { DRAWING_MODES } from '../../hooks/useMapData'
 
 // ============================================
-// EVENT HELPERS - CRITICAL FOR MAP CONTROL INTERACTIVITY
+// EVENT HELPERS - Simplified to not block clicks
 // ============================================
 
 /**
- * Stops event propagation to prevent map from intercepting
- * BUT does NOT preventDefault - allows native behaviors like scrolling
- */
-const stopMapPropagation = (e) => {
-  e.stopPropagation()
-  // Don't preventDefault - this allows native scroll, click, etc.
-}
-
-/**
- * For wheel events specifically - stop propagation but allow scroll
+ * For wheel events - stop map zoom when scrolling in panels
  */
 const handleWheel = (e) => {
-  e.stopPropagation()
-  // Don't preventDefault - allows the div to scroll naturally
-}
-
-/**
- * For mouse/pointer events that shouldn't reach the map
- */
-const handlePointerEvent = (e) => {
   e.stopPropagation()
 }
 
@@ -92,25 +73,20 @@ export function SiteSelector({
   
   const handleSiteClick = useCallback((e, siteId) => {
     e.stopPropagation()
-    e.preventDefault()
     onSelectSite(siteId)
   }, [onSelectSite])
   
   if (compact) {
     return (
-      <div 
-        className="relative pointer-events-auto"
-        onMouseDown={handlePointerEvent}
-        onClick={handlePointerEvent}
-      >
+      <div className="relative pointer-events-auto">
         <select
           value={activeSiteId || ''}
           onChange={(e) => {
             e.stopPropagation()
             onSelectSite(e.target.value)
           }}
+          onClick={(e) => e.stopPropagation()}
           className="input text-sm py-1.5 pr-8"
-          onClick={handlePointerEvent}
         >
           {sites.map(site => (
             <option key={site.id} value={site.id}>
@@ -124,11 +100,8 @@ export function SiteSelector({
   
   return (
     <div 
-      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
-      onMouseDown={handlePointerEvent}
-      onPointerDown={handlePointerEvent}
-      onClick={handlePointerEvent}
     >
       <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -140,10 +113,8 @@ export function SiteSelector({
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
-                e.preventDefault()
                 onAddSite?.()
               }}
-              onMouseDown={handlePointerEvent}
               className="p-1 text-aeria-navy hover:bg-aeria-navy/10 rounded transition-colors"
               title="Add new site"
             >
@@ -171,7 +142,6 @@ export function SiteSelector({
                   : 'hover:bg-gray-50 border-l-2 border-transparent'
               }`}
               onClick={(e) => handleSiteClick(e, site.id)}
-              onMouseDown={handlePointerEvent}
             >
               <div 
                 className="w-3 h-3 rounded-full flex-shrink-0"
@@ -193,10 +163,8 @@ export function SiteSelector({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      e.preventDefault()
                       setMenuOpenId(menuOpenId === site.id ? null : site.id)
                     }}
-                    onMouseDown={handlePointerEvent}
                     className="p-1 text-gray-400 hover:text-gray-600 rounded"
                   >
                     <MoreVertical className="w-4 h-4" />
@@ -216,11 +184,9 @@ export function SiteSelector({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            e.preventDefault()
                             onDuplicateSite?.(site.id)
                             setMenuOpenId(null)
                           }}
-                          onMouseDown={handlePointerEvent}
                           className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         >
                           <Copy className="w-4 h-4" />
@@ -231,11 +197,9 @@ export function SiteSelector({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              e.preventDefault()
                               onDeleteSite?.(site.id)
                               setMenuOpenId(null)
                             }}
-                            onMouseDown={handlePointerEvent}
                             className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -271,22 +235,13 @@ export function LayerToggles({
   
   const handleToggle = useCallback((e, layerId) => {
     e.stopPropagation()
-    e.preventDefault()
     onToggleLayer(layerId)
   }, [onToggleLayer])
-  
-  const handleExpandClick = useCallback((e) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setIsExpanded(prev => !prev)
-  }, [])
   
   if (compact) {
     return (
       <div 
         className="flex gap-1 bg-white rounded-lg shadow-lg border border-gray-200 p-1 pointer-events-auto"
-        onMouseDown={handlePointerEvent}
-        onClick={handlePointerEvent}
       >
         {layers.map(([id, layer]) => {
           const isVisible = visibleLayers[id]
@@ -295,7 +250,6 @@ export function LayerToggles({
               key={id}
               type="button"
               onClick={(e) => handleToggle(e, id)}
-              onMouseDown={handlePointerEvent}
               className={`p-1.5 rounded transition-colors ${
                 isVisible 
                   ? 'bg-gray-100 text-gray-700' 
@@ -316,16 +270,15 @@ export function LayerToggles({
   
   return (
     <div 
-      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
-      onMouseDown={handlePointerEvent}
-      onPointerDown={handlePointerEvent}
-      onClick={handlePointerEvent}
     >
       <button
         type="button"
-        onClick={handleExpandClick}
-        onMouseDown={handlePointerEvent}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsExpanded(prev => !prev)
+        }}
         className="w-full px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
       >
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
@@ -348,7 +301,6 @@ export function LayerToggles({
                 key={id}
                 type="button"
                 onClick={(e) => handleToggle(e, id)}
-                onMouseDown={handlePointerEvent}
                 className={`w-full flex items-center gap-3 px-2 py-1.5 rounded transition-colors hover:bg-gray-100 ${
                   isVisible ? 'bg-gray-50' : 'opacity-50'
                 }`}
@@ -393,12 +345,6 @@ export function DrawingTools({
   
   if (!editMode) return null
   
-  const handleExpandClick = useCallback((e) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setIsExpanded(prev => !prev)
-  }, [])
-  
   // Tool groups by layer
   const toolGroups = {
     siteSurvey: [
@@ -421,16 +367,15 @@ export function DrawingTools({
   
   return (
     <div 
-      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
-      onMouseDown={handlePointerEvent}
-      onPointerDown={handlePointerEvent}
-      onClick={handlePointerEvent}
     >
       <button
         type="button"
-        onClick={handleExpandClick}
-        onMouseDown={handlePointerEvent}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsExpanded(prev => !prev)
+        }}
         className="w-full px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
       >
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
@@ -472,10 +417,8 @@ export function DrawingTools({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      e.preventDefault()
                       onRemoveLastPoint()
                     }}
-                    onMouseDown={handlePointerEvent}
                     className="flex-1 px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                   >
                     Undo
@@ -485,10 +428,8 @@ export function DrawingTools({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    e.preventDefault()
                     onCancelDrawing()
                   }}
-                  onMouseDown={handlePointerEvent}
                   className="flex-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
                 >
                   Cancel
@@ -499,10 +440,8 @@ export function DrawingTools({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      e.preventDefault()
                       onCompleteDrawing()
                     }}
-                    onMouseDown={handlePointerEvent}
                     className="flex-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                   >
                     Done
@@ -522,10 +461,8 @@ export function DrawingTools({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    e.preventDefault()
                     isActive ? onCancelDrawing() : onStartDrawing(mode)
                   }}
-                  onMouseDown={handlePointerEvent}
                   disabled={isDrawing && !isActive}
                   className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
                     isActive
@@ -557,31 +494,16 @@ export function BasemapSwitcher({ currentBasemap, onChangeBasemap }) {
   const basemaps = Object.entries(MAP_BASEMAPS)
   const current = MAP_BASEMAPS[currentBasemap] || MAP_BASEMAPS.streets
   
-  const handleToggle = useCallback((e) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setIsOpen(prev => !prev)
-  }, [])
-  
-  const handleSelect = useCallback((e, basemapId) => {
-    e.stopPropagation()
-    e.preventDefault()
-    onChangeBasemap(basemapId)
-    setIsOpen(false)
-  }, [onChangeBasemap])
-  
   const IconComponent = current.icon === 'map' ? Map : current.icon === 'globe' ? Globe : Mountain
   
   return (
-    <div 
-      className="relative pointer-events-auto"
-      onMouseDown={handlePointerEvent}
-      onClick={handlePointerEvent}
-    >
+    <div className="relative pointer-events-auto">
       <button
         type="button"
-        onClick={handleToggle}
-        onMouseDown={handlePointerEvent}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen(prev => !prev)
+        }}
         className="p-2 bg-white rounded-lg shadow border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
         title="Change basemap"
       >
@@ -608,8 +530,11 @@ export function BasemapSwitcher({ currentBasemap, onChangeBasemap }) {
                 <button
                   key={id}
                   type="button"
-                  onClick={(e) => handleSelect(e, id)}
-                  onMouseDown={handlePointerEvent}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onChangeBasemap(id)
+                    setIsOpen(false)
+                  }}
                   className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
                     isActive 
                       ? 'bg-aeria-navy/10 text-aeria-navy' 
@@ -644,19 +569,15 @@ export function ViewControls({
 }) {
   return (
     <div 
-      className="map-control-panel flex flex-col gap-1 bg-white rounded-lg shadow border border-gray-200 p-1 pointer-events-auto"
+      className="flex flex-col gap-1 bg-white rounded-lg shadow border border-gray-200 p-1 pointer-events-auto"
       onWheel={handleWheel}
-      onMouseDown={handlePointerEvent}
-      onClick={handlePointerEvent}
     >
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          e.preventDefault()
           onZoomIn()
         }}
-        onMouseDown={handlePointerEvent}
         className="p-2 text-gray-700 hover:bg-gray-100 rounded transition-colors"
         title="Zoom in"
       >
@@ -667,10 +588,8 @@ export function ViewControls({
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          e.preventDefault()
           onZoomOut()
         }}
-        onMouseDown={handlePointerEvent}
         className="p-2 text-gray-700 hover:bg-gray-100 rounded transition-colors"
         title="Zoom out"
       >
@@ -683,10 +602,8 @@ export function ViewControls({
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          e.preventDefault()
           onFitToSite()
         }}
-        onMouseDown={handlePointerEvent}
         className={`p-2 rounded transition-colors ${
           !showAllSites 
             ? 'text-aeria-navy bg-aeria-navy/10' 
@@ -701,10 +618,8 @@ export function ViewControls({
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          e.preventDefault()
           onFitToAll()
         }}
-        onMouseDown={handlePointerEvent}
         className={`p-2 rounded transition-colors ${
           showAllSites 
             ? 'text-aeria-navy bg-aeria-navy/10' 
@@ -723,10 +638,8 @@ export function ViewControls({
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              e.preventDefault()
               onToggleFullscreen()
             }}
-            onMouseDown={handlePointerEvent}
             className={`p-2 rounded transition-colors ${
               isFullscreen 
                 ? 'text-aeria-navy bg-aeria-navy/10' 
@@ -799,9 +712,9 @@ export function MapControlsPanel({
   
   return (
     <>
-      {/* Left/Right side controls - z-50 ensures above map */}
+      {/* Left/Right side controls */}
       <div 
-        className={`absolute top-4 ${positionClasses} z-50 flex flex-col gap-3 max-h-[calc(100%-8rem)] pointer-events-none`}
+        className={`absolute top-4 ${positionClasses} z-50 flex flex-col gap-3 max-h-[calc(100%-8rem)]`}
         style={{ overscrollBehavior: 'contain' }}
       >
         <SiteSelector
@@ -836,9 +749,7 @@ export function MapControlsPanel({
       </div>
       
       {/* Bottom right controls */}
-      <div 
-        className="absolute bottom-4 right-4 z-50 flex items-end gap-2 pointer-events-none"
-      >
+      <div className="absolute bottom-4 right-4 z-50 flex items-end gap-2">
         <BasemapSwitcher
           currentBasemap={currentBasemap}
           onChangeBasemap={onChangeBasemap}
