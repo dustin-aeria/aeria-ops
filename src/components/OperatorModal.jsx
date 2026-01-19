@@ -56,6 +56,7 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
     emergencyContact: {
       name: '',
       phone: '',
+      email: '',
       relationship: ''
     },
     roles: [],
@@ -75,6 +76,7 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
         emergencyContact: operator.emergencyContact || {
           name: '',
           phone: '',
+          email: '',
           relationship: ''
         },
         roles: operator.roles || [],
@@ -95,6 +97,7 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
       emergencyContact: {
         name: '',
         phone: '',
+        email: '',
         relationship: ''
       },
       roles: [],
@@ -263,23 +266,13 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
         {/* Emergency Contact */}
         <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Emergency Contact</h3>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="label">Name <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 name="name"
                 value={formData.emergencyContact.name}
-                onChange={handleEmergencyContactChange}
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="label">Phone <span className="text-red-500">*</span></label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.emergencyContact.phone}
                 onChange={handleEmergencyContactChange}
                 className="input"
               />
@@ -293,6 +286,29 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
                 onChange={handleEmergencyContactChange}
                 className="input"
                 placeholder="e.g., Spouse, Parent"
+              />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Phone <span className="text-red-500">*</span></label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.emergencyContact.phone}
+                onChange={handleEmergencyContactChange}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.emergencyContact.email}
+                onChange={handleEmergencyContactChange}
+                className="input"
+                placeholder="emergency@email.com"
               />
             </div>
           </div>
