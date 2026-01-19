@@ -7,8 +7,12 @@
  * - Multi-site display with color coding
  * - Layer-based rendering (Site Survey, Flight Plan, Emergency)
  * - Drawing tools for markers, polygons, and lines
- * - Offline tile caching support
+ * - Offline tile caching support (Batch 4 - M-09)
  * - Responsive design
+ * 
+ * Batch 4 Fix:
+ * - Implemented full offline caching with OfflineCachePanel (M-09)
+ * - Added mapOfflineCache.js utility for tile management
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
  * @action REPLACE
@@ -23,11 +27,13 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useMapData, DRAWING_MODES } from '../../hooks/useMapData'
 import { MapControlsPanel } from './MapControls'
 import { MapLegend, SiteColorLegend } from './MapLegend'
+import OfflineCachePanel from './OfflineCachePanel'
 import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds } from '../../lib/mapDataStructures'
 import {
   Loader2,
   AlertCircle,
-  WifiOff
+  WifiOff,
+  Download
 } from 'lucide-react'
 
 // ============================================
@@ -69,21 +75,8 @@ const createMarkerElement = (color, icon = 'map-pin', size = 32) => {
 // OFFLINE CACHE HELPER
 // ============================================
 
-const CACHE_NAME = 'aeria-map-tiles-v1'
-
-async function cacheMapTiles(bounds, zoom = 14) {
-  if (!('caches' in window)) return false
-  
-  try {
-    // This is a simplified cache implementation
-    // A full implementation would iterate over tile coordinates
-    console.log('Caching tiles for offline use...')
-    return true
-  } catch (err) {
-    console.error('Failed to cache tiles:', err)
-    return false
-  }
-}
+// Full offline caching implementation is in mapOfflineCache.js
+// The OfflineCachePanel component provides the UI for this feature
 
 // ============================================
 // MAIN COMPONENT
@@ -112,6 +105,7 @@ export function UnifiedProjectMap({
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState(null)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [showOfflineCache, setShowOfflineCache] = useState(false)
   
   // Map data hook
   const mapData = useMapData(project, onUpdate, {
@@ -666,6 +660,25 @@ export function UnifiedProjectMap({
           Offline Mode
         </div>
       )}
+      
+      {/* Offline cache button */}
+      {mapLoaded && !isOffline && (
+        <button
+          onClick={() => setShowOfflineCache(true)}
+          className="absolute top-4 right-4 z-20 p-2 bg-white rounded-lg shadow border border-gray-200 text-gray-600 hover:text-aeria-navy hover:border-aeria-navy transition-colors"
+          title="Cache map for offline use"
+        >
+          <Download className="w-5 h-5" />
+        </button>
+      )}
+      
+      {/* Offline cache panel */}
+      <OfflineCachePanel
+        isOpen={showOfflineCache}
+        onClose={() => setShowOfflineCache(false)}
+        bounds={mapRef.current?.getBounds()}
+        mapboxToken={MAPBOX_TOKEN}
+      />
       
       {/* Controls */}
       {showControls && mapLoaded && (
