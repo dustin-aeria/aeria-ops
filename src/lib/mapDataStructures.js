@@ -523,7 +523,7 @@ export const getDefaultSiteEmergencyData = () => ({
 export const getDefaultSiteSoraData = () => ({
   // iGRC calculation (auto-populated from site data)
   populationCategory: null,      // From siteSurvey.population.category
-  adjacentPopulation: null,      // From siteSurvey.population.adjacentCategory
+  adjacentAreaPopulation: null,  // From siteSurvey.population.adjacentCategory
   operationType: 'VLOS',         // From siteFlightPlan.operationType
   maxAltitudeAGL: 120,           // From siteFlightPlan.maxAltitudeAGL
   
@@ -537,8 +537,17 @@ export const getDefaultSiteSoraData = () => ({
   residualARC: null,
   sail: null,
   
+  // Containment & Adjacent Area (Step 8)
+  containment: {
+    method: 'none',           // none | procedural | sw_geofence | hw_geofence | flight_termination | parachute_fts
+    evidence: ''              // Reference to containment evidence
+  },
+  
   // Site-specific mitigations (can override project defaults)
   mitigationOverrides: {},
+  
+  // OSO compliance tracking
+  osoCompliance: {},          // { 'OSO-01': { robustness: 'low', evidence: '...' }, ... }
   
   // Status
   calculationDate: null,
