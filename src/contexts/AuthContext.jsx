@@ -1,8 +1,20 @@
+/**
+ * AuthContext.jsx
+ * Authentication context provider for Firebase Auth
+ * 
+ * Batch 3 Fix:
+ * - Added resetPassword function for password reset flow (M-10)
+ * 
+ * @location src/contexts/AuthContext.jsx
+ * @action REPLACE
+ */
+
 import { createContext, useContext, useEffect, useState } from 'react'
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
@@ -77,6 +89,25 @@ export function AuthProvider({ children }) {
     }
   }
 
+  /**
+   * Send password reset email
+   * @param {string} email - User's email address
+   * @returns {Promise<void>}
+   * @throws {Error} Firebase auth errors
+   */
+  const resetPassword = async (email) => {
+    setError(null)
+    try {
+      await sendPasswordResetEmail(auth, email, {
+        // Optional: customize the action URL
+        // url: window.location.origin + '/login',
+      })
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }
+
   const value = {
     user,
     userProfile,
@@ -84,6 +115,7 @@ export function AuthProvider({ children }) {
     error,
     signIn,
     signOut,
+    resetPassword,
     isAuthenticated: !!user,
   }
 
