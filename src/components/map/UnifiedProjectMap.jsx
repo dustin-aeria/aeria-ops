@@ -1,3 +1,10 @@
+map.on('click', (e) => {
+  console.log('🗺️ MAP CLICKED', { 
+    isDrawing: isDrawingRef.current, 
+    mode: drawingModeRef.current 
+  })
+  // ... rest of existing code
+})
 /**
  * UnifiedProjectMap.jsx
  * Main unified map component for displaying and editing project sites
