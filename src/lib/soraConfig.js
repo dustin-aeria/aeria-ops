@@ -360,10 +360,13 @@ export const osoCategories = {
 }
 
 // ============================================
+// ============================================
 // OSO DEFINITIONS WITH REQUIREMENTS BY SAIL
 // CORRECTED per JARUS SORA 2.5 Table 14
 // O = Optional (not required to show compliance)
 // L = Low robustness, M = Medium, H = High
+// 
+// Evidence Guidance added for each robustness level
 // ============================================
 export const osoDefinitions = [
   // Technical Issue with UAS
@@ -373,7 +376,12 @@ export const osoDefinitions = [
     name: 'Ensure the Operator is competent and/or proven', 
     description: 'Operator demonstrates competency for the operation',
     requirements: { 'I': 'O', 'II': 'L', 'III': 'M', 'IV': 'H', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Pilot certificate/license', 'Basic flight training records', 'Operator registration'],
+      medium: ['Recurrent training records', 'Type-specific training', 'Competency assessments', 'Operations manual'],
+      high: ['Third-party competency verification', 'Audited training program', 'Continuous assessment program']
+    }
   },
   { 
     id: 'OSO-02', 
@@ -381,7 +389,12 @@ export const osoDefinitions = [
     name: 'UAS manufactured by competent and/or proven entity',
     description: 'Manufacturer has documented quality and design processes',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'L', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Manufacturer declaration', 'Basic product documentation'],
+      medium: ['ISO 9001 or equivalent QMS certification', 'Design documentation'],
+      high: ['Aviation authority approved design organization', 'Full design assurance']
+    }
   },
   { 
     id: 'OSO-03', 
@@ -389,7 +402,12 @@ export const osoDefinitions = [
     name: 'UAS maintained by competent and/or proven entity',
     description: 'Maintenance performed by trained personnel per procedures',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Maintenance log', 'Basic maintenance training records'],
+      medium: ['Documented maintenance program', 'Certified maintenance personnel', 'Maintenance tracking system'],
+      high: ['Approved maintenance organization', 'Audited maintenance program', 'Component tracking']
+    }
   },
   { 
     id: 'OSO-04', 
@@ -397,7 +415,12 @@ export const osoDefinitions = [
     name: 'UAS developed to Airworthiness Design Standard (ADS)',
     description: 'UAS components essential to safe ops designed to ADS',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'O', 'IV': 'L', 'V': 'M', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Reference to industry standards used', 'Basic design documentation'],
+      medium: ['Compliance matrix to recognized standard', 'Design verification evidence'],
+      high: ['Full airworthiness certification', 'Type certificate or equivalent']
+    }
   },
   { 
     id: 'OSO-05', 
@@ -405,7 +428,12 @@ export const osoDefinitions = [
     name: 'UAS designed considering system safety and reliability',
     description: 'System safety and reliability analysis performed',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'L', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Basic hazard identification', 'Manufacturer reliability data'],
+      medium: ['Functional Hazard Analysis (FHA)', 'FMEA or equivalent', 'Reliability targets defined'],
+      high: ['Full safety assessment per ARP4761 or equivalent', 'Demonstrated reliability data']
+    }
   },
   { 
     id: 'OSO-06', 
@@ -413,7 +441,12 @@ export const osoDefinitions = [
     name: 'C3 link characteristics appropriate for operation',
     description: 'Command, control, communication link meets operational needs',
     requirements: { 'I': 'O', 'II': 'L', 'III': 'L', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['C3 link specifications', 'Range and latency data', 'Basic link testing'],
+      medium: ['Link budget analysis', 'Interference assessment', 'Link loss procedures'],
+      high: ['Certified C3 link performance', 'Redundant link capability', 'Full spectrum analysis']
+    }
   },
   { 
     id: 'OSO-07', 
@@ -421,7 +454,12 @@ export const osoDefinitions = [
     name: 'Conformity check of UAS configuration',
     description: 'Inspection of UAS to ensure condition for safe operation',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Pre-flight checklist', 'Visual inspection records'],
+      medium: ['Configuration control log', 'Software version verification', 'Component tracking'],
+      high: ['Independent conformity inspection', 'Airworthiness release documentation']
+    }
   },
   
   // Operations & Procedures
@@ -431,7 +469,12 @@ export const osoDefinitions = [
     name: 'Operational procedures defined, validated and adhered to',
     description: 'Procedures exist, are validated, and crew adheres to them',
     requirements: { 'I': 'L', 'II': 'M', 'III': 'H', 'IV': 'H', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Basic operating procedures', 'Emergency procedures documented'],
+      medium: ['Validated operations manual', 'Procedure compliance records', 'Crew briefing records'],
+      high: ['Third-party validated procedures', 'Audited procedure compliance', 'Continuous improvement process']
+    }
   },
   { 
     id: 'OSO-09', 
@@ -439,7 +482,12 @@ export const osoDefinitions = [
     name: 'Remote crew trained and current',
     description: 'Crew training for normal and emergency procedures',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Initial training records', 'Currency requirements met'],
+      medium: ['Recurrent training program', 'Emergency procedure training', 'Competency checks'],
+      high: ['Simulator-based training', 'Third-party assessed competency', 'CRM training']
+    }
   },
   { 
     id: 'OSO-10', 
@@ -447,7 +495,12 @@ export const osoDefinitions = [
     name: 'Safe recovery from technical issue',
     description: 'Procedures exist to safely recover from a technical failure',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Emergency landing procedures', 'Basic failure response procedures'],
+      medium: ['Failure mode procedures', 'Recovery training evidence', 'Tested contingency procedures'],
+      high: ['Automatic safe recovery systems', 'Demonstrated recovery capability', 'Validated through testing']
+    }
   },
   { 
     id: 'OSO-11', 
@@ -455,7 +508,12 @@ export const osoDefinitions = [
     name: 'Safe recovery from C3 link issues',
     description: 'Procedures and systems to recover from communication failures',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Link loss procedures', 'Return-to-home settings documented'],
+      medium: ['Automatic link loss behavior tested', 'Backup C3 procedures', 'Training on link loss'],
+      high: ['Redundant C3 link', 'Demonstrated safe behavior on link loss', 'Certified link loss response']
+    }
   },
   { 
     id: 'OSO-12', 
@@ -463,7 +521,12 @@ export const osoDefinitions = [
     name: 'Remote crew trained to handle technical emergencies',
     description: 'Crew competent to manage technical failures and degraded modes',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Emergency procedure training records', 'Basic troubleshooting capability'],
+      medium: ['Scenario-based emergency training', 'Regular drills conducted', 'Assessment records'],
+      high: ['Simulator training for emergencies', 'Third-party competency verification', 'Stress training']
+    }
   },
   
   // External Systems
@@ -473,7 +536,12 @@ export const osoDefinitions = [
     name: 'External services supporting UAS operations are adequate',
     description: 'CNS, UTM, weather services adequate for operation',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'H', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Weather source identified', 'NOTAM check process', 'Basic communication plan'],
+      medium: ['Validated weather services', 'UTM integration where required', 'ATC coordination procedures'],
+      high: ['Certified external service providers', 'Redundant services', 'SLA with service providers']
+    }
   },
   
   // Human Factors
@@ -483,7 +551,12 @@ export const osoDefinitions = [
     name: 'Multi-crew coordination',
     description: 'Coordination between multiple crew members',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Defined crew roles', 'Basic communication procedures'],
+      medium: ['CRM principles applied', 'Briefing/debriefing procedures', 'Team training'],
+      high: ['Formal CRM training', 'Crew composition requirements', 'Third-party assessed coordination']
+    }
   },
   { 
     id: 'OSO-17', 
@@ -491,7 +564,12 @@ export const osoDefinitions = [
     name: 'Remote crew fit to operate',
     description: 'Crew fitness-for-duty (medical, fatigue, substances)',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Self-declaration of fitness', 'Basic fitness requirements documented'],
+      medium: ['Medical certificate', 'Fatigue management policy', 'Substance policy'],
+      high: ['Aviation medical certificate', 'Fatigue risk management system', 'Random testing program']
+    }
   },
   { 
     id: 'OSO-18', 
@@ -499,7 +577,12 @@ export const osoDefinitions = [
     name: 'Automatic protection of flight envelope from human error',
     description: 'Automatic systems prevent exceeding flight envelope',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'L', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Basic geofencing capability', 'Altitude limits implemented'],
+      medium: ['Validated envelope protection', 'Tested limit functions', 'Override procedures'],
+      high: ['Certified flight envelope protection', 'Independent monitoring', 'Full automation testing']
+    }
   },
   { 
     id: 'OSO-19', 
@@ -507,7 +590,12 @@ export const osoDefinitions = [
     name: 'Safe recovery from human error',
     description: 'Procedures and systems for recovery from human error',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'L', 'IV': 'M', 'V': 'M', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Basic error recovery procedures', 'Undo/cancel functions'],
+      medium: ['Error-tolerant interface design', 'Recovery mode procedures', 'Training on error recovery'],
+      high: ['Formal HMI assessment', 'Demonstrated error recovery capability', 'Independent verification']
+    }
   },
   { 
     id: 'OSO-20', 
@@ -515,7 +603,12 @@ export const osoDefinitions = [
     name: 'Human Factors evaluation performed, HMI appropriate',
     description: 'HMI assessed and found appropriate for the mission',
     requirements: { 'I': 'O', 'II': 'L', 'III': 'L', 'IV': 'M', 'V': 'M', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Basic HMI description', 'User feedback considered'],
+      medium: ['HMI assessment performed', 'Workload analysis', 'Usability testing'],
+      high: ['Formal HF evaluation per standards', 'Independent HMI assessment', 'Certified HMI design']
+    }
   },
   { 
     id: 'OSO-21', 
@@ -523,7 +616,12 @@ export const osoDefinitions = [
     name: 'Automatic protection of flight envelope from adverse conditions',
     description: 'Automatic systems protect operation from adverse environmental conditions',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'L', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Environmental limits defined', 'Basic sensor monitoring'],
+      medium: ['Automatic response to adverse conditions', 'Tested environmental protection'],
+      high: ['Certified environmental protection systems', 'Redundant sensing', 'Full automation validation']
+    }
   },
   { 
     id: 'OSO-22', 
@@ -531,7 +629,12 @@ export const osoDefinitions = [
     name: 'Remote crew able to control UAS in adverse conditions',
     description: 'Crew can safely manage UAS when faced with adverse conditions',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Adverse condition procedures', 'Basic training on weather effects'],
+      medium: ['Scenario training for adverse conditions', 'Decision-making procedures', 'Competency assessment'],
+      high: ['Simulator training for adverse conditions', 'Third-party verified competency', 'Stress testing']
+    }
   },
   
   // Operating Conditions
@@ -541,7 +644,12 @@ export const osoDefinitions = [
     name: 'Environmental conditions defined, measurable and adhered to',
     description: 'Weather and environmental limits documented and followed',
     requirements: { 'I': 'L', 'II': 'L', 'III': 'M', 'IV': 'M', 'V': 'H', 'VI': 'H' },
-    responsibility: 'operator'
+    responsibility: 'operator',
+    evidenceGuidance: {
+      low: ['Weather limits defined', 'Weather briefing procedure'],
+      medium: ['Weather monitoring during ops', 'Go/no-go criteria', 'Real-time weather updates'],
+      high: ['Validated weather sources', 'Continuous monitoring systems', 'Automatic alerts']
+    }
   },
   { 
     id: 'OSO-24', 
@@ -549,7 +657,12 @@ export const osoDefinitions = [
     name: 'UAS designed and qualified for adverse environmental conditions',
     description: 'UAS can handle defined adverse environmental conditions',
     requirements: { 'I': 'O', 'II': 'O', 'III': 'M', 'IV': 'H', 'V': 'H', 'VI': 'H' },
-    responsibility: 'designer'
+    responsibility: 'designer',
+    evidenceGuidance: {
+      low: ['Environmental envelope defined by manufacturer'],
+      medium: ['Environmental testing performed', 'IP rating where applicable', 'Temperature range verified'],
+      high: ['Certified environmental qualification', 'Full environmental testing to standards', 'Independent verification']
+    }
   }
 ]
 
