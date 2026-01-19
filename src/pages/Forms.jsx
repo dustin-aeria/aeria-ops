@@ -12,6 +12,9 @@
  * Security Fix (Batch 2):
  * - Replaced eval() with safe condition parser for showIf conditions
  * 
+ * Code Quality Fix (Batch 5):
+ * - Replaced console.log with logger utility
+ * 
  * @location src/pages/Forms.jsx
  * @action REPLACE
  */
@@ -25,6 +28,7 @@ import {
   Phone, AlertCircle, CheckCircle2, ArrowRight
 } from 'lucide-react'
 import { FORM_TEMPLATES, FORM_CATEGORIES, RPAS_INCIDENT_TRIGGERS, calculateRiskScore, SEVERITY_RATINGS, PROBABILITY_RATINGS, CONTROL_TYPES, HAZARD_CATEGORIES } from '../lib/formDefinitions'
+import { logger } from '../lib/logger'
 
 // Icon mapping
 const iconMap = {
@@ -775,7 +779,7 @@ export default function Forms() {
   
   const handleSaveForm = (formData) => {
     // Save form to Firebase (would implement actual save)
-    console.log('Saving form:', formData)
+    logger.debug('Saving form:', formData)
     setRecentForms([
       { 
         id: Date.now(), 
