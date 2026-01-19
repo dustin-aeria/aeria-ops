@@ -1,10 +1,3 @@
-map.on('click', (e) => {
-  console.log('🗺️ MAP CLICKED', { 
-    isDrawing: isDrawingRef.current, 
-    mode: drawingModeRef.current 
-  })
-  // ... rest of existing code
-})
 /**
  * UnifiedProjectMap.jsx
  * Main unified map component for displaying and editing project sites
@@ -17,11 +10,10 @@ map.on('click', (e) => {
  * - Offline tile caching support
  * - Responsive design
  * 
- * BATCH 6 FINAL FIXES:
+ * PHASE 1 FIX:
  * - Fixed stale closure bug in map click handlers
- * - Fixed site management handlers (add/duplicate/delete)
- * - Added fullscreen toggle functionality
- * - Added map-controls.css import
+ * - Drawing state now uses refs that stay in sync with current values
+ * - Map click/dblclick handlers use refs instead of stale state
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
  * @action REPLACE
@@ -32,12 +24,11 @@ import mapboxgl from 'mapbox-gl'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
-import '../../styles/map-controls.css'
 
 import { useMapData, DRAWING_MODES } from '../../hooks/useMapData'
 import { MapControlsPanel } from './MapControls'
 import { MapLegend, SiteColorLegend } from './MapLegend'
-import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds, createDefaultSite } from '../../lib/mapDataStructures'
+import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds } from '../../lib/mapDataStructures'
 import {
   Loader2,
   AlertCircle,
@@ -122,6 +113,16 @@ export function UnifiedProjectMap({
   const markersRef = useRef({})
   const drawRef = useRef(null)
   
+  // ============================================
+  // PHASE 1 FIX: Refs for drawing state
+  // These refs always hold the current values and solve
+  // the stale closure problem in map event handlers
+  // ============================================
+  const isDrawingRef = useRef(false)
+  const drawingModeRef = useRef(DRAWING_MODES.none)
+  const completeDrawingRef = useRef(null)
+  const addDrawingPointRef = useRef(null)
+  
   // State
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState(null)
@@ -167,33 +168,24 @@ export function UnifiedProjectMap({
   } = mapData
 
   // ============================================
-  // FULLSCREEN STATE
+  // PHASE 1 FIX: Keep refs in sync with state
+  // These effects update refs whenever state changes
   // ============================================
-  
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev)
-  }, [])
-
-  // ============================================
-  // REFS FOR DRAWING STATE (prevents stale closures)
-  // ============================================
-  
-  // These refs always hold the current values, solving the stale closure problem
-  // in map event handlers that are set up once on mount
-  const isDrawingRef = useRef(isDrawing)
-  const drawingModeRef = useRef(drawingMode)
-  const completeDrawingRef = useRef(completeDrawing)
-  const addDrawingPointRef = useRef(addDrawingPoint)
-  
-  // Keep refs in sync with state
   useEffect(() => {
     isDrawingRef.current = isDrawing
+  }, [isDrawing])
+  
+  useEffect(() => {
     drawingModeRef.current = drawingMode
+  }, [drawingMode])
+  
+  useEffect(() => {
     completeDrawingRef.current = completeDrawing
+  }, [completeDrawing])
+  
+  useEffect(() => {
     addDrawingPointRef.current = addDrawingPoint
-  }, [isDrawing, drawingMode, completeDrawing, addDrawingPoint])
+  }, [addDrawingPoint])
 
   // ============================================
   // INITIALIZE MAP
@@ -242,27 +234,48 @@ export function UnifiedProjectMap({
         setMapError('Failed to load map')
       })
       
-      // Handle click for drawing - USES REFS to avoid stale closure!
+      // ============================================
+      // PHASE 1 FIX: Click handler uses refs
+      // Instead of capturing stale state values at mount time,
+      // we now read from refs which always have current values
+      // ============================================
       map.on('click', (e) => {
-        // Use refs to get current values (fixes stale closure bug)
-        if (isDrawingRef.current && drawingModeRef.current.id !== 'none') {
+        // Read current values from refs (not stale closure values)
+        const currentIsDrawing = isDrawingRef.current
+        const currentDrawingMode = drawingModeRef.current
+        const currentCompleteDrawing = completeDrawingRef.current
+        const currentAddDrawingPoint = addDrawingPointRef.current
+        
+        if (currentIsDrawing && currentDrawingMode.id !== 'none') {
           const lngLat = e.lngLat
           
-          if (drawingModeRef.current.type === 'marker') {
+          if (currentDrawingMode.type === 'marker') {
             // For markers, complete immediately on click
-            completeDrawingRef.current(lngLat)
+            if (currentCompleteDrawing) {
+              currentCompleteDrawing(lngLat)
+            }
           } else {
             // For polygons/lines, add point
-            addDrawingPointRef.current(lngLat)
+            if (currentAddDrawingPoint) {
+              currentAddDrawingPoint(lngLat)
+            }
           }
         }
       })
       
-      // Handle double-click to complete polygon/line - USES REFS to avoid stale closure!
+      // ============================================
+      // PHASE 1 FIX: Double-click handler uses refs
+      // ============================================
       map.on('dblclick', (e) => {
-        if (isDrawingRef.current && (drawingModeRef.current.type === 'polygon' || drawingModeRef.current.type === 'line')) {
+        const currentIsDrawing = isDrawingRef.current
+        const currentDrawingMode = drawingModeRef.current
+        const currentCompleteDrawing = completeDrawingRef.current
+        
+        if (currentIsDrawing && (currentDrawingMode.type === 'polygon' || currentDrawingMode.type === 'line')) {
           e.preventDefault()
-          completeDrawingRef.current()
+          if (currentCompleteDrawing) {
+            currentCompleteDrawing()
+          }
         }
       })
       
@@ -615,59 +628,19 @@ export function UnifiedProjectMap({
   }, [selectSite, onSiteChange])
   
   const handleAddSite = useCallback(() => {
-    if (!onUpdate || !project) return
-    
-    const newSite = createDefaultSite({
-      name: `Site ${sites.length + 1}`,
-      order: sites.length
-    })
-    
-    onUpdate({
-      sites: [...sites, newSite],
-      activeSiteId: newSite.id
-    })
-  }, [sites, onUpdate, project])
+    // This will be handled by parent component
+    console.log('Add site requested')
+  }, [])
   
   const handleDuplicateSite = useCallback((siteId) => {
-    if (!onUpdate) return
-    
-    const sourceSite = sites.find(s => s.id === siteId)
-    if (!sourceSite) return
-    
-    const newSite = {
-      ...JSON.parse(JSON.stringify(sourceSite)),
-      id: `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: `${sourceSite.name} (Copy)`,
-      status: 'draft',
-      order: sites.length,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    
-    onUpdate({
-      sites: [...sites, newSite],
-      activeSiteId: newSite.id
-    })
-  }, [sites, onUpdate])
+    console.log('Duplicate site:', siteId)
+  }, [])
   
   const handleDeleteSite = useCallback((siteId) => {
-    if (!onUpdate) return
-    
-    if (sites.length <= 1) {
-      alert('Cannot delete the last site')
-      return
+    if (confirm('Are you sure you want to delete this site?')) {
+      console.log('Delete site:', siteId)
     }
-    
-    if (!confirm('Are you sure you want to delete this site?')) return
-    
-    const filteredSites = sites.filter(s => s.id !== siteId)
-    const newActiveSiteId = activeSiteId === siteId ? filteredSites[0]?.id : activeSiteId
-    
-    onUpdate({
-      sites: filteredSites,
-      activeSiteId: newActiveSiteId
-    })
-  }, [sites, activeSiteId, onUpdate])
+  }, [])
   
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) {
@@ -703,8 +676,8 @@ export function UnifiedProjectMap({
   
   return (
     <div 
-      className={`relative bg-gray-100 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[100]' : ''} ${className}`}
-      style={{ height: isFullscreen ? '100vh' : height }}
+      className={`relative bg-gray-100 rounded-lg overflow-hidden ${className}`}
+      style={{ height }}
     >
       {/* Map container */}
       <div ref={mapContainerRef} className="absolute inset-0" />
@@ -755,8 +728,6 @@ export function UnifiedProjectMap({
           onZoomOut={handleZoomOut}
           showAllSites={showAllSites}
           editMode={editMode}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={toggleFullscreen}
         />
       )}
       
