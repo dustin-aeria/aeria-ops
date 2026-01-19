@@ -568,11 +568,12 @@ function TMPRSelector({ value, onChange }) {
 }
 
 // ============================================
-// OSO COMPLIANCE TABLE (FIXED)
+// OSO COMPLIANCE TABLE (ENHANCED)
 // ============================================
 
 function OSOComplianceSection({ sail, osoCompliance, onChange }) {
   const [expandedCategory, setExpandedCategory] = useState(null)
+  const [showGuidance, setShowGuidance] = useState({})
   
   // Ensure osoCompliance is always an object
   const safeOsoCompliance = osoCompliance || {}
@@ -593,6 +594,10 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
     }
     onChange(newCompliance)
   }, [safeOsoCompliance, onChange])
+
+  const toggleGuidance = (osoId) => {
+    setShowGuidance(prev => ({ ...prev, [osoId]: !prev[osoId] }))
+  }
   
   return (
     <div className="space-y-4">
@@ -619,6 +624,14 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
         </div>
       </div>
       
+      {/* SAIL indicator */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-800">
+          <Info className="w-4 h-4 inline mr-1" />
+          Requirements shown for <strong>SAIL {sail}</strong>. Select robustness level achieved and provide evidence reference.
+        </p>
+      </div>
+      
       {/* OSO Categories */}
       {Object.entries(osoCategories).map(([catKey, catConfig]) => {
         const catOSOs = compliance.results.filter(o => o.category === catKey)
@@ -634,7 +647,11 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
             >
               <span className="font-medium text-gray-900">{catConfig.label}</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
+                <span className={`text-sm px-2 py-0.5 rounded-full ${
+                  catCompliant === catOSOs.length 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
                   {catCompliant}/{catOSOs.length}
                 </span>
                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -647,9 +664,14 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                   // Get current robustness for this OSO
                   const currentRobustness = safeOsoCompliance[oso.id]?.robustness || 'none'
                   const currentEvidence = safeOsoCompliance[oso.id]?.evidence || ''
+                  const isGuidanceShown = showGuidance[oso.id]
+                  
+                  // Get evidence guidance for required level
+                  const requiredLevel = oso.required === 'L' ? 'low' : oso.required === 'M' ? 'medium' : oso.required === 'H' ? 'high' : null
+                  const guidance = oso.evidenceGuidance?.[requiredLevel] || []
                   
                   return (
-                    <div key={oso.id} className="p-4">
+                    <div key={oso.id} className={`p-4 ${!oso.compliant && oso.required !== 'O' ? 'bg-red-50/30' : ''}`}>
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -657,15 +679,17 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                             {oso.compliant ? (
                               <Check className="w-4 h-4 text-green-500" />
                             ) : oso.required === 'O' ? (
-                              <span className="text-xs text-gray-500">Optional</span>
+                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">Optional</span>
                             ) : (
                               <X className="w-4 h-4 text-red-500" />
                             )}
+                            <span className="text-xs text-gray-400">({oso.responsibility})</span>
                           </div>
                           <p className="text-sm text-gray-600">{oso.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{oso.description}</p>
                         </div>
-                        <div className="text-right">
-                          <span className={`text-xs px-2 py-0.5 rounded ${
+                        <div className="text-right flex flex-col items-end gap-1">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                             oso.required === 'O' ? 'bg-gray-100 text-gray-600' :
                             oso.required === 'L' ? 'bg-green-100 text-green-700' :
                             oso.required === 'M' ? 'bg-amber-100 text-amber-700' :
@@ -673,13 +697,44 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                           }`}>
                             Required: {oso.requiredLabel}
                           </span>
+                          {guidance.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleGuidance(oso.id)}
+                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <Info className="w-3 h-3" />
+                              {isGuidanceShown ? 'Hide' : 'Show'} guidance
+                            </button>
+                          )}
                         </div>
                       </div>
                       
-                      {/* FIX: Robustness buttons with explicit click handling */}
+                      {/* Evidence Guidance */}
+                      {isGuidanceShown && guidance.length > 0 && (
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-xs font-medium text-blue-900 mb-1">
+                            Evidence guidance for {requiredLevel} robustness:
+                          </p>
+                          <ul className="text-xs text-blue-800 space-y-0.5">
+                            {guidance.map((item, idx) => (
+                              <li key={idx} className="flex items-start gap-1">
+                                <span className="text-blue-500">•</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Robustness buttons */}
                       <div className="flex gap-2 mb-2">
                         {['none', 'low', 'medium', 'high'].map(level => {
                           const isSelected = currentRobustness === level
+                          const meetsRequirement = oso.required === 'O' || 
+                            (level === 'low' && ['L'].includes(oso.required)) ||
+                            (level === 'medium' && ['L', 'M'].includes(oso.required)) ||
+                            (level === 'high')
                           
                           return (
                             <button
@@ -693,7 +748,9 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                               className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-aeria-navy text-white'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  : level !== 'none' && meetsRequirement
+                                    ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                               }`}
                             >
                               {level === 'none' ? 'None' : level.charAt(0).toUpperCase() + level.slice(1)}
@@ -706,7 +763,7 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                         type="text"
                         value={currentEvidence}
                         onChange={(e) => handleOSOChange(oso.id, { evidence: e.target.value })}
-                        placeholder="Evidence / reference..."
+                        placeholder="Evidence reference (e.g., Training Records §3.2, Maintenance Log)"
                         className="input text-sm py-1"
                       />
                     </div>
