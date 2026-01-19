@@ -921,6 +921,58 @@ export default function ProjectSORA({ project, onUpdate, onNavigateToSection }) 
   }, [activeSite, updateSiteSORA])
   
   // ============================================
+  // AUTO-SYNC FROM SITE SURVEY AND FLIGHT PLAN
+  // ============================================
+  
+  // Auto-sync population category from Site Survey when it changes
+  useEffect(() => {
+    const surveyPopulation = activeSite?.siteSurvey?.population?.category
+    const currentPopulation = siteSORA?.populationCategory
+    
+    // Only auto-sync if:
+    // 1. Site survey has a population category set
+    // 2. SORA doesn't have one yet (null/undefined) OR
+    //    We want to keep them in sync (user hasn't manually changed it)
+    if (surveyPopulation && !currentPopulation) {
+      updateSiteSORA({ populationCategory: surveyPopulation })
+    }
+  }, [activeSite?.siteSurvey?.population?.category, activeSiteId])
+  
+  // Auto-sync adjacent population from Site Survey
+  useEffect(() => {
+    const surveyAdjacent = activeSite?.siteSurvey?.population?.adjacentCategory
+    const currentAdjacent = siteSORA?.adjacentAreaPopulation
+    
+    if (surveyAdjacent && !currentAdjacent) {
+      updateSiteSORA({ adjacentAreaPopulation: surveyAdjacent })
+    }
+  }, [activeSite?.siteSurvey?.population?.adjacentCategory, activeSiteId])
+  
+  // Auto-sync UA characteristics from aircraft when available
+  useEffect(() => {
+    if (!projectAircraft || projectAircraft.length === 0) return
+    if (siteSORA?.uaCharacteristics) return // Already set
+    
+    // Find primary aircraft or use first one
+    const primary = projectAircraft.find(a => a.isPrimary) || projectAircraft[0]
+    if (!primary) return
+    
+    const maxDim = primary?.maxDimension || primary?.wingspan || 1
+    const maxSpeed = primary?.maxSpeed || 25
+    
+    // Find matching UA characteristic category
+    let suggestedUA = '1m_25ms'
+    for (const [key, char] of Object.entries(uaCharacteristics)) {
+      if (maxDim <= char.maxDimension && maxSpeed <= char.maxSpeed) {
+        suggestedUA = key
+        break
+      }
+    }
+    
+    updateSiteSORA({ uaCharacteristics: suggestedUA })
+  }, [projectAircraft, activeSiteId])
+  
+  // ============================================
   // RENDER
   // ============================================
   
