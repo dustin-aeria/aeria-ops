@@ -55,6 +55,9 @@ import {
   sailColors,
   sailDescriptions,
   robustnessLevels,
+  containmentMethods,
+  containmentRobustness,
+  adjacentAreaGuidance,
   osoCategories,
   osoDefinitions,
   getIntrinsicGRC,
@@ -63,6 +66,7 @@ import {
   calculateResidualARC,
   getSAIL,
   getContainmentRequirement,
+  calculateAdjacentAreaDistance,
   checkAllOSOCompliance
 } from '../../lib/soraConfig'
 
@@ -779,6 +783,226 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
 }
 
 // ============================================
+// CONTAINMENT & ADJACENT AREA SECTION
+// ============================================
+
+function ContainmentSection({ 
+  sail, 
+  adjacentPopulation, 
+  operationalPopulation,
+  containment = {},
+  maxSpeed = 25,
+  onChange 
+}) {
+  const [showDetails, setShowDetails] = useState(false)
+  
+  // Calculate adjacent area distance
+  const adjacentDistance = useMemo(() => {
+    return calculateAdjacentAreaDistance(maxSpeed)
+  }, [maxSpeed])
+  
+  // Determine if adjacent area has higher population
+  const populationOrder = ['controlled', 'remote', 'lightly', 'sparsely', 'suburban', 'highdensity', 'assembly']
+  const opIdx = populationOrder.indexOf(operationalPopulation || 'sparsely')
+  const adjIdx = populationOrder.indexOf(adjacentPopulation || operationalPopulation || 'sparsely')
+  const adjacentIsHigher = adjIdx > opIdx
+  
+  // Get required containment robustness
+  const requiredRobustness = useMemo(() => {
+    if (!adjacentIsHigher) return 'none'
+    return getContainmentRequirement(adjacentPopulation, sail) || 'low'
+  }, [adjacentPopulation, sail, adjacentIsHigher])
+  
+  // Check if current containment meets requirement
+  const currentMethod = containment.method || 'none'
+  const currentRobustness = containmentMethods[currentMethod]?.robustnessAchievable || 'none'
+  const robustnessOrder = ['none', 'low', 'medium', 'high']
+  const meetsRequirement = robustnessOrder.indexOf(currentRobustness) >= robustnessOrder.indexOf(requiredRobustness)
+  
+  return (
+    <div className="space-y-4">
+      {/* Adjacent Area Assessment */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-gray-900">Adjacent Area Assessment</h4>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Operational Area</p>
+            <p className="font-medium text-gray-900">
+              {populationCategories[operationalPopulation]?.label || 'Not set'}
+            </p>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Adjacent Area (within {(adjacentDistance/1000).toFixed(0)}km)</p>
+            <select
+              value={adjacentPopulation || ''}
+              onChange={(e) => onChange({ adjacentPopulation: e.target.value })}
+              className="input text-sm py-1 mt-1"
+            >
+              <option value="">Same as operational</option>
+              {Object.entries(populationCategories).map(([key, cat]) => (
+                <option key={key} value={key}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        {/* Adjacent Area Status */}
+        {adjacentIsHigher ? (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-900">Higher Population Adjacent</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  Adjacent area has higher population density. You must either:
+                </p>
+                <ul className="text-sm text-amber-700 mt-1 ml-4 list-disc">
+                  <li>Demonstrate containment with <strong>{requiredRobustness}</strong> robustness, OR</li>
+                  <li>Use the higher population category for GRC calculation</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <p className="text-green-800">
+                Adjacent area population is same or lower - no additional containment required.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Containment Method Selection */}
+      {adjacentIsHigher && (
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-gray-900">Containment Method</h4>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+              requiredRobustness === 'low' ? 'bg-green-100 text-green-700' :
+              requiredRobustness === 'medium' ? 'bg-amber-100 text-amber-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              Required: {requiredRobustness.charAt(0).toUpperCase() + requiredRobustness.slice(1)}
+            </span>
+          </div>
+          
+          <div className="space-y-2">
+            {Object.entries(containmentMethods).map(([key, method]) => {
+              const isSelected = currentMethod === key
+              const methodMeetsReq = robustnessOrder.indexOf(method.robustnessAchievable) >= robustnessOrder.indexOf(requiredRobustness)
+              
+              return (
+                <label
+                  key={key}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    isSelected 
+                      ? 'bg-aeria-navy/5 border-aeria-navy' 
+                      : methodMeetsReq && key !== 'none'
+                        ? 'bg-green-50/50 border-green-200 hover:border-green-300'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="containmentMethod"
+                    value={key}
+                    checked={isSelected}
+                    onChange={() => onChange({ method: key })}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">{method.label}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        method.robustnessAchievable === 'none' ? 'bg-gray-100 text-gray-600' :
+                        method.robustnessAchievable === 'low' ? 'bg-green-100 text-green-700' :
+                        method.robustnessAchievable === 'medium' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {method.robustnessAchievable === 'none' ? 'N/A' : method.robustnessAchievable}
+                      </span>
+                      {methodMeetsReq && key !== 'none' && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mt-0.5">{method.description}</p>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+          
+          {/* Evidence Requirements */}
+          {currentMethod !== 'none' && containmentMethods[currentMethod]?.evidenceRequired?.length > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <span className="text-sm font-medium text-blue-900">Evidence Required</span>
+                {showDetails ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />}
+              </button>
+              {showDetails && (
+                <ul className="mt-2 text-sm text-blue-800 space-y-1">
+                  {containmentMethods[currentMethod].evidenceRequired.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-1">
+                      <span className="text-blue-500">•</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          
+          {/* Evidence Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Containment Evidence Reference
+            </label>
+            <input
+              type="text"
+              value={containment.evidence || ''}
+              onChange={(e) => onChange({ evidence: e.target.value })}
+              placeholder="e.g., Geofence test report §4.2, FTS certification..."
+              className="input"
+            />
+          </div>
+          
+          {/* Compliance Status */}
+          <div className={`p-4 rounded-lg ${
+            meetsRequirement 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              {meetsRequirement ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <span className="font-medium text-green-900">Containment requirement met</span>
+                </>
+              ) : (
+                <>
+                  <X className="w-5 h-5 text-red-600" />
+                  <span className="font-medium text-red-900">
+                    Containment requirement not met - select method with {requiredRobustness} robustness
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
 // MULTI-SITE SUMMARY
 // ============================================
 
@@ -1280,6 +1504,42 @@ export default function ProjectSORA({ project, onUpdate, onNavigateToSection }) 
             sail={activeCalc.sail}
             osoCompliance={siteSORA.osoCompliance || {}}
             onChange={(v) => updateSiteSORA({ osoCompliance: v })}
+          />
+        </CollapsibleSection>
+      )}
+      
+      {/* Step 8: Containment & Adjacent Area */}
+      {activeCalc.sail && (
+        <CollapsibleSection
+          title="Containment & Adjacent Area"
+          stepNumber={8}
+          defaultOpen={false}
+          status={
+            !siteSORA.adjacentAreaPopulation ? 'incomplete' :
+            (siteSORA.containment?.method && siteSORA.containment.method !== 'none') ? 'complete' : 
+            'incomplete'
+          }
+        >
+          <ContainmentSection
+            sail={activeCalc.sail}
+            adjacentPopulation={siteSORA.adjacentAreaPopulation}
+            operationalPopulation={siteSORA.populationCategory || activeCalc.population}
+            containment={siteSORA.containment || {}}
+            maxSpeed={primaryAircraft?.maxSpeed || 25}
+            onChange={(updates) => {
+              const newData = {}
+              if (updates.adjacentPopulation !== undefined) {
+                newData.adjacentAreaPopulation = updates.adjacentPopulation
+              }
+              if (updates.method !== undefined || updates.evidence !== undefined) {
+                newData.containment = {
+                  ...(siteSORA.containment || {}),
+                  ...(updates.method !== undefined && { method: updates.method }),
+                  ...(updates.evidence !== undefined && { evidence: updates.evidence })
+                }
+              }
+              updateSiteSORA(newData)
+            }}
           />
         </CollapsibleSection>
       )}
