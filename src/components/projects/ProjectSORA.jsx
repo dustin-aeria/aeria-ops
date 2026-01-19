@@ -20,6 +20,8 @@
  * 
  * @location src/components/projects/ProjectSORA.jsx
  * @action REPLACE
+ * 
+ * Batch 2 Fix: Split Step 4 (Air Risk) into Step 4 (Initial ARC) and Step 5 (Residual ARC)
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
@@ -767,7 +769,7 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
                         type="text"
                         value={currentEvidence}
                         onChange={(e) => handleOSOChange(oso.id, { evidence: e.target.value })}
-                        placeholder="Evidence reference (e.g., Training Records §3.2, Maintenance Log)"
+                        placeholder="Evidence reference (e.g., Training Records Â§3.2, Maintenance Log)"
                         className="input text-sm py-1"
                       />
                     </div>
@@ -969,7 +971,7 @@ function ContainmentSection({
               type="text"
               value={containment.evidence || ''}
               onChange={(e) => onChange({ evidence: e.target.value })}
-              placeholder="e.g., Geofence test report §4.2, FTS certification..."
+              placeholder="e.g., Geofence test report Â§4.2, FTS certification..."
               className="input"
             />
           </div>
@@ -1419,40 +1421,59 @@ export default function ProjectSORA({ project, onUpdate, onNavigateToSection }) 
         </div>
       </CollapsibleSection>
       
-      {/* Step 4-5: Air Risk */}
+      {/* Step 4: Initial Air Risk Class */}
       <CollapsibleSection
-        title="Air Risk - ARC & TMPR"
+        title="Air Risk - Initial ARC"
         stepNumber={4}
-        badge={activeCalc.residualARC || activeCalc.initialARC}
+        badge={siteSORA.initialARC || 'ARC-b'}
         status={siteSORA.initialARC ? 'complete' : 'missing'}
       >
-        <div className="space-y-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Initial Air Risk Class (ARC)</h4>
-            <ARCSelector
-              value={siteSORA.initialARC || 'ARC-b'}
-              onChange={(v) => updateSiteSORA({ initialARC: v })}
-            />
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p className="text-sm text-blue-800">
+            <Info className="w-4 h-4 inline mr-1" />
+            Initial ARC is determined by the airspace classification and encounter probability (SORA 2.5 Step #4)
+          </p>
+        </div>
+        
+        <ARCSelector
+          value={siteSORA.initialARC || 'ARC-b'}
+          onChange={(v) => updateSiteSORA({ initialARC: v })}
+        />
+        
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
+          <p className="text-sm text-gray-600 mb-1">Initial Air Risk Class</p>
+          <span className="text-2xl font-bold">{siteSORA.initialARC || 'ARC-b'}</span>
+        </div>
+      </CollapsibleSection>
+      
+      {/* Step 5: Residual ARC (TMPR) */}
+      <CollapsibleSection
+        title="Air Risk - Residual ARC (TMPR)"
+        stepNumber={5}
+        badge={activeCalc.residualARC}
+        status={siteSORA.tmpr?.enabled ? 'complete' : 'info'}
+      >
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p className="text-sm text-blue-800">
+            <Info className="w-4 h-4 inline mr-1" />
+            Apply Tactical Mitigation Performance Requirements to reduce ARC (SORA 2.5 Step #5)
+          </p>
+        </div>
+        
+        <TMPRSelector
+          value={siteSORA.tmpr || {}}
+          onChange={(v) => updateSiteSORA({ tmpr: v })}
+        />
+        
+        <div className="mt-4 flex justify-center gap-8 p-4 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">Initial ARC</p>
+            <span className="text-lg font-bold">{siteSORA.initialARC || 'ARC-b'}</span>
           </div>
-          
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Tactical Mitigation Performance Requirement (TMPR)</h4>
-            <TMPRSelector
-              value={siteSORA.tmpr || {}}
-              onChange={(v) => updateSiteSORA({ tmpr: v })}
-            />
-          </div>
-          
-          <div className="flex justify-center gap-8 p-4 bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Initial ARC</p>
-              <span className="text-lg font-bold">{siteSORA.initialARC || 'ARC-b'}</span>
-            </div>
-            <ArrowRight className="w-6 h-6 text-gray-400 self-center" />
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Residual ARC</p>
-              <span className="text-lg font-bold text-green-600">{activeCalc.residualARC}</span>
-            </div>
+          <ArrowRight className="w-6 h-6 text-gray-400 self-center" />
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">Residual ARC</p>
+            <span className="text-lg font-bold text-green-600">{activeCalc.residualARC}</span>
           </div>
         </div>
       </CollapsibleSection>
