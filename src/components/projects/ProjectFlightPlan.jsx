@@ -118,7 +118,7 @@ function CollapsibleSection({ title, icon: Icon, children, defaultOpen = true, b
           )}
           {status && (
             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[status]}`}>
-              {status === 'complete' ? '✓ Complete' : status === 'partial' ? 'Partial' : 'Missing'}
+              {status === 'complete' ? 'âœ“ Complete' : status === 'partial' ? 'Partial' : 'Missing'}
             </span>
           )}
         </div>
@@ -209,10 +209,12 @@ function OperationTypeSelector({ value, onChange }) {
 // AIRCRAFT SELECTOR
 // ============================================
 
-function AircraftSelector({ 
+function SiteAircraftSelector({ 
   projectAircraft = [], 
-  selectedAircraftIds = [], 
+  siteAircraft = [],
+  primaryAircraftId = null,
   onToggleAircraft,
+  onSetPrimary,
   onNavigateToAircraft 
 }) {
   if (projectAircraft.length === 0) {
@@ -220,10 +222,11 @@ function AircraftSelector({
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <p className="text-sm text-amber-800 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" />
-          No aircraft assigned to this project. Add aircraft in project settings.
+          No aircraft in project fleet. Add aircraft in project settings first.
         </p>
         {onNavigateToAircraft && (
           <button
+            type="button"
             onClick={onNavigateToAircraft}
             className="mt-2 text-sm text-amber-700 hover:text-amber-900 flex items-center gap-1"
           >
@@ -235,40 +238,80 @@ function AircraftSelector({
     )
   }
   
+  const siteAircraftIds = siteAircraft.map(a => typeof a === 'string' ? a : a.id)
+  
   return (
-    <div className="space-y-2">
-      {projectAircraft.map(aircraft => {
-        const isSelected = selectedAircraftIds.includes(aircraft.id)
-        return (
-          <label
-            key={aircraft.id}
-            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-              isSelected 
-                ? 'bg-aeria-navy/5 border-aeria-navy' 
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onToggleAircraft(aircraft.id)}
-              className="w-4 h-4 text-aeria-navy rounded focus:ring-aeria-navy"
-            />
-            <Plane className={`w-5 h-5 ${isSelected ? 'text-aeria-navy' : 'text-gray-400'}`} />
-            <div className="flex-1 min-w-0">
-              <p className={`font-medium ${isSelected ? 'text-aeria-navy' : 'text-gray-900'}`}>
-                {aircraft.nickname || `${aircraft.make} ${aircraft.model}`}
-              </p>
-              <p className="text-xs text-gray-500">
-                {aircraft.make} {aircraft.model} • {aircraft.mtow ? `${aircraft.mtow}kg` : 'Weight N/A'}
-              </p>
+    <div className="space-y-3">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-800">
+          <Info className="w-4 h-4 inline mr-1" />
+          Select aircraft for this site. Mark one as <strong>primary</strong> for SORA calculations.
+        </p>
+      </div>
+      
+      <div className="space-y-2">
+        {projectAircraft.map(aircraft => {
+          const isAssigned = siteAircraftIds.includes(aircraft.id)
+          const isPrimary = primaryAircraftId === aircraft.id
+          
+          return (
+            <div
+              key={aircraft.id}
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                isAssigned 
+                  ? 'bg-aeria-navy/5 border-aeria-navy' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isAssigned}
+                onChange={() => onToggleAircraft(aircraft.id)}
+                className="w-4 h-4 text-aeria-navy rounded focus:ring-aeria-navy"
+              />
+              <Plane className={`w-5 h-5 ${isAssigned ? 'text-aeria-navy' : 'text-gray-400'}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium ${isAssigned ? 'text-aeria-navy' : 'text-gray-900'}`}>
+                  {aircraft.nickname || `${aircraft.make} ${aircraft.model}`}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {aircraft.make} {aircraft.model} • {aircraft.mtow ? `${aircraft.mtow}kg` : 'Weight N/A'}
+                  {aircraft.maxSpeed && ` • Max ${aircraft.maxSpeed}m/s`}
+                </p>
+              </div>
+              
+              {isAssigned && (
+                <button
+                  type="button"
+                  onClick={() => onSetPrimary(aircraft.id)}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    isPrimary
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300'
+                  }`}
+                >
+                  {isPrimary ? '★ Primary' : 'Set Primary'}
+                </button>
+              )}
             </div>
-            {aircraft.isPrimary && (
-              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Primary</span>
-            )}
-          </label>
-        )
-      })}
+          )
+        })}
+      </div>
+      
+      {siteAircraftIds.length > 0 && !primaryAircraftId && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-sm text-amber-800">
+            <AlertTriangle className="w-4 h-4 inline mr-1" />
+            Select a primary aircraft for SORA calculations.
+          </p>
+        </div>
+      )}
+      
+      {siteAircraftIds.length === 0 && (
+        <p className="text-sm text-gray-500 italic text-center py-2">
+          No aircraft assigned to this site yet.
+        </p>
+      )}
     </div>
   )
 }
@@ -625,6 +668,39 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
     updateProjectFlightPlan({ aircraft: updatedAircraft })
   }, [projectFlightPlan.aircraft, updateProjectFlightPlan])
   
+  // Toggle site-level aircraft assignment
+  const handleToggleSiteAircraft = useCallback((aircraftId) => {
+    const currentAircraft = siteFlightPlan.aircraft || []
+    const exists = currentAircraft.includes(aircraftId)
+    
+    let updatedAircraft
+    let updatedPrimary = siteFlightPlan.primaryAircraftId
+    
+    if (exists) {
+      updatedAircraft = currentAircraft.filter(id => id !== aircraftId)
+      // Clear primary if we're removing the primary aircraft
+      if (updatedPrimary === aircraftId) {
+        updatedPrimary = updatedAircraft[0] || null
+      }
+    } else {
+      updatedAircraft = [...currentAircraft, aircraftId]
+      // Auto-set primary if this is the first aircraft
+      if (!updatedPrimary && updatedAircraft.length === 1) {
+        updatedPrimary = aircraftId
+      }
+    }
+    
+    updateSiteFlightPlan({ 
+      aircraft: updatedAircraft,
+      primaryAircraftId: updatedPrimary
+    })
+  }, [siteFlightPlan.aircraft, siteFlightPlan.primaryAircraftId, updateSiteFlightPlan])
+  
+  // Set primary aircraft for site
+  const handleSetPrimaryAircraft = useCallback((aircraftId) => {
+    updateSiteFlightPlan({ primaryAircraftId: aircraftId })
+  }, [updateSiteFlightPlan])
+  
   // ============================================
   // VALIDATION
   // ============================================
@@ -639,9 +715,11 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
       if (!mapData.recoveryPoint) issues.push('Recovery point not set')
     }
     
-    // Check project-level requirements
-    if (!projectFlightPlan.aircraft || projectFlightPlan.aircraft.length === 0) {
-      issues.push('No aircraft selected')
+    // Check site-level aircraft requirements
+    if (!siteFlightPlan.aircraft || siteFlightPlan.aircraft.length === 0) {
+      issues.push('No aircraft assigned to site')
+    } else if (!siteFlightPlan.primaryAircraftId) {
+      issues.push('No primary aircraft selected')
     }
     
     if (!siteFlightPlan.operationType) {
@@ -710,7 +788,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
           </h4>
           <ul className="text-sm text-amber-700 space-y-1">
             {validation.issues.map((issue, i) => (
-              <li key={i}>• {issue}</li>
+              <li key={i}>â€¢ {issue}</li>
             ))}
           </ul>
         </div>
@@ -825,7 +903,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
               />
               <span className="text-sm text-gray-500">meters</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">SORA: Based on aircraft max speed × 15s</p>
+            <p className="text-xs text-gray-500 mt-1">SORA: Based on aircraft max speed Ã— 15s</p>
           </div>
         </div>
         
@@ -843,17 +921,19 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         </div>
       </CollapsibleSection>
       
-      {/* Aircraft - Project Level */}
+      {/* Aircraft - Site Level */}
       <CollapsibleSection
-        title="Aircraft"
+        title="Site Aircraft"
         icon={Plane}
-        badge={projectFlightPlan.aircraft?.length > 0 ? `${projectFlightPlan.aircraft.length} selected` : null}
-        status={projectFlightPlan.aircraft?.length > 0 ? 'complete' : 'missing'}
+        badge={siteFlightPlan.aircraft?.length > 0 ? `${siteFlightPlan.aircraft.length} assigned` : null}
+        status={siteFlightPlan.aircraft?.length > 0 && siteFlightPlan.primaryAircraftId ? 'complete' : 'missing'}
       >
-        <AircraftSelector
-          projectAircraft={project?.aircraft || projectFlightPlan.aircraft || []}
-          selectedAircraftIds={(projectFlightPlan.aircraft || []).map(a => a.id)}
-          onToggleAircraft={handleToggleAircraft}
+        <SiteAircraftSelector
+          projectAircraft={project?.aircraft || []}
+          siteAircraft={siteFlightPlan.aircraft || []}
+          primaryAircraftId={siteFlightPlan.primaryAircraftId}
+          onToggleAircraft={handleToggleSiteAircraft}
+          onSetPrimary={handleSetPrimaryAircraft}
         />
       </CollapsibleSection>
       
