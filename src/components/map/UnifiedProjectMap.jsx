@@ -14,6 +14,9 @@
  * - Implemented full offline caching with OfflineCachePanel (M-09)
  * - Added mapOfflineCache.js utility for tile management
  * 
+ * Batch 5 Fix:
+ * - Replaced console.log with logger utility (L-01)
+ * 
  * @location src/components/map/UnifiedProjectMap.jsx
  * @action REPLACE
  */
@@ -29,6 +32,7 @@ import { MapControlsPanel } from './MapControls'
 import { MapLegend, SiteColorLegend } from './MapLegend'
 import OfflineCachePanel from './OfflineCachePanel'
 import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds } from '../../lib/mapDataStructures'
+import { logger } from '../../lib/logger'
 import {
   Loader2,
   AlertCircle,
@@ -565,17 +569,19 @@ export function UnifiedProjectMap({
   }, [selectSite, onSiteChange])
   
   const handleAddSite = useCallback(() => {
-    // This will be handled by parent component
-    console.log('Add site requested')
+    // Site addition is handled by parent component via onUpdate
+    logger.debug('Add site requested - should be handled by parent')
   }, [])
   
   const handleDuplicateSite = useCallback((siteId) => {
-    console.log('Duplicate site:', siteId)
+    // Site duplication is handled by parent component via onUpdate
+    logger.debug('Duplicate site requested:', siteId)
   }, [])
   
   const handleDeleteSite = useCallback((siteId) => {
     if (confirm('Are you sure you want to delete this site?')) {
-      console.log('Delete site:', siteId)
+      // Site deletion is handled by parent component via onUpdate
+      logger.debug('Delete site requested:', siteId)
     }
   }, [])
   
