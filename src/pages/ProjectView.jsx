@@ -10,6 +10,10 @@
  * - Issue #5: Visual feedback for save states (saving, saved, error)
  * - Added: ProjectNeedsAnalysis tab for CONOPS pre-planning
  * 
+ * Batch 3 Fix:
+ * - Added keyboard navigation for tabs (arrow keys) (M-06)
+ * - Added ARIA labels and roles for accessibility (M-04)
+ * 
  * @location src/pages/ProjectView.jsx
  * @action REPLACE
  */
@@ -450,15 +454,16 @@ export default function ProjectView() {
             className={`btn-primary inline-flex items-center gap-2 ${
               saveStatus === SAVE_STATUS.IDLE ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            aria-busy={saveStatus === SAVE_STATUS.SAVING}
           >
             {saveStatus === SAVE_STATUS.SAVING ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4" aria-hidden="true" />
                 Save
               </>
             )}
@@ -469,6 +474,7 @@ export default function ProjectView() {
             value={project.status}
             onChange={(e) => handleStatusChange(e.target.value)}
             className={`px-3 py-2 rounded-lg border text-sm font-medium ${statusColors[project.status]}`}
+            aria-label="Project status"
           >
             <option value="draft">Draft</option>
             <option value="planning">Planning</option>
@@ -482,8 +488,11 @@ export default function ProjectView() {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              aria-label="More options"
+              aria-expanded={menuOpen}
+              aria-haspopup="true"
             >
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-5 h-5" aria-hidden="true" />
             </button>
             
             {menuOpen && (
@@ -500,7 +509,7 @@ export default function ProjectView() {
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                     Delete Project
                   </button>
                 </div>
@@ -510,15 +519,48 @@ export default function ProjectView() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - Accessible with keyboard navigation */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-1 overflow-x-auto pb-px">
-          {visibleTabs.map((tab) => {
+        <nav 
+          className="flex gap-1 overflow-x-auto pb-px"
+          role="tablist"
+          aria-label="Project sections"
+          onKeyDown={(e) => {
+            const tabs = visibleTabs
+            const currentIndex = tabs.findIndex(t => t.id === activeTab)
+            
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+              e.preventDefault()
+              const nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0
+              setActiveTab(tabs[nextIndex].id)
+              document.getElementById(`tab-${tabs[nextIndex].id}`)?.focus()
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+              e.preventDefault()
+              const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1
+              setActiveTab(tabs[prevIndex].id)
+              document.getElementById(`tab-${tabs[prevIndex].id}`)?.focus()
+            } else if (e.key === 'Home') {
+              e.preventDefault()
+              setActiveTab(tabs[0].id)
+              document.getElementById(`tab-${tabs[0].id}`)?.focus()
+            } else if (e.key === 'End') {
+              e.preventDefault()
+              setActiveTab(tabs[tabs.length - 1].id)
+              document.getElementById(`tab-${tabs[tabs.length - 1].id}`)?.focus()
+            }
+          }}
+        >
+          {visibleTabs.map((tab, index) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
             return (
               <button
                 key={tab.id}
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`tabpanel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   isActive
@@ -526,7 +568,7 @@ export default function ProjectView() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4" aria-hidden="true" />
                 {tab.label}
               </button>
             )
@@ -535,7 +577,12 @@ export default function ProjectView() {
       </div>
 
       {/* Tab Content */}
-      <div>
+      <div 
+        role="tabpanel" 
+        id={`tabpanel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        tabIndex={0}
+      >
         {activeTab === 'overview' && (
           <ProjectOverview project={project} onUpdate={handleUpdate} />
         )}
