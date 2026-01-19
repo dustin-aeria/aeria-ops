@@ -46,6 +46,7 @@ import {
   getSAIL,
   sailColors
 } from '../lib/soraConfig'
+import { POLICIES, getStatusInfo } from '../components/PolicyLibrary'
 
 // ============================================
 // SAIL CALCULATION HELPER
@@ -65,13 +66,13 @@ function calculateSiteSORA(site) {
 }
 
 // ============================================
-// POLICY DATA (for dashboard summary)
+// POLICY DATA (calculated from PolicyLibrary)
 // ============================================
-const POLICY_REVIEW_DATA = {
-  // Simulated - in production this would come from Firestore
-  totalPolicies: 45,
-  reviewDue: 3,
-  reviewOverdue: 1
+const getPolicyReviewStats = () => {
+  const total = POLICIES.length
+  const due = POLICIES.filter(p => getStatusInfo(p).status === 'due').length
+  const overdue = POLICIES.filter(p => getStatusInfo(p).status === 'overdue').length
+  return { totalPolicies: total, reviewDue: due, reviewOverdue: overdue }
 }
 
 export default function Dashboard() {
@@ -89,6 +90,9 @@ export default function Dashboard() {
   const [expiringOperators, setExpiringOperators] = useState([])
   const [sailDistribution, setSailDistribution] = useState({})
   const [allProjects, setAllProjects] = useState([])
+
+  // Calculate policy review stats from actual POLICIES data
+  const policyStats = useMemo(() => getPolicyReviewStats(), [])
 
   useEffect(() => {
     loadDashboardData()
@@ -429,27 +433,27 @@ export default function Dashboard() {
             
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-2xl font-bold text-gray-900">{POLICY_REVIEW_DATA.totalPolicies}</p>
+                <p className="text-2xl font-bold text-gray-900">{policyStats.totalPolicies}</p>
                 <p className="text-xs text-gray-500">Total Policies</p>
               </div>
               <div className="text-center p-3 bg-amber-50 rounded-lg">
-                <p className="text-2xl font-bold text-amber-600">{POLICY_REVIEW_DATA.reviewDue}</p>
+                <p className="text-2xl font-bold text-amber-600">{policyStats.reviewDue}</p>
                 <p className="text-xs text-amber-700">Review Due</p>
               </div>
               <div className="text-center p-3 bg-red-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">{POLICY_REVIEW_DATA.reviewOverdue}</p>
+                <p className="text-2xl font-bold text-red-600">{policyStats.reviewOverdue}</p>
                 <p className="text-xs text-red-700">Overdue</p>
               </div>
             </div>
             
-            {(POLICY_REVIEW_DATA.reviewDue > 0 || POLICY_REVIEW_DATA.reviewOverdue > 0) && (
+            {(policyStats.reviewDue > 0 || policyStats.reviewOverdue > 0) && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-amber-900">Policy Review Required</p>
                     <p className="text-xs text-amber-700 mt-0.5">
-                      {POLICY_REVIEW_DATA.reviewDue + POLICY_REVIEW_DATA.reviewOverdue} policies need review
+                      {policyStats.reviewDue + policyStats.reviewOverdue} policies need review
                     </p>
                   </div>
                 </div>
