@@ -8,13 +8,12 @@
  * - Population assessment with SORA categories
  * - Airspace classification
  * - Access and surroundings documentation
- * - Photo upload for site documentation
  * 
  * @location src/components/projects/ProjectSiteSurvey.jsx
  * @action NEW
  */
 
-import React, { useState, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   MapPin,
   Plus,
@@ -39,10 +38,7 @@ import {
   Copy,
   MoreVertical,
   Pencil,
-  Eye,
-  Upload,
-  Image,
-  Loader2
+  Eye
 } from 'lucide-react'
 import UnifiedProjectMap from '../map/UnifiedProjectMap'
 import { SiteSelector } from '../map/MapControls'
@@ -52,7 +48,6 @@ import {
   getSiteStats,
   validateSiteCompleteness
 } from '../../lib/mapDataStructures'
-import { uploadSitePhoto, deleteSitePhoto } from '../../lib/storageHelpers'
 
 // ============================================
 // CONSTANTS
@@ -362,7 +357,7 @@ function ObstaclesList({ obstacles = [], onUpdate, onRemove, onAdd }) {
       notes: newObstacle.notes,
       geometry: {
         type: 'Point',
-        coordinates: [lng, lat] // GeoJSON uses [lng, lat]
+        coordinates: [lng, lat]
       }
     })
 
@@ -372,9 +367,9 @@ function ObstaclesList({ obstacles = [], onUpdate, onRemove, onAdd }) {
 
   return (
     <div className="space-y-4">
-      {/* Add Manual Obstacle Button/Form */}
       {!showAddForm ? (
         <button
+          type="button"
           onClick={() => setShowAddForm(true)}
           className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"
         >
@@ -385,360 +380,71 @@ function ObstaclesList({ obstacles = [], onUpdate, onRemove, onAdd }) {
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-gray-900">Add Manual Obstacle</h4>
-            <button 
-              onClick={() => setShowAddForm(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button type="button" onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>
           </div>
-          
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
-              <select
-                value={newObstacle.obstacleType}
-                onChange={(e) => setNewObstacle(prev => ({ ...prev, obstacleType: e.target.value }))}
-                className="input text-sm"
-              >
-                {OBSTACLE_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
+              <select value={newObstacle.obstacleType} onChange={(e) => setNewObstacle(prev => ({ ...prev, obstacleType: e.target.value }))} className="input text-sm">
+                {OBSTACLE_TYPES.map(type => (<option key={type.value} value={type.value}>{type.label}</option>))}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Height (m)</label>
-              <input
-                type="number"
-                value={newObstacle.height}
-                onChange={(e) => setNewObstacle(prev => ({ ...prev, height: e.target.value }))}
-                placeholder="e.g., 30"
-                className="input text-sm"
-              />
+              <input type="number" value={newObstacle.height} onChange={(e) => setNewObstacle(prev => ({ ...prev, height: e.target.value }))} placeholder="e.g., 30" className="input text-sm" />
             </div>
           </div>
-          
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Latitude *</label>
-              <input
-                type="number"
-                step="any"
-                value={newObstacle.lat}
-                onChange={(e) => setNewObstacle(prev => ({ ...prev, lat: e.target.value }))}
-                placeholder="e.g., 49.7"
-                className="input text-sm"
-              />
+              <input type="number" step="any" value={newObstacle.lat} onChange={(e) => setNewObstacle(prev => ({ ...prev, lat: e.target.value }))} placeholder="e.g., 49.7" className="input text-sm" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Longitude *</label>
-              <input
-                type="number"
-                step="any"
-                value={newObstacle.lng}
-                onChange={(e) => setNewObstacle(prev => ({ ...prev, lng: e.target.value }))}
-                placeholder="e.g., -123.1"
-                className="input text-sm"
-              />
+              <input type="number" step="any" value={newObstacle.lng} onChange={(e) => setNewObstacle(prev => ({ ...prev, lng: e.target.value }))} placeholder="e.g., -123.1" className="input text-sm" />
             </div>
           </div>
-          
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
-            <input
-              type="text"
-              value={newObstacle.notes}
-              onChange={(e) => setNewObstacle(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="e.g., Guy wires, red aviation lights"
-              className="input text-sm"
-            />
+            <input type="text" value={newObstacle.notes} onChange={(e) => setNewObstacle(prev => ({ ...prev, notes: e.target.value }))} placeholder="e.g., Guy wires, red aviation lights" className="input text-sm" />
           </div>
-          
           <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddManualObstacle}
-              className="px-3 py-1.5 text-sm bg-aeria-navy text-white rounded-lg hover:bg-aeria-navy/90"
-            >
-              Add Obstacle
-            </button>
+            <button type="button" onClick={() => setShowAddForm(false)} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+            <button type="button" onClick={handleAddManualObstacle} className="px-3 py-1.5 text-sm bg-aeria-navy text-white rounded-lg hover:bg-aeria-navy/90">Add Obstacle</button>
           </div>
         </div>
       )}
 
-      {/* Existing Obstacles List */}
       {obstacles.length === 0 ? (
-        <p className="text-sm text-gray-500 italic text-center py-4">
-          No obstacles marked yet. Add obstacles using the map drawing tools or the manual form above.
-        </p>
+        <p className="text-sm text-gray-500 italic text-center py-4">No obstacles marked yet.</p>
       ) : (
         <div className="space-y-2">
-          {obstacles.map((obstacle, index) => {
+          {obstacles.map((obstacle) => {
             const typeInfo = OBSTACLE_TYPES.find(t => t.value === obstacle.obstacleType) || OBSTACLE_TYPES[OBSTACLE_TYPES.length - 1]
-            
             return (
-              <div 
-                key={obstacle.id}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-              >
+              <div key={obstacle.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <span className="text-xl">{typeInfo.icon}</span>
-                
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center gap-2">
-                    <select
-                      value={obstacle.obstacleType || 'other'}
-                      onChange={(e) => onUpdate(obstacle.id, { obstacleType: e.target.value })}
-                      className="input text-sm py-1"
-                    >
-                      {OBSTACLE_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
-                      ))}
+                    <select value={obstacle.obstacleType || 'other'} onChange={(e) => onUpdate(obstacle.id, { obstacleType: e.target.value })} className="input text-sm py-1">
+                      {OBSTACLE_TYPES.map(type => (<option key={type.value} value={type.value}>{type.label}</option>))}
                     </select>
-                    
-                    <input
-                      type="number"
-                      value={obstacle.height || ''}
-                      onChange={(e) => onUpdate(obstacle.id, { height: e.target.value ? Number(e.target.value) : null })}
-                      placeholder="Height (m)"
-                      className="input text-sm py-1 w-28"
-                    />
+                    <input type="number" value={obstacle.height || ''} onChange={(e) => onUpdate(obstacle.id, { height: e.target.value ? Number(e.target.value) : null })} placeholder="Height (m)" className="input text-sm py-1 w-28" />
                   </div>
-                  
-                  <input
-                    type="text"
-                    value={obstacle.notes || ''}
-                    onChange={(e) => onUpdate(obstacle.id, { notes: e.target.value })}
-                    placeholder="Notes (e.g., guy wires, lighting)"
-                    className="input text-sm py-1 w-full"
-                  />
-                  
+                  <input type="text" value={obstacle.notes || ''} onChange={(e) => onUpdate(obstacle.id, { notes: e.target.value })} placeholder="Notes (e.g., guy wires, lighting)" className="input text-sm py-1 w-full" />
                   {obstacle.geometry?.coordinates && (
-                    <p className="text-xs text-gray-500">
-                      Location: {obstacle.geometry.coordinates[1].toFixed(5)}, {obstacle.geometry.coordinates[0].toFixed(5)}
-                    </p>
+                    <p className="text-xs text-gray-500">Location: {obstacle.geometry.coordinates[1].toFixed(5)}, {obstacle.geometry.coordinates[0].toFixed(5)}</p>
                   )}
                 </div>
-                
-                <button
-                  onClick={() => onRemove(obstacle.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 rounded"
-                >
+                <button type="button" onClick={() => onRemove(obstacle.id)} className="p-1 text-gray-400 hover:text-red-500 rounded">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             )
           })}
         </div>
-      )}
-    </div>
-  )
-}
-
-// ============================================
-// PHOTO UPLOAD COMPONENT
-// ============================================
-
-const PHOTO_CATEGORIES = [
-  { value: 'site_overview', label: 'Site Overview' },
-  { value: 'launch_area', label: 'Launch/Recovery Area' },
-  { value: 'obstacle', label: 'Obstacle' },
-  { value: 'hazard', label: 'Hazard' },
-  { value: 'access', label: 'Access Route' },
-  { value: 'airspace', label: 'Airspace Reference' },
-  { value: 'other', label: 'Other' }
-]
-
-function PhotoUpload({ photos = [], projectId, siteId, onPhotosChange }) {
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState('')
-  const [error, setError] = useState(null)
-  const [selectedCategory, setSelectedCategory] = useState('site_overview')
-  const fileInputRef = useRef(null)
-
-  const handleFileSelect = async (e) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-    
-    setUploading(true)
-    setError(null)
-    setUploadProgress(`Uploading 0/${files.length}...`)
-    
-    const newPhotos = [...photos]
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      setUploadProgress(`Uploading ${i + 1}/${files.length}: ${file.name}`)
-      
-      try {
-        const result = await uploadSitePhoto(file, projectId, siteId, selectedCategory)
-        newPhotos.push({
-          id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          ...result,
-          category: selectedCategory,
-          caption: ''
-        })
-      } catch (err) {
-        console.error('Upload error:', err)
-        setError(`Failed to upload ${file.name}: ${err.message}`)
-      }
-    }
-    
-    onPhotosChange(newPhotos)
-    setUploading(false)
-    setUploadProgress('')
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const handleDeletePhoto = async (photo) => {
-    if (!confirm('Delete this photo?')) return
-    
-    try {
-      if (photo.path) {
-        await deleteSitePhoto(photo.path)
-      }
-      const updatedPhotos = photos.filter(p => p.id !== photo.id)
-      onPhotosChange(updatedPhotos)
-    } catch (err) {
-      console.error('Delete error:', err)
-      setError(`Failed to delete photo: ${err.message}`)
-    }
-  }
-
-  const handleUpdateCaption = (photoId, caption) => {
-    const updatedPhotos = photos.map(p => 
-      p.id === photoId ? { ...p, caption } : p
-    )
-    onPhotosChange(updatedPhotos)
-  }
-
-  const handleUpdateCategory = (photoId, category) => {
-    const updatedPhotos = photos.map(p => 
-      p.id === photoId ? { ...p, category } : p
-    )
-    onPhotosChange(updatedPhotos)
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Upload Area */}
-      <div className="flex items-center gap-4">
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="input text-sm"
-          disabled={uploading}
-        >
-          {PHOTO_CATEGORIES.map(cat => (
-            <option key={cat.value} value={cat.value}>{cat.label}</option>
-          ))}
-        </select>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic"
-          multiple
-          onChange={handleFileSelect}
-          className="hidden"
-          disabled={uploading}
-        />
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || !projectId || !siteId}
-          className="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-aeria-navy hover:text-aeria-navy hover:bg-aeria-sky/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              {uploadProgress}
-            </>
-          ) : (
-            <>
-              <Upload className="w-5 h-5" />
-              Upload Photos
-            </>
-          )}
-        </button>
-      </div>
-      
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
-        </div>
-      )}
-      
-      {/* Photo Grid */}
-      {photos.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <Image className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <p className="text-sm">No photos uploaded yet</p>
-          <p className="text-xs mt-1">Upload site photos to document conditions</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {photos.map((photo) => (
-            <div key={photo.id} className="group relative">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                <img
-                  src={photo.url}
-                  alt={photo.caption || photo.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Overlay controls */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                <a
-                  href={photo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 bg-white rounded-full text-gray-700 hover:bg-gray-100"
-                >
-                  <Eye className="w-4 h-4" />
-                </a>
-                <button
-                  onClick={() => handleDeletePhoto(photo)}
-                  className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              
-              {/* Category badge */}
-              <div className="absolute top-2 left-2">
-                <span className="px-2 py-0.5 text-xs bg-black/60 text-white rounded">
-                  {PHOTO_CATEGORIES.find(c => c.value === photo.category)?.label || 'Other'}
-                </span>
-              </div>
-              
-              {/* Caption input */}
-              <input
-                type="text"
-                value={photo.caption || ''}
-                onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
-                placeholder="Add caption..."
-                className="mt-2 w-full text-xs px-2 py-1 border border-gray-200 rounded focus:border-aeria-navy focus:outline-none"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {photos.length > 0 && (
-        <p className="text-xs text-gray-500 text-center">
-          {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
-        </p>
       )}
     </div>
   )
@@ -963,26 +669,6 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     onUpdate({ sites: updatedSites })
   }, [sites, activeSiteId, onUpdate])
   
-  // Update site photos
-  const handlePhotosChange = useCallback((photos) => {
-    if (!activeSiteId) return
-    
-    const updatedSites = sites.map(site => {
-      if (site.id !== activeSiteId) return site
-      
-      return {
-        ...site,
-        siteSurvey: {
-          ...site.siteSurvey,
-          photos: photos
-        },
-        updatedAt: new Date().toISOString()
-      }
-    })
-    
-    onUpdate({ sites: updatedSites })
-  }, [sites, activeSiteId, onUpdate])
-  
   // ============================================
   // VALIDATION
   // ============================================
@@ -1188,88 +874,24 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             </div>
           </CollapsibleSection>
           
-          {/* Airspace */}
-          <CollapsibleSection 
-            title="Airspace" 
-            icon={Plane}
-            badge={surveyData.airspace?.classification ? `Class ${surveyData.airspace.classification}` : null}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Airspace Classification
-                </label>
-                <select
-                  value={surveyData.airspace?.classification || 'G'}
-                  onChange={(e) => updateNestedSurveyData('airspace', { classification: e.target.value })}
-                  className="input"
-                >
-                  {AIRSPACE_CLASSES.map(cls => (
-                    <option key={cls.value} value={cls.value}>
-                      {cls.label} - {cls.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nearest Aerodrome
-                </label>
-                <input
-                  type="text"
-                  value={surveyData.airspace?.nearestAerodrome || ''}
-                  onChange={(e) => updateNestedSurveyData('airspace', { nearestAerodrome: e.target.value })}
-                  placeholder="e.g., CYYC Calgary International"
-                  className="input"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Distance to Aerodrome (km)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={surveyData.airspace?.aerodromeDistance || ''}
-                  onChange={(e) => updateNestedSurveyData('airspace', { 
-                    aerodromeDistance: e.target.value ? Number(e.target.value) : null 
-                  })}
-                  placeholder="e.g., 12.5"
-                  className="input"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Direction from Aerodrome
-                </label>
-                <input
-                  type="text"
-                  value={surveyData.airspace?.aerodromeDirection || ''}
-                  onChange={(e) => updateNestedSurveyData('airspace', { aerodromeDirection: e.target.value })}
-                  placeholder="e.g., NNW"
-                  className="input"
-                />
-              </div>
+          {/* Airspace - Moved to Flight Plan */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Plane className="w-5 h-5" />
+              <span className="font-medium">Airspace Classification</span>
             </div>
-            
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Airspace Restrictions / Notes
-              </label>
-              <textarea
-                value={Array.isArray(surveyData.airspace?.restrictions) ? surveyData.airspace.restrictions.join('\n') : ''}
-                onChange={(e) => updateNestedSurveyData('airspace', { 
-                  restrictions: e.target.value.split('\n').filter(r => r.trim()) 
-                })}
-                placeholder="Enter any airspace restrictions, one per line..."
-                rows={3}
-                className="input"
-              />
-            </div>
-          </CollapsibleSection>
+            <p className="text-sm text-blue-700 mt-1">
+              Airspace information is now configured in the <strong>Flight Plan</strong> section, as it's directly related to flight operations and SORA air risk assessment.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigateToSection?.('flightPlan')}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              Go to Flight Plan
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
           
           {/* Obstacles */}
           <CollapsibleSection 
@@ -1485,18 +1107,10 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               />
             </div>
             
-            {/* Photo Upload Section */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <Camera className="w-4 h-4" />
-                Site Photos
-              </h4>
-              <PhotoUpload
-                photos={surveyData.photos || []}
-                projectId={project?.id}
-                siteId={activeSiteId}
-                onPhotosChange={handlePhotosChange}
-              />
+            {/* Photo upload placeholder */}
+            <div className="mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+              <Camera className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500">Photo upload coming soon</p>
             </div>
           </CollapsibleSection>
         </div>
