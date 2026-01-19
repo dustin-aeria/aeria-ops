@@ -127,6 +127,7 @@ export function UnifiedProjectMap({
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState(null)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   
   // Map data hook
   const mapData = useMapData(project, onUpdate, {
@@ -653,6 +654,33 @@ export function UnifiedProjectMap({
       mapRef.current.zoomOut()
     }
   }, [])
+  
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+    // Trigger map resize after state change
+    setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.resize()
+      }
+    }, 100)
+  }, [])
+  
+  // Handle Escape key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.resize()
+          }
+        }, 100)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
 
   // ============================================
   // RENDER
@@ -676,8 +704,8 @@ export function UnifiedProjectMap({
   
   return (
     <div 
-      className={`relative bg-gray-100 rounded-lg overflow-hidden ${className}`}
-      style={{ height }}
+      className={`relative bg-gray-100 overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[9999] rounded-none' : 'rounded-lg'} ${className}`}
+      style={isFullscreen ? undefined : { height }}
     >
       {/* Map container */}
       <div ref={mapContainerRef} className="absolute inset-0" />
@@ -728,6 +756,8 @@ export function UnifiedProjectMap({
           onZoomOut={handleZoomOut}
           showAllSites={showAllSites}
           editMode={editMode}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={handleToggleFullscreen}
         />
       )}
       
