@@ -465,9 +465,11 @@ export const getDefaultSiteFlightPlanData = () => ({
   primaryAircraftId: null,   // ID of primary aircraft for this site (for SORA)
   
   // Operation parameters (SORA-relevant)
-  operationType: 'VLOS',
-  maxAltitudeAGL: 120,
-  maxDistanceFromPilot: null,
+  operationType: 'VLOS',       // VLOS | EVLOS | BVLOS
+  maxAltitudeAGL: 120,         // meters
+  maxDistanceFromPilot: null,  // meters
+  flightDuration: null,        // minutes per flight
+  totalFlights: 1,             // number of flights planned
   
   // Airspace (moved from siteSurvey - flight-relevant)
   airspace: {
@@ -483,10 +485,13 @@ export const getDefaultSiteFlightPlanData = () => ({
     notes: ''
   },
   
-  // Flight geography parameters (for auto-calculation)
-  flightGeographyMethod: 'manual', // manual | auto
-  contingencyBuffer: 15,           // seconds at max speed
-  groundRiskBufferMethod: 'altitude', // altitude | fixed | manual
+  // Flight geography parameters
+  areaType: null,                        // point | corridor | area
+  flightGeographyMethod: 'manual',       // inside-out | reverse | manual
+  contingencyBuffer: null,               // meters (typically maxSpeed × 15s)
+  groundRiskBufferMethod: 'altitude',    // altitude | ballistic | fixed | containment
+  groundRiskBuffer: null,                // meters (auto-calculated or manual)
+  adjacentAreaConsidered: false,         // SORA Step 8 assessment done
   
   // Site-specific weather considerations
   localWeatherFactors: '',
