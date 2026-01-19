@@ -38,7 +38,8 @@ import {
   Copy,
   MoreVertical,
   Pencil,
-  Eye
+  Eye,
+  ArrowRight
 } from 'lucide-react'
 import UnifiedProjectMap from '../map/UnifiedProjectMap'
 import { SiteSelector } from '../map/MapControls'
