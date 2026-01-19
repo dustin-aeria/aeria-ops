@@ -40,7 +40,9 @@ import {
   XCircle,
   Settings,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Radio,
+  Navigation2
 } from 'lucide-react'
 import UnifiedProjectMap from '../map/UnifiedProjectMap'
 import { 
@@ -87,6 +89,16 @@ const DEFAULT_CONTINGENCIES = [
   { trigger: 'Fly-Away', action: 'Attempt to regain control. If unsuccessful, contact FIC immediately.', priority: 'critical' },
   { trigger: 'Deteriorating Weather', action: 'Land immediately if conditions fall below minimums.', priority: 'medium' },
   { trigger: 'Aircraft in Vicinity', action: 'Descend and hold position or land. Give way to all manned aircraft.', priority: 'high' }
+]
+
+const AIRSPACE_CLASSES = [
+  { value: 'A', label: 'Class A', description: 'Controlled - IFR only', controlled: true },
+  { value: 'B', label: 'Class B', description: 'Controlled - Major airports', controlled: true },
+  { value: 'C', label: 'Class C', description: 'Controlled - Busy airports', controlled: true },
+  { value: 'D', label: 'Class D', description: 'Controlled - Towered airports', controlled: true },
+  { value: 'E', label: 'Class E', description: 'Controlled - Low altitude', controlled: true },
+  { value: 'F', label: 'Class F', description: 'Special use airspace', controlled: false },
+  { value: 'G', label: 'Class G', description: 'Uncontrolled airspace', controlled: false }
 ]
 
 // ============================================
@@ -918,6 +930,158 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
             rows={3}
             className="input"
           />
+        </div>
+      </CollapsibleSection>
+      
+      {/* Airspace - Site Level */}
+      <CollapsibleSection
+        title="Airspace"
+        icon={Radio}
+        badge={siteFlightPlan.airspace?.classification ? `Class ${siteFlightPlan.airspace.classification}` : null}
+        status={siteFlightPlan.airspace?.classification ? 'complete' : 'incomplete'}
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <Info className="w-4 h-4 inline mr-1" />
+              Airspace classification affects SORA Air Risk Class (ARC) determination.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Airspace Classification
+              </label>
+              <select
+                value={siteFlightPlan.airspace?.classification || 'G'}
+                onChange={(e) => {
+                  const cls = AIRSPACE_CLASSES.find(c => c.value === e.target.value)
+                  updateSiteFlightPlan({ 
+                    airspace: {
+                      ...siteFlightPlan.airspace,
+                      classification: e.target.value,
+                      controlled: cls?.controlled || false
+                    }
+                  })
+                }}
+                className="input"
+              >
+                {AIRSPACE_CLASSES.map(cls => (
+                  <option key={cls.value} value={cls.value}>
+                    {cls.label} - {cls.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={siteFlightPlan.airspace?.atcCoordinationRequired || false}
+                  onChange={(e) => updateSiteFlightPlan({ 
+                    airspace: {
+                      ...siteFlightPlan.airspace,
+                      atcCoordinationRequired: e.target.checked
+                    }
+                  })}
+                  className="w-4 h-4 text-aeria-navy rounded"
+                />
+                <span className="text-sm text-gray-700">ATC Coordination Required</span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={siteFlightPlan.airspace?.notamRequired || false}
+                  onChange={(e) => updateSiteFlightPlan({ 
+                    airspace: {
+                      ...siteFlightPlan.airspace,
+                      notamRequired: e.target.checked
+                    }
+                  })}
+                  className="w-4 h-4 text-aeria-navy rounded"
+                />
+                <span className="text-sm text-gray-700">NOTAM Required</span>
+              </label>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nearest Aerodrome
+              </label>
+              <input
+                type="text"
+                value={siteFlightPlan.airspace?.nearestAerodrome || ''}
+                onChange={(e) => updateSiteFlightPlan({ 
+                  airspace: {
+                    ...siteFlightPlan.airspace,
+                    nearestAerodrome: e.target.value
+                  }
+                })}
+                placeholder="e.g., CYYC Calgary Intl"
+                className="input"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Distance (km)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={siteFlightPlan.airspace?.aerodromeDistance || ''}
+                onChange={(e) => updateSiteFlightPlan({ 
+                  airspace: {
+                    ...siteFlightPlan.airspace,
+                    aerodromeDistance: e.target.value ? Number(e.target.value) : null
+                  }
+                })}
+                placeholder="e.g., 12.5"
+                className="input"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Direction
+              </label>
+              <input
+                type="text"
+                value={siteFlightPlan.airspace?.aerodromeDirection || ''}
+                onChange={(e) => updateSiteFlightPlan({ 
+                  airspace: {
+                    ...siteFlightPlan.airspace,
+                    aerodromeDirection: e.target.value
+                  }
+                })}
+                placeholder="e.g., NNW"
+                className="input"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Airspace Notes / Restrictions
+            </label>
+            <textarea
+              value={siteFlightPlan.airspace?.notes || ''}
+              onChange={(e) => updateSiteFlightPlan({ 
+                airspace: {
+                  ...siteFlightPlan.airspace,
+                  notes: e.target.value
+                }
+              })}
+              placeholder="Enter any airspace restrictions, special considerations, or coordination requirements..."
+              rows={3}
+              className="input"
+            />
+          </div>
         </div>
       </CollapsibleSection>
       
