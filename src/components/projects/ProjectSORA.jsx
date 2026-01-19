@@ -620,7 +620,7 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
       </div>
       
       {/* OSO Categories */}
-      {Object.entries(osoCategories).map(([catKey, catLabel]) => {
+      {Object.entries(osoCategories).map(([catKey, catConfig]) => {
         const catOSOs = compliance.results.filter(o => o.category === catKey)
         const isExpanded = expandedCategory === catKey
         const catCompliant = catOSOs.filter(o => o.compliant || o.required === 'O').length
@@ -632,7 +632,7 @@ function OSOComplianceSection({ sail, osoCompliance, onChange }) {
               onClick={() => setExpandedCategory(isExpanded ? null : catKey)}
               className="w-full px-4 py-3 bg-gray-50 flex items-center justify-between hover:bg-gray-100"
             >
-              <span className="font-medium text-gray-900">{catLabel}</span>
+              <span className="font-medium text-gray-900">{catConfig.label}</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">
                   {catCompliant}/{catOSOs.length}
