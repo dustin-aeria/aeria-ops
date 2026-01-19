@@ -12,7 +12,7 @@
  * - Review status badges (active/due/overdue)
  * 
  * @location src/components/PolicyLibrary.jsx
- * @action NEW
+ * @action REPLACE
  */
 
 import React, { useState, useMemo, useCallback } from 'react'
@@ -82,7 +82,7 @@ import {
 // POLICY DATA
 // ============================================
 
-const POLICIES = [
+export const POLICIES = [
   // RPAS Operations (1001-1012)
   {
     id: 'pol-1001',
@@ -1154,7 +1154,7 @@ const CATEGORIES = {
 // HELPER FUNCTIONS
 // ============================================
 
-const getStatusInfo = (policy) => {
+export const getStatusInfo = (policy) => {
   const today = new Date()
   const reviewDate = new Date(policy.reviewDate)
   const daysUntilReview = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24))
