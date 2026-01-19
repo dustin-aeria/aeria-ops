@@ -64,14 +64,14 @@ const AIRSPACE_CLASSES = [
 ]
 
 const OBSTACLE_TYPES = [
-  { value: 'tower', label: 'Tower/Antenna', icon: '📡' },
-  { value: 'wire', label: 'Power Lines/Wires', icon: '⚡' },
-  { value: 'building', label: 'Building/Structure', icon: '🏢' },
-  { value: 'tree', label: 'Trees/Vegetation', icon: '🌲' },
-  { value: 'terrain', label: 'Terrain Feature', icon: '⛰️' },
-  { value: 'water', label: 'Water Tower/Tank', icon: '💧' },
-  { value: 'crane', label: 'Crane', icon: '🏗️' },
-  { value: 'other', label: 'Other', icon: '⚠️' }
+  { value: 'tower', label: 'Tower/Antenna', icon: 'ðŸ“¡' },
+  { value: 'wire', label: 'Power Lines/Wires', icon: 'âš¡' },
+  { value: 'building', label: 'Building/Structure', icon: 'ðŸ¢' },
+  { value: 'tree', label: 'Trees/Vegetation', icon: 'ðŸŒ²' },
+  { value: 'terrain', label: 'Terrain Feature', icon: 'â›°ï¸' },
+  { value: 'water', label: 'Water Tower/Tank', icon: 'ðŸ’§' },
+  { value: 'crane', label: 'Crane', icon: 'ðŸ—ï¸' },
+  { value: 'other', label: 'Other', icon: 'âš ï¸' }
 ]
 
 // ============================================
@@ -324,75 +324,212 @@ function PopulationCategorySelector({ value, onChange, label = "Population Categ
 }
 
 // ============================================
-// OBSTACLES LIST
+// OBSTACLES LIST WITH MANUAL ADD
 // ============================================
 
-function ObstaclesList({ obstacles = [], onUpdate, onRemove }) {
-  if (obstacles.length === 0) {
-    return (
-      <p className="text-sm text-gray-500 italic">
-        No obstacles marked. Use the map drawing tools to add obstacles.
-      </p>
-    )
+function ObstaclesList({ obstacles = [], onUpdate, onRemove, onAdd }) {
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newObstacle, setNewObstacle] = useState({
+    obstacleType: 'other',
+    height: '',
+    notes: '',
+    lat: '',
+    lng: ''
+  })
+
+  const handleAddManualObstacle = () => {
+    if (!newObstacle.lat || !newObstacle.lng) {
+      alert('Please enter coordinates (latitude and longitude)')
+      return
+    }
+    
+    const lat = parseFloat(newObstacle.lat)
+    const lng = parseFloat(newObstacle.lng)
+    
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      alert('Invalid coordinates. Latitude must be -90 to 90, Longitude must be -180 to 180')
+      return
+    }
+
+    onAdd({
+      obstacleType: newObstacle.obstacleType,
+      height: newObstacle.height ? Number(newObstacle.height) : null,
+      notes: newObstacle.notes,
+      geometry: {
+        type: 'Point',
+        coordinates: [lng, lat] // GeoJSON uses [lng, lat]
+      }
+    })
+
+    setNewObstacle({ obstacleType: 'other', height: '', notes: '', lat: '', lng: '' })
+    setShowAddForm(false)
   }
-  
+
   return (
-    <div className="space-y-2">
-      {obstacles.map((obstacle, index) => {
-        const typeInfo = OBSTACLE_TYPES.find(t => t.value === obstacle.obstacleType) || OBSTACLE_TYPES[OBSTACLE_TYPES.length - 1]
-        
-        return (
-          <div 
-            key={obstacle.id}
-            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-          >
-            <span className="text-xl">{typeInfo.icon}</span>
-            
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="flex items-center gap-2">
-                <select
-                  value={obstacle.obstacleType || 'other'}
-                  onChange={(e) => onUpdate(obstacle.id, { obstacleType: e.target.value })}
-                  className="input text-sm py-1"
-                >
-                  {OBSTACLE_TYPES.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-                
-                <input
-                  type="number"
-                  value={obstacle.height || ''}
-                  onChange={(e) => onUpdate(obstacle.id, { height: e.target.value ? Number(e.target.value) : null })}
-                  placeholder="Height (m)"
-                  className="input text-sm py-1 w-28"
-                />
-              </div>
-              
-              <input
-                type="text"
-                value={obstacle.notes || ''}
-                onChange={(e) => onUpdate(obstacle.id, { notes: e.target.value })}
-                placeholder="Notes (e.g., guy wires, lighting)"
-                className="input text-sm py-1 w-full"
-              />
-              
-              {obstacle.geometry?.coordinates && (
-                <p className="text-xs text-gray-500">
-                  📍 {obstacle.geometry.coordinates[1].toFixed(5)}, {obstacle.geometry.coordinates[0].toFixed(5)}
-                </p>
-              )}
-            </div>
-            
-            <button
-              onClick={() => onRemove(obstacle.id)}
-              className="p-1 text-gray-400 hover:text-red-500 rounded"
+    <div className="space-y-4">
+      {/* Add Manual Obstacle Button/Form */}
+      {!showAddForm ? (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Obstacle Manually
+        </button>
+      ) : (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-gray-900">Add Manual Obstacle</h4>
+            <button 
+              onClick={() => setShowAddForm(false)}
+              className="text-gray-400 hover:text-gray-600"
             >
-              <Trash2 className="w-4 h-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
-        )
-      })}
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+              <select
+                value={newObstacle.obstacleType}
+                onChange={(e) => setNewObstacle(prev => ({ ...prev, obstacleType: e.target.value }))}
+                className="input text-sm"
+              >
+                {OBSTACLE_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Height (m)</label>
+              <input
+                type="number"
+                value={newObstacle.height}
+                onChange={(e) => setNewObstacle(prev => ({ ...prev, height: e.target.value }))}
+                placeholder="e.g., 30"
+                className="input text-sm"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Latitude *</label>
+              <input
+                type="number"
+                step="any"
+                value={newObstacle.lat}
+                onChange={(e) => setNewObstacle(prev => ({ ...prev, lat: e.target.value }))}
+                placeholder="e.g., 49.7"
+                className="input text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Longitude *</label>
+              <input
+                type="number"
+                step="any"
+                value={newObstacle.lng}
+                onChange={(e) => setNewObstacle(prev => ({ ...prev, lng: e.target.value }))}
+                placeholder="e.g., -123.1"
+                className="input text-sm"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+            <input
+              type="text"
+              value={newObstacle.notes}
+              onChange={(e) => setNewObstacle(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="e.g., Guy wires, red aviation lights"
+              className="input text-sm"
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowAddForm(false)}
+              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddManualObstacle}
+              className="px-3 py-1.5 text-sm bg-aeria-navy text-white rounded-lg hover:bg-aeria-navy/90"
+            >
+              Add Obstacle
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Obstacles List */}
+      {obstacles.length === 0 ? (
+        <p className="text-sm text-gray-500 italic text-center py-4">
+          No obstacles marked yet. Add obstacles using the map drawing tools or the manual form above.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {obstacles.map((obstacle, index) => {
+            const typeInfo = OBSTACLE_TYPES.find(t => t.value === obstacle.obstacleType) || OBSTACLE_TYPES[OBSTACLE_TYPES.length - 1]
+            
+            return (
+              <div 
+                key={obstacle.id}
+                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+              >
+                <span className="text-xl">{typeInfo.icon}</span>
+                
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={obstacle.obstacleType || 'other'}
+                      onChange={(e) => onUpdate(obstacle.id, { obstacleType: e.target.value })}
+                      className="input text-sm py-1"
+                    >
+                      {OBSTACLE_TYPES.map(type => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                    
+                    <input
+                      type="number"
+                      value={obstacle.height || ''}
+                      onChange={(e) => onUpdate(obstacle.id, { height: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="Height (m)"
+                      className="input text-sm py-1 w-28"
+                    />
+                  </div>
+                  
+                  <input
+                    type="text"
+                    value={obstacle.notes || ''}
+                    onChange={(e) => onUpdate(obstacle.id, { notes: e.target.value })}
+                    placeholder="Notes (e.g., guy wires, lighting)"
+                    className="input text-sm py-1 w-full"
+                  />
+                  
+                  {obstacle.geometry?.coordinates && (
+                    <p className="text-xs text-gray-500">
+                      Location: {obstacle.geometry.coordinates[1].toFixed(5)}, {obstacle.geometry.coordinates[0].toFixed(5)}
+                    </p>
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => onRemove(obstacle.id)}
+                  className="p-1 text-gray-400 hover:text-red-500 rounded"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -583,6 +720,39 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
     onUpdate({ sites: updatedSites })
   }, [sites, activeSiteId, onUpdate])
   
+  // Add obstacle manually
+  const handleAddObstacle = useCallback((obstacleData) => {
+    if (!activeSiteId) return
+    
+    const newObstacle = {
+      id: `obstacle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      elementType: 'obstacle',
+      ...obstacleData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    const updatedSites = sites.map(site => {
+      if (site.id !== activeSiteId) return site
+      
+      const obstacles = site.mapData?.siteSurvey?.obstacles || []
+      
+      return {
+        ...site,
+        mapData: {
+          ...site.mapData,
+          siteSurvey: {
+            ...site.mapData?.siteSurvey,
+            obstacles: [...obstacles, newObstacle]
+          }
+        },
+        updatedAt: new Date().toISOString()
+      }
+    })
+    
+    onUpdate({ sites: updatedSites })
+  }, [sites, activeSiteId, onUpdate])
+  
   // ============================================
   // VALIDATION
   // ============================================
@@ -653,12 +823,12 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               <h4 className={`font-medium mb-2 ${
                 validation.isComplete ? 'text-green-800' : 'text-amber-800'
               }`}>
-                {validation.isComplete ? '✓ Survey Complete' : 'Survey Incomplete'}
+                {validation.isComplete ? 'âœ“ Survey Complete' : 'Survey Incomplete'}
               </h4>
               {!validation.isComplete && (
                 <ul className="text-sm space-y-1">
                   {validation.issues.map((issue, i) => (
-                    <li key={i} className="text-amber-700">• {issue.message}</li>
+                    <li key={i} className="text-amber-700">â€¢ {issue.message}</li>
                   ))}
                 </ul>
               )}
@@ -880,8 +1050,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-gray-600">
                 <Info className="w-4 h-4 inline mr-1" />
-                Use the <strong>Add Obstacle</strong> drawing tool on the map to mark obstacle locations. 
-                Then add details below.
+                Mark obstacles using the <strong>map drawing tools</strong> or <strong>add manually</strong> below with coordinates.
               </p>
             </div>
             
@@ -889,6 +1058,7 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
               obstacles={mapData.obstacles || []}
               onUpdate={handleUpdateObstacle}
               onRemove={handleRemoveObstacle}
+              onAdd={handleAddObstacle}
             />
           </CollapsibleSection>
           
