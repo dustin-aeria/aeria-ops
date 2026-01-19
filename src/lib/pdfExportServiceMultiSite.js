@@ -488,10 +488,10 @@ export async function generateSingleSiteExport(project, siteId, exportType, bran
 }
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS (exported for use in components)
 // ============================================
 
-function calculateSiteSORA(site) {
+export function calculateSiteSORA(site) {
   const sora = site.soraAssessment || {}
   const population = sora.populationCategory || site.siteSurvey?.population?.category || 'sparsely'
   const uaChar = sora.uaCharacteristics || '1m_25ms'
@@ -514,7 +514,7 @@ function calculateSiteSORA(site) {
   }
 }
 
-function calculateMaxSAIL(sites) {
+export function calculateMaxSAIL(sites) {
   const sailOrder = ['I', 'II', 'III', 'IV', 'V', 'VI']
   let maxIndex = -1
   
