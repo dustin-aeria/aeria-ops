@@ -27,32 +27,32 @@ export const populationCategories = {
     description: 'Areas controlled where unauthorized people are not allowed to enter'
   },
   remote: { 
-    label: 'Remote (< 5 ppl/kmÂ²)', 
+    label: 'Remote (< 5 ppl/km²)', 
     density: 5,
     description: 'Areas where people may be, such as forests, deserts, large farm parcels'
   },
   lightly: { 
-    label: 'Lightly Populated (< 50 ppl/kmÂ²)', 
+    label: 'Lightly Populated (< 50 ppl/km²)', 
     density: 50,
     description: 'Areas of small farms, residential areas with very large lots (~4 acres)'
   },
   sparsely: { 
-    label: 'Sparsely Populated (< 500 ppl/kmÂ²)', 
+    label: 'Sparsely Populated (< 500 ppl/km²)', 
     density: 500,
     description: 'Areas of homes and small businesses with large lot sizes (~1 acre)'
   },
   suburban: { 
-    label: 'Suburban (< 5,000 ppl/kmÂ²)', 
+    label: 'Suburban (< 5,000 ppl/km²)', 
     density: 5000,
     description: 'Single-family homes on small lots, apartment complexes, commercial buildings'
   },
   highdensity: { 
-    label: 'High Density Metro (< 50,000 ppl/kmÂ²)', 
+    label: 'High Density Metro (< 50,000 ppl/km²)', 
     density: 50000,
     description: 'Areas of mostly large multistory buildings, downtown areas'
   },
   assembly: { 
-    label: 'Assembly of People (> 50,000 ppl/kmÂ²)', 
+    label: 'Assembly of People (> 50,000 ppl/km²)', 
     density: 100000,
     description: 'Large gatherings such as professional sporting events, large concerts'
   }
@@ -63,31 +63,31 @@ export const populationCategories = {
 // ============================================
 export const uaCharacteristics = {
   '1m_25ms': { 
-    label: 'â‰¤1m / â‰¤25 m/s', 
+    label: '≤1m / ≤25 m/s', 
     maxDimension: 1, 
     maxSpeed: 25,
     description: 'Small consumer drones'
   },
   '3m_35ms': { 
-    label: 'â‰¤3m / â‰¤35 m/s', 
+    label: '≤3m / ≤35 m/s', 
     maxDimension: 3, 
     maxSpeed: 35,
     description: 'Medium commercial UAS'
   },
   '8m_75ms': { 
-    label: 'â‰¤8m / â‰¤75 m/s', 
+    label: '≤8m / ≤75 m/s', 
     maxDimension: 8, 
     maxSpeed: 75,
     description: 'Large industrial UAS'
   },
   '20m_120ms': { 
-    label: 'â‰¤20m / â‰¤120 m/s', 
+    label: '≤20m / ≤120 m/s', 
     maxDimension: 20, 
     maxSpeed: 120,
     description: 'Large fixed-wing UAS'
   },
   '40m_200ms': { 
-    label: 'â‰¤40m / â‰¤200 m/s', 
+    label: '≤40m / ≤200 m/s', 
     maxDimension: 40, 
     maxSpeed: 200,
     description: 'Very large UAS'
@@ -110,42 +110,42 @@ export const intrinsicGRCMatrix = {
     '20m_120ms': 3,
     '40m_200ms': 3
   },
-  remote: {  // < 5 ppl/kmÂ²
+  remote: {  // < 5 ppl/km²
     '1m_25ms': 2,
     '3m_35ms': 3,
     '8m_75ms': 4,
     '20m_120ms': 5,
     '40m_200ms': 6
   },
-  lightly: {  // < 50 ppl/kmÂ²
+  lightly: {  // < 50 ppl/km²
     '1m_25ms': 3,
     '3m_35ms': 4,
     '8m_75ms': 5,
     '20m_120ms': 6,
     '40m_200ms': 7
   },
-  sparsely: {  // < 500 ppl/kmÂ²
+  sparsely: {  // < 500 ppl/km²
     '1m_25ms': 4,
     '3m_35ms': 5,
     '8m_75ms': 6,
     '20m_120ms': 7,
     '40m_200ms': 8
   },
-  suburban: {  // < 5,000 ppl/kmÂ²
+  suburban: {  // < 5,000 ppl/km²
     '1m_25ms': 5,
     '3m_35ms': 6,
     '8m_75ms': 7,
     '20m_120ms': 8,
     '40m_200ms': 9
   },
-  highdensity: {  // < 50,000 ppl/kmÂ²
+  highdensity: {  // < 50,000 ppl/km²
     '1m_25ms': 6,
     '3m_35ms': 7,
     '8m_75ms': 8,
     '20m_120ms': 9,
     '40m_200ms': 10
   },
-  assembly: {  // > 50,000 ppl/kmÂ²
+  assembly: {  // > 50,000 ppl/km²
     '1m_25ms': 7,
     '3m_35ms': 8,
     '8m_75ms': null,  // Not part of SORA
@@ -263,10 +263,10 @@ export const tmprDefinitions = {
 // ============================================
 // SAIL MATRIX (SORA 2.5 Table 7)
 // CORRECTED per JARUS JAR_doc_25 page 47
-// Final GRC (rows) Ã— Residual ARC (columns) = SAIL
+// Final GRC (rows) × Residual ARC (columns) = SAIL
 // ============================================
 export const sailMatrix = {
-  // GRC â‰¤2 uses same row
+  // GRC ≤2 uses same row
   1: { 'ARC-a': 'I', 'ARC-b': 'II', 'ARC-c': 'IV', 'ARC-d': 'VI' },
   2: { 'ARC-a': 'I', 'ARC-b': 'II', 'ARC-c': 'IV', 'ARC-d': 'VI' },
   3: { 'ARC-a': 'II', 'ARC-b': 'II', 'ARC-c': 'IV', 'ARC-d': 'VI' },
@@ -825,7 +825,7 @@ export function calculateFinalGRC(iGRC, mitigations = {}) {
 /**
  * Check if final GRC is within SORA scope
  * @param {number} finalGRC - Final GRC
- * @returns {boolean} True if within scope (â‰¤7)
+ * @returns {boolean} True if within scope (≤7)
  */
 export function isWithinSORAScope(finalGRC) {
   return finalGRC !== null && finalGRC <= 7
@@ -877,7 +877,7 @@ export function getSAIL(finalGRC, residualARC) {
 
 /**
  * Calculate adjacent area distance
- * Per SORA 2.5 Step #8: 3 minutes Ã— max speed, min 5km, max 35km
+ * Per SORA 2.5 Step #8: 3 minutes × max speed, min 5km, max 35km
  * @param {number} maxSpeed - Max speed in m/s
  * @returns {number} Distance in meters
  */
