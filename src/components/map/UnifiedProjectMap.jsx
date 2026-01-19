@@ -10,9 +10,10 @@
  * - Offline tile caching support
  * - Responsive design
  * 
- * Batch 6 Fixes:
- * - Fixed stale closure bug in map click handlers (CRITICAL)
+ * BATCH 6 FINAL FIXES:
+ * - Fixed stale closure bug in map click handlers
  * - Fixed site management handlers (add/duplicate/delete)
+ * - Added fullscreen toggle functionality
  * - Added map-controls.css import
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
@@ -157,6 +158,16 @@ export function UnifiedProjectMap({
     fitToAllSites,
     setShowAllSites
   } = mapData
+
+  // ============================================
+  // FULLSCREEN STATE
+  // ============================================
+  
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+  }, [])
 
   // ============================================
   // REFS FOR DRAWING STATE (prevents stale closures)
@@ -685,8 +696,8 @@ export function UnifiedProjectMap({
   
   return (
     <div 
-      className={`relative bg-gray-100 rounded-lg overflow-hidden ${className}`}
-      style={{ height }}
+      className={`relative bg-gray-100 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[100]' : ''} ${className}`}
+      style={{ height: isFullscreen ? '100vh' : height }}
     >
       {/* Map container */}
       <div ref={mapContainerRef} className="absolute inset-0" />
@@ -737,6 +748,8 @@ export function UnifiedProjectMap({
           onZoomOut={handleZoomOut}
           showAllSites={showAllSites}
           editMode={editMode}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
         />
       )}
       
