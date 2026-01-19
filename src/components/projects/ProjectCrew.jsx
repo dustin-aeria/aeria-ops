@@ -376,19 +376,40 @@ export default function ProjectCrew({ project, onUpdate }) {
       {project.crew?.length > 0 && (
         <div className="card">
           <h3 className="font-medium text-gray-900 mb-3">Emergency Contacts (from crew)</h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {project.crew.map((member, index) => {
               const operator = getOperatorById(member.operatorId)
               if (!operator?.emergencyContact?.name) return null
               
               return (
-                <div key={index} className="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
-                  <span className="text-gray-600">
-                    {member.operatorName}'s emergency contact
-                  </span>
-                  <span className="text-gray-900">
-                    {operator.emergencyContact.name} ({operator.emergencyContact.phone})
-                  </span>
+                <div key={index} className="py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">
+                      {member.operatorName}'s emergency contact
+                    </span>
+                    <span className="text-gray-900 font-medium">
+                      {operator.emergencyContact.name}
+                      {operator.emergencyContact.relationship && (
+                        <span className="text-gray-500 font-normal ml-1">
+                          ({operator.emergencyContact.relationship})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                    {operator.emergencyContact.phone && (
+                      <span className="inline-flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        {operator.emergencyContact.phone}
+                      </span>
+                    )}
+                    {operator.emergencyContact.email && (
+                      <span className="inline-flex items-center gap-1">
+                        <span>✉</span>
+                        {operator.emergencyContact.email}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )
             })}
