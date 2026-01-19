@@ -11,7 +11,7 @@
  * - Responsive design
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
- * @action NEW
+ * @action REPLACE
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
@@ -601,17 +601,41 @@ export function UnifiedProjectMap({
   // RENDER
   // ============================================
   
-  // Error state
+  // Error state - enhanced with setup instructions
   if (mapError) {
+    const isTokenError = mapError.includes('token') || mapError.includes('MAPBOX')
+    
     return (
       <div 
         className={`bg-gray-100 rounded-lg flex items-center justify-center ${className}`}
         style={{ height }}
       >
-        <div className="text-center p-6">
+        <div className="text-center p-6 max-w-md">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium mb-2">Map Error</p>
-          <p className="text-gray-500 text-sm">{mapError}</p>
+          <p className="text-gray-700 font-medium mb-2">Map Configuration Required</p>
+          <p className="text-gray-500 text-sm mb-4">{mapError}</p>
+          
+          {isTokenError && (
+            <div className="text-left bg-white rounded-lg p-4 border border-gray-200">
+              <p className="text-sm font-medium text-gray-700 mb-2">Setup Instructions:</p>
+              <ol className="text-xs text-gray-600 space-y-2 list-decimal list-inside">
+                <li>
+                  Get a free Mapbox token at{' '}
+                  <a 
+                    href="https://account.mapbox.com/auth/signup/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    mapbox.com/signup
+                  </a>
+                </li>
+                <li>Create a <code className="bg-gray-100 px-1 rounded">.env</code> file in your project root</li>
+                <li>Add: <code className="bg-gray-100 px-1 rounded">VITE_MAPBOX_TOKEN=your_token_here</code></li>
+                <li>Restart your development server</li>
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     )
