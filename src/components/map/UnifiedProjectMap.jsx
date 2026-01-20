@@ -9,12 +9,11 @@
  * - Drawing tools for markers, polygons, and lines
  * - Offline tile caching support
  * - Responsive design
- * - Fullscreen mode
  * 
- * FIXES APPLIED:
- * - Fixed stale closure bug in map click handlers (refs sync with state)
- * - Fixed layers disappearing after basemap change (styleVersion + style.load)
- * - Added fullscreen toggle with Escape key support
+ * CRITICAL FIXES APPLIED:
+ * 1. Added styleVersion state to force layer re-render after basemap change
+ * 2. Added style.load listener before calling setStyle()
+ * 3. Added debug logging for marker rendering issues
  * 
  * @location src/components/map/UnifiedProjectMap.jsx
  * @action REPLACE
@@ -114,22 +113,11 @@ export function UnifiedProjectMap({
   const markersRef = useRef({})
   const drawRef = useRef(null)
   
-  // ============================================
-  // PHASE 1 FIX: Refs for drawing state
-  // These refs always hold the current values and solve
-  // the stale closure problem in map event handlers
-  // ============================================
-  const isDrawingRef = useRef(false)
-  const drawingModeRef = useRef(DRAWING_MODES.none)
-  const completeDrawingRef = useRef(null)
-  const addDrawingPointRef = useRef(null)
-  
   // State
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState(null)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [styleVersion, setStyleVersion] = useState(0) // Increments when style changes to force layer re-render
+  const [styleVersion, setStyleVersion] = useState(0) // Increments on basemap change to force layer re-render
   
   // Map data hook
   const mapData = useMapData(project, onUpdate, {
@@ -169,26 +157,6 @@ export function UnifiedProjectMap({
     fitToAllSites,
     setShowAllSites
   } = mapData
-
-  // ============================================
-  // PHASE 1 FIX: Keep refs in sync with state
-  // These effects update refs whenever state changes
-  // ============================================
-  useEffect(() => {
-    isDrawingRef.current = isDrawing
-  }, [isDrawing])
-  
-  useEffect(() => {
-    drawingModeRef.current = drawingMode
-  }, [drawingMode])
-  
-  useEffect(() => {
-    completeDrawingRef.current = completeDrawing
-  }, [completeDrawing])
-  
-  useEffect(() => {
-    addDrawingPointRef.current = addDrawingPoint
-  }, [addDrawingPoint])
 
   // ============================================
   // INITIALIZE MAP
@@ -237,48 +205,26 @@ export function UnifiedProjectMap({
         setMapError('Failed to load map')
       })
       
-      // ============================================
-      // PHASE 1 FIX: Click handler uses refs
-      // Instead of capturing stale state values at mount time,
-      // we now read from refs which always have current values
-      // ============================================
+      // Handle click for drawing
       map.on('click', (e) => {
-        // Read current values from refs (not stale closure values)
-        const currentIsDrawing = isDrawingRef.current
-        const currentDrawingMode = drawingModeRef.current
-        const currentCompleteDrawing = completeDrawingRef.current
-        const currentAddDrawingPoint = addDrawingPointRef.current
-        
-        if (currentIsDrawing && currentDrawingMode.id !== 'none') {
+        if (isDrawing && drawingMode.id !== 'none') {
           const lngLat = e.lngLat
           
-          if (currentDrawingMode.type === 'marker') {
+          if (drawingMode.type === 'marker') {
             // For markers, complete immediately on click
-            if (currentCompleteDrawing) {
-              currentCompleteDrawing(lngLat)
-            }
+            completeDrawing(lngLat)
           } else {
             // For polygons/lines, add point
-            if (currentAddDrawingPoint) {
-              currentAddDrawingPoint(lngLat)
-            }
+            addDrawingPoint(lngLat)
           }
         }
       })
       
-      // ============================================
-      // PHASE 1 FIX: Double-click handler uses refs
-      // ============================================
+      // Handle double-click to complete polygon/line
       map.on('dblclick', (e) => {
-        const currentIsDrawing = isDrawingRef.current
-        const currentDrawingMode = drawingModeRef.current
-        const currentCompleteDrawing = completeDrawingRef.current
-        
-        if (currentIsDrawing && (currentDrawingMode.type === 'polygon' || currentDrawingMode.type === 'line')) {
+        if (isDrawing && (drawingMode.type === 'polygon' || drawingMode.type === 'line')) {
           e.preventDefault()
-          if (currentCompleteDrawing) {
-            currentCompleteDrawing()
-          }
+          completeDrawing()
         }
       })
       
@@ -294,9 +240,10 @@ export function UnifiedProjectMap({
 
   // ============================================
   // UPDATE BASEMAP
-  // When basemap changes, setStyle removes all custom layers.
-  // We listen for style.load and increment styleVersion to
-  // force the layer rendering effects to re-run.
+  // ============================================
+  // UPDATE BASEMAP
+  // When basemap changes, setStyle() removes all custom layers.
+  // We listen for style.load and increment styleVersion to force re-render.
   // ============================================
   
   useEffect(() => {
@@ -306,12 +253,11 @@ export function UnifiedProjectMap({
     const newStyle = MAP_BASEMAPS[basemap]?.style
     if (!newStyle) return
     
-    // Handler to re-add layers after style loads
     const handleStyleLoad = () => {
+      // Force layer re-render after style loads
       setStyleVersion(v => v + 1)
     }
     
-    // Listen for style.load before changing style
     map.once('style.load', handleStyleLoad)
     map.setStyle(newStyle)
     
@@ -348,10 +294,18 @@ export function UnifiedProjectMap({
     // Helper to add markers from a layer
     const addMarkersFromLayer = (markers, layer) => {
       markers.forEach(marker => {
-        if (!marker?.geometry?.coordinates) return
+        if (!marker?.geometry?.coordinates) {
+          console.warn(`[Map] Marker missing geometry:`, { layer, elementType: marker?.elementType, id: marker?.id })
+          return
+        }
         
         const [lng, lat] = marker.geometry.coordinates
         const style = MAP_ELEMENT_STYLES[marker.elementType] || {}
+        
+        if (!style.color) {
+          console.warn(`[Map] No style found for marker:`, { layer, elementType: marker.elementType })
+        }
+        
         const color = marker._siteColor || style.color || '#3B82F6'
         const icon = style.icon || 'map-pin'
         
@@ -390,7 +344,15 @@ export function UnifiedProjectMap({
     addMarkersFromLayer(visibleMapElements.flightPlan.markers, 'flightPlan')
     addMarkersFromLayer(visibleMapElements.emergency.markers, 'emergency')
     
-  }, [visibleMapElements, mapLoaded, setSelectedElement, onElementSelect])
+    // Debug: Log marker counts
+    console.log('[Map] Rendered markers:', {
+      siteSurvey: visibleMapElements.siteSurvey.markers.length,
+      flightPlan: visibleMapElements.flightPlan.markers.length,
+      emergency: visibleMapElements.emergency.markers.length,
+      styleVersion
+    })
+    
+  }, [visibleMapElements, mapLoaded, setSelectedElement, onElementSelect, styleVersion])
 
   // ============================================
   // RENDER POLYGONS AND LINES
@@ -606,7 +568,7 @@ export function UnifiedProjectMap({
       }
     })
     
-  }, [isDrawing, drawingPoints, drawingMode, mapLoaded, styleVersion])
+  }, [isDrawing, drawingPoints, drawingMode, mapLoaded])
 
   // ============================================
   // CURSOR STYLE
@@ -671,32 +633,6 @@ export function UnifiedProjectMap({
       mapRef.current.zoomOut()
     }
   }, [])
-  
-  const handleToggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev)
-  }, [])
-  
-  // Resize map when fullscreen changes
-  useEffect(() => {
-    if (mapRef.current) {
-      // Small delay to let the DOM update
-      setTimeout(() => {
-        mapRef.current?.resize()
-      }, 50)
-    }
-  }, [isFullscreen])
-  
-  // Handle Escape key to exit fullscreen
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false)
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isFullscreen])
 
   // ============================================
   // RENDER
@@ -720,8 +656,8 @@ export function UnifiedProjectMap({
   
   return (
     <div 
-      className={`relative bg-gray-100 overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[9999]' : 'rounded-lg'} ${className}`}
-      style={{ height: isFullscreen ? '100vh' : height }}
+      className={`relative bg-gray-100 rounded-lg overflow-hidden ${className}`}
+      style={{ height }}
     >
       {/* Map container */}
       <div ref={mapContainerRef} className="absolute inset-0" />
@@ -772,8 +708,6 @@ export function UnifiedProjectMap({
           onZoomOut={handleZoomOut}
           showAllSites={showAllSites}
           editMode={editMode}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={handleToggleFullscreen}
         />
       )}
       
