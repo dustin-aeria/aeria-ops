@@ -123,6 +123,9 @@ export function UnifiedProjectMap({
   const drawingModeRef = useRef(DRAWING_MODES.none)
   const completeDrawingRef = useRef(null)
   const addDrawingPointRef = useRef(null)
+
+  // Track initial basemap to prevent unnecessary setStyle on first load
+  const initialBasemapRef = useRef(basemap)
   
   // State
   const [mapLoaded, setMapLoaded] = useState(false)
@@ -298,23 +301,30 @@ export function UnifiedProjectMap({
   // We listen for style.load and increment styleVersion to
   // force the layer rendering effects to re-run.
   // ============================================
-  
+
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
-    
+
     const map = mapRef.current
     const newStyle = MAP_BASEMAPS[basemap]?.style
     if (!newStyle) return
-    
+
+    // Skip setStyle on initial load - the style is already set in the Map constructor
+    // This prevents a race condition where setStyle removes layers before they're rendered
+    if (basemap === initialBasemapRef.current && initialBasemapRef.current !== null) {
+      initialBasemapRef.current = null // Clear so future changes work
+      return
+    }
+
     // Handler to re-add layers after style loads
     const handleStyleLoad = () => {
       setStyleVersion(v => v + 1)
     }
-    
+
     // Listen for style.load before changing style
     map.once('style.load', handleStyleLoad)
     map.setStyle(newStyle)
-    
+
     return () => {
       map.off('style.load', handleStyleLoad)
     }
