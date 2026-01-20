@@ -1019,3 +1019,861 @@ export async function retirePolicy(id, userId) {
     updatedAt: serverTimestamp()
   })
 }
+
+// ============================================
+// SEED DATA FUNCTION
+// ============================================
+
+/**
+ * Seed the database with sample policies
+ * @param {string} userId - User ID performing the seed
+ * @returns {Promise<{success: boolean, count: number, error?: string}>}
+ */
+export async function seedSamplePolicies(userId) {
+  // Sample policies data
+  const SAMPLE_POLICIES = [
+    // RPAS Operations (1001-1012)
+    {
+      number: '1001',
+      title: 'RPAS Operations Policy',
+      category: 'rpas',
+      description: 'Establishes the framework for all remotely piloted aircraft system operations, defining responsibilities, authorization requirements, and operational standards.',
+      version: '3.0',
+      effectiveDate: '2025-01-15',
+      reviewDate: '2026-01-15',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['operations', 'framework', 'authorization', 'standards', 'rpas', 'drone'],
+      relatedPolicies: ['1002', '1003', '1009'],
+      regulatoryRefs: ['CARs 901', 'CARs 903', 'SFOC Guidelines'],
+      sections: [
+        { id: '1', title: 'Purpose and Scope', content: '', order: 1 },
+        { id: '2', title: 'Responsibilities', content: '', order: 2 },
+        { id: '3', title: 'Authorization Requirements', content: '', order: 3 },
+        { id: '4', title: 'Operational Categories', content: '', order: 4 },
+        { id: '5', title: 'Training Requirements', content: '', order: 5 },
+        { id: '6', title: 'Documentation', content: '', order: 6 },
+        { id: '7', title: 'Compliance Monitoring', content: '', order: 7 }
+      ]
+    },
+    {
+      number: '1002',
+      title: 'Flight Authorization Procedure',
+      category: 'rpas',
+      description: 'Defines the process for obtaining internal flight authorization, including risk assessment review, crew qualification verification, and operational approval.',
+      version: '2.1',
+      effectiveDate: '2024-09-01',
+      reviewDate: '2025-09-01',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['authorization', 'approval', 'risk assessment', 'flight', 'permission'],
+      relatedPolicies: ['1001', '1005', '1006'],
+      regulatoryRefs: ['CARs 901.71', 'CARs 903.03'],
+      sections: [
+        { id: '1', title: 'Authorization Request Process', content: '', order: 1 },
+        { id: '2', title: 'Risk Assessment Requirements', content: '', order: 2 },
+        { id: '3', title: 'Crew Qualification Verification', content: '', order: 3 },
+        { id: '4', title: 'Site Survey Requirements', content: '', order: 4 },
+        { id: '5', title: 'Approval Authority Matrix', content: '', order: 5 },
+        { id: '6', title: 'Documentation Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1003',
+      title: 'Airspace Authorization',
+      category: 'rpas',
+      description: 'Procedures for obtaining airspace authorization from NAV CANADA and operating in controlled airspace, including NOTAM requirements.',
+      version: '2.0',
+      effectiveDate: '2024-06-15',
+      reviewDate: '2025-06-15',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['airspace', 'NAV CANADA', 'controlled', 'authorization', 'ATC'],
+      relatedPolicies: ['1001', '1004'],
+      regulatoryRefs: ['CARs 901.64', 'CARs 901.65', 'NAV CANADA RPAS Guidelines'],
+      sections: [
+        { id: '1', title: 'Airspace Classification Overview', content: '', order: 1 },
+        { id: '2', title: 'Authorization Requirements by Class', content: '', order: 2 },
+        { id: '3', title: 'NAV CANADA Application Process', content: '', order: 3 },
+        { id: '4', title: 'NOTAM Procedures', content: '', order: 4 },
+        { id: '5', title: 'Real-time Coordination', content: '', order: 5 },
+        { id: '6', title: 'Emergency Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1004',
+      title: 'NOTAM Procedures',
+      category: 'rpas',
+      description: 'Procedures for filing, managing, and monitoring NOTAMs for drone operations, including timing requirements and coordination protocols.',
+      version: '1.5',
+      effectiveDate: '2024-08-01',
+      reviewDate: '2025-08-01',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['NOTAM', 'notice', 'airmen', 'filing', 'airspace'],
+      relatedPolicies: ['1003'],
+      regulatoryRefs: ['CARs 602.73', 'NAV CANADA NOTAM Manual'],
+      sections: [
+        { id: '1', title: 'NOTAM Requirements', content: '', order: 1 },
+        { id: '2', title: 'Filing Procedures', content: '', order: 2 },
+        { id: '3', title: 'Timing Requirements', content: '', order: 3 },
+        { id: '4', title: 'Content Standards', content: '', order: 4 },
+        { id: '5', title: 'Monitoring and Updates', content: '', order: 5 },
+        { id: '6', title: 'Cancellation Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1005',
+      title: 'Weather Minimums and Limitations',
+      category: 'rpas',
+      description: 'Defines weather minimums for safe operations, including visibility, wind, precipitation, and temperature limitations for different aircraft types.',
+      version: '2.2',
+      effectiveDate: '2024-11-01',
+      reviewDate: '2025-11-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['weather', 'minimums', 'wind', 'visibility', 'conditions', 'limitations'],
+      relatedPolicies: ['1002', '1006'],
+      regulatoryRefs: ['CARs 901.22', 'Manufacturer Limitations'],
+      sections: [
+        { id: '1', title: 'Weather Assessment Requirements', content: '', order: 1 },
+        { id: '2', title: 'Visibility Minimums', content: '', order: 2 },
+        { id: '3', title: 'Wind Limitations', content: '', order: 3 },
+        { id: '4', title: 'Precipitation Restrictions', content: '', order: 4 },
+        { id: '5', title: 'Temperature Limits', content: '', order: 5 },
+        { id: '6', title: 'Weather Monitoring During Operations', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1006',
+      title: 'Emergency Procedures',
+      category: 'rpas',
+      description: 'Standard emergency procedures for RPAS operations including flyaways, loss of control link, battery emergencies, and collision response.',
+      version: '3.1',
+      effectiveDate: '2024-12-01',
+      reviewDate: '2025-06-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['emergency', 'flyaway', 'loss of link', 'battery', 'collision', 'procedures'],
+      relatedPolicies: ['1001', '1007'],
+      regulatoryRefs: ['CARs 901.73', 'Transport Canada Advisory Circulars'],
+      sections: [
+        { id: '1', title: 'Emergency Classification', content: '', order: 1 },
+        { id: '2', title: 'Flyaway Procedures', content: '', order: 2 },
+        { id: '3', title: 'Loss of Control Link', content: '', order: 3 },
+        { id: '4', title: 'Low Battery Emergency', content: '', order: 4 },
+        { id: '5', title: 'Collision/Near-Miss Response', content: '', order: 5 },
+        { id: '6', title: 'Post-Emergency Reporting', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1007',
+      title: 'Incident Reporting',
+      category: 'rpas',
+      description: 'Requirements and procedures for reporting safety incidents, accidents, and near-misses, including Transport Canada notification requirements.',
+      version: '2.0',
+      effectiveDate: '2024-07-01',
+      reviewDate: '2025-07-01',
+      owner: 'Safety Manager',
+      status: 'active',
+      keywords: ['incident', 'accident', 'reporting', 'notification', 'safety', 'near-miss'],
+      relatedPolicies: ['1006', '1045', '1046'],
+      regulatoryRefs: ['CARs 901.75', 'TSB Regulations'],
+      sections: [
+        { id: '1', title: 'Reportable Events Definition', content: '', order: 1 },
+        { id: '2', title: 'Internal Reporting Process', content: '', order: 2 },
+        { id: '3', title: 'Transport Canada Notification', content: '', order: 3 },
+        { id: '4', title: 'TSB Notification Requirements', content: '', order: 4 },
+        { id: '5', title: 'Investigation Procedures', content: '', order: 5 },
+        { id: '6', title: 'Documentation Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1008',
+      title: 'Aircraft Registration',
+      category: 'rpas',
+      description: 'Procedures for registering and marking RPAS with Transport Canada, including renewal requirements and record keeping.',
+      version: '1.3',
+      effectiveDate: '2024-03-01',
+      reviewDate: '2025-03-01',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['registration', 'marking', 'Transport Canada', 'aircraft', 'renewal'],
+      relatedPolicies: ['1009'],
+      regulatoryRefs: ['CARs 901.03', 'CARs 901.05'],
+      sections: [
+        { id: '1', title: 'Registration Requirements', content: '', order: 1 },
+        { id: '2', title: 'Marking Requirements', content: '', order: 2 },
+        { id: '3', title: 'Registration Process', content: '', order: 3 },
+        { id: '4', title: 'Renewal Procedures', content: '', order: 4 },
+        { id: '5', title: 'Record Keeping', content: '', order: 5 },
+        { id: '6', title: 'Fleet Management', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1009',
+      title: 'Aircraft Maintenance',
+      category: 'rpas',
+      description: 'Maintenance requirements, inspection schedules, and airworthiness standards for the RPAS fleet, including pre-flight and periodic inspections.',
+      version: '2.5',
+      effectiveDate: '2024-10-15',
+      reviewDate: '2025-10-15',
+      owner: 'Maintenance Manager',
+      status: 'active',
+      keywords: ['maintenance', 'inspection', 'airworthiness', 'pre-flight', 'periodic'],
+      relatedPolicies: ['1001', '1008'],
+      regulatoryRefs: ['CARs 901.29', 'Manufacturer Maintenance Manuals'],
+      sections: [
+        { id: '1', title: 'Maintenance Philosophy', content: '', order: 1 },
+        { id: '2', title: 'Pre-flight Inspection', content: '', order: 2 },
+        { id: '3', title: 'Periodic Inspection Schedule', content: '', order: 3 },
+        { id: '4', title: 'Component Life Limits', content: '', order: 4 },
+        { id: '5', title: 'Maintenance Documentation', content: '', order: 5 },
+        { id: '6', title: 'Defect Reporting and Rectification', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1010',
+      title: 'Pilot Certification',
+      category: 'rpas',
+      description: 'Requirements for pilot certification, currency, and proficiency, including Basic and Advanced certificate requirements.',
+      version: '2.1',
+      effectiveDate: '2024-05-01',
+      reviewDate: '2025-05-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['certification', 'pilot', 'basic', 'advanced', 'currency', 'proficiency'],
+      relatedPolicies: ['1001', '1011'],
+      regulatoryRefs: ['CARs 901.54', 'CARs 901.55', 'CARs 901.56'],
+      sections: [
+        { id: '1', title: 'Certification Requirements', content: '', order: 1 },
+        { id: '2', title: 'Basic vs Advanced Operations', content: '', order: 2 },
+        { id: '3', title: 'Currency Requirements', content: '', order: 3 },
+        { id: '4', title: 'Proficiency Standards', content: '', order: 4 },
+        { id: '5', title: 'Recertification Process', content: '', order: 5 },
+        { id: '6', title: 'Record Keeping', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1011',
+      title: 'Flight Review Program',
+      category: 'rpas',
+      description: 'Internal flight review program for maintaining pilot proficiency, including annual check requirements and remedial training.',
+      version: '1.8',
+      effectiveDate: '2024-04-01',
+      reviewDate: '2025-04-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['flight review', 'proficiency', 'check', 'annual', 'training'],
+      relatedPolicies: ['1010'],
+      regulatoryRefs: ['CARs 901.57'],
+      sections: [
+        { id: '1', title: 'Flight Review Requirements', content: '', order: 1 },
+        { id: '2', title: 'Review Schedule', content: '', order: 2 },
+        { id: '3', title: 'Evaluation Criteria', content: '', order: 3 },
+        { id: '4', title: 'Remedial Training', content: '', order: 4 },
+        { id: '5', title: 'Documentation', content: '', order: 5 },
+        { id: '6', title: 'Examiner Qualifications', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1012',
+      title: 'SFOC Operations',
+      category: 'rpas',
+      description: 'Procedures for conducting operations under Special Flight Operations Certificates, including application process and compliance requirements.',
+      version: '2.3',
+      effectiveDate: '2024-08-15',
+      reviewDate: '2025-08-15',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['SFOC', 'special', 'operations', 'certificate', 'Transport Canada'],
+      relatedPolicies: ['1001', '1002', '1003'],
+      regulatoryRefs: ['CARs 903', 'Transport Canada SFOC Guidelines'],
+      sections: [
+        { id: '1', title: 'SFOC Requirements', content: '', order: 1 },
+        { id: '2', title: 'Application Process', content: '', order: 2 },
+        { id: '3', title: 'Operational Conditions', content: '', order: 3 },
+        { id: '4', title: 'Compliance Monitoring', content: '', order: 4 },
+        { id: '5', title: 'Reporting Requirements', content: '', order: 5 },
+        { id: '6', title: 'Renewal Process', content: '', order: 6 }
+      ]
+    },
+    // CRM Policies (1013-1021)
+    {
+      number: '1013',
+      title: 'Crew Resource Management',
+      category: 'crm',
+      description: 'CRM principles and practices for RPAS operations, including communication, decision making, and situational awareness.',
+      version: '2.0',
+      effectiveDate: '2024-06-01',
+      reviewDate: '2025-06-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['CRM', 'crew', 'resource', 'management', 'communication', 'teamwork'],
+      relatedPolicies: ['1014', '1017', '1018'],
+      regulatoryRefs: ['Transport Canada CRM Guidelines', 'ICAO Doc 9995'],
+      sections: [
+        { id: '1', title: 'CRM Principles', content: '', order: 1 },
+        { id: '2', title: 'Communication Standards', content: '', order: 2 },
+        { id: '3', title: 'Situational Awareness', content: '', order: 3 },
+        { id: '4', title: 'Workload Management', content: '', order: 4 },
+        { id: '5', title: 'Team Coordination', content: '', order: 5 },
+        { id: '6', title: 'Error Management', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1014',
+      title: 'Briefing and Debriefing',
+      category: 'crm',
+      description: 'Requirements for pre-flight briefings, operational briefings, and post-flight debriefings to ensure effective crew coordination.',
+      version: '1.7',
+      effectiveDate: '2024-05-15',
+      reviewDate: '2025-05-15',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['briefing', 'debriefing', 'pre-flight', 'post-flight', 'coordination'],
+      relatedPolicies: ['1013', '1015'],
+      regulatoryRefs: ['CARs 901.71'],
+      sections: [
+        { id: '1', title: 'Pre-Flight Briefing Requirements', content: '', order: 1 },
+        { id: '2', title: 'Briefing Content Standards', content: '', order: 2 },
+        { id: '3', title: 'Operational Briefings', content: '', order: 3 },
+        { id: '4', title: 'Debriefing Process', content: '', order: 4 },
+        { id: '5', title: 'Lessons Learned Documentation', content: '', order: 5 },
+        { id: '6', title: 'Briefing Checklists', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1015',
+      title: 'Visual Observer Procedures',
+      category: 'crm',
+      description: 'Requirements, responsibilities, and procedures for visual observers supporting RPAS operations.',
+      version: '2.2',
+      effectiveDate: '2024-07-01',
+      reviewDate: '2025-07-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['visual observer', 'VO', 'spotter', 'EVLOS', 'procedures'],
+      relatedPolicies: ['1013', '1016', '1021'],
+      regulatoryRefs: ['CARs 901.70', 'CARs 901.71'],
+      sections: [
+        { id: '1', title: 'Visual Observer Requirements', content: '', order: 1 },
+        { id: '2', title: 'Qualifications and Training', content: '', order: 2 },
+        { id: '3', title: 'Communication Protocols', content: '', order: 3 },
+        { id: '4', title: 'Positioning Requirements', content: '', order: 4 },
+        { id: '5', title: 'Handover Procedures', content: '', order: 5 },
+        { id: '6', title: 'Documentation', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1016',
+      title: 'Crew Composition',
+      category: 'crm',
+      description: 'Requirements for crew composition based on operation type, complexity, and risk level.',
+      version: '1.5',
+      effectiveDate: '2024-04-01',
+      reviewDate: '2025-04-01',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['crew', 'composition', 'staffing', 'roles', 'requirements'],
+      relatedPolicies: ['1013', '1015'],
+      regulatoryRefs: ['CARs 901.69'],
+      sections: [
+        { id: '1', title: 'Minimum Crew Requirements', content: '', order: 1 },
+        { id: '2', title: 'Role Definitions', content: '', order: 2 },
+        { id: '3', title: 'Complexity-Based Staffing', content: '', order: 3 },
+        { id: '4', title: 'Qualification Matrix', content: '', order: 4 },
+        { id: '5', title: 'Crew Assignment Process', content: '', order: 5 },
+        { id: '6', title: 'Substitution Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1017',
+      title: 'Aeronautical Decision Making',
+      category: 'crm',
+      description: 'Framework for aeronautical decision making including the FORDEC model and risk-based decision processes.',
+      version: '2.1',
+      effectiveDate: '2024-09-01',
+      reviewDate: '2025-09-01',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['decision making', 'FORDEC', 'ADM', 'risk', 'judgment'],
+      relatedPolicies: ['1013', '1018'],
+      regulatoryRefs: ['Transport Canada ADM Guidelines'],
+      sections: [
+        { id: '1', title: 'Decision Making Framework', content: '', order: 1 },
+        { id: '2', title: 'FORDEC Model', content: '', order: 2 },
+        { id: '3', title: 'Risk Assessment Integration', content: '', order: 3 },
+        { id: '4', title: 'Go/No-Go Decisions', content: '', order: 4 },
+        { id: '5', title: 'In-Flight Decision Making', content: '', order: 5 },
+        { id: '6', title: 'Post-Decision Review', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1018',
+      title: 'Threat and Error Management',
+      category: 'crm',
+      description: 'TEM model implementation for identifying, managing, and mitigating threats and errors in RPAS operations.',
+      version: '1.8',
+      effectiveDate: '2024-10-01',
+      reviewDate: '2025-10-01',
+      owner: 'Safety Manager',
+      status: 'active',
+      keywords: ['TEM', 'threat', 'error', 'management', 'safety'],
+      relatedPolicies: ['1013', '1017'],
+      regulatoryRefs: ['ICAO Doc 9995', 'Transport Canada SMS Guidelines'],
+      sections: [
+        { id: '1', title: 'TEM Model Overview', content: '', order: 1 },
+        { id: '2', title: 'Threat Identification', content: '', order: 2 },
+        { id: '3', title: 'Error Classification', content: '', order: 3 },
+        { id: '4', title: 'Countermeasures', content: '', order: 4 },
+        { id: '5', title: 'Undesired Aircraft States', content: '', order: 5 },
+        { id: '6', title: 'TEM Training Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1019',
+      title: 'Fatigue Risk Management',
+      category: 'crm',
+      description: 'Fatigue risk management system including duty time limitations, rest requirements, and fatigue reporting.',
+      version: '2.0',
+      effectiveDate: '2024-11-15',
+      reviewDate: '2025-11-15',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['fatigue', 'duty time', 'rest', 'FRMS', 'hours'],
+      relatedPolicies: ['1020'],
+      regulatoryRefs: ['Transport Canada FRMS Guidelines'],
+      sections: [
+        { id: '1', title: 'Fatigue Risk Factors', content: '', order: 1 },
+        { id: '2', title: 'Duty Time Limitations', content: '', order: 2 },
+        { id: '3', title: 'Rest Requirements', content: '', order: 3 },
+        { id: '4', title: 'Fatigue Reporting', content: '', order: 4 },
+        { id: '5', title: 'Scheduling Considerations', content: '', order: 5 },
+        { id: '6', title: 'Fatigue Countermeasures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1020',
+      title: 'Fitness for Duty',
+      category: 'crm',
+      description: 'Requirements for crew fitness for duty including medical fitness, substance use policy, and self-assessment.',
+      version: '1.6',
+      effectiveDate: '2024-08-01',
+      reviewDate: '2025-08-01',
+      owner: 'Operations Manager',
+      status: 'active',
+      keywords: ['fitness', 'duty', 'medical', 'IMSAFE', 'impairment'],
+      relatedPolicies: ['1019'],
+      regulatoryRefs: ['CARs 602.02', 'Transport Canada Guidelines'],
+      sections: [
+        { id: '1', title: 'Fitness Standards', content: '', order: 1 },
+        { id: '2', title: 'IMSAFE Checklist', content: '', order: 2 },
+        { id: '3', title: 'Medical Requirements', content: '', order: 3 },
+        { id: '4', title: 'Substance Use Policy', content: '', order: 4 },
+        { id: '5', title: 'Self-Declaration', content: '', order: 5 },
+        { id: '6', title: 'Return to Duty Process', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1021',
+      title: 'Communication Procedures',
+      category: 'crm',
+      description: 'Standard communication procedures for crew coordination, including radio procedures and emergency communications.',
+      version: '1.9',
+      effectiveDate: '2024-06-15',
+      reviewDate: '2025-06-15',
+      owner: 'Chief Pilot',
+      status: 'active',
+      keywords: ['communication', 'radio', 'procedures', 'crew', 'coordination'],
+      relatedPolicies: ['1013', '1015'],
+      regulatoryRefs: ['CARs 901.71'],
+      sections: [
+        { id: '1', title: 'Communication Standards', content: '', order: 1 },
+        { id: '2', title: 'Radio Procedures', content: '', order: 2 },
+        { id: '3', title: 'Crew Communication', content: '', order: 3 },
+        { id: '4', title: 'External Communications', content: '', order: 4 },
+        { id: '5', title: 'Emergency Communications', content: '', order: 5 },
+        { id: '6', title: 'Communication Equipment', content: '', order: 6 }
+      ]
+    },
+    // HSE Policies (1022-1045)
+    {
+      number: '1022',
+      title: 'Health and Safety Policy',
+      category: 'hse',
+      description: 'Overarching health and safety policy establishing commitment, responsibilities, and HSE management system framework.',
+      version: '3.0',
+      effectiveDate: '2025-01-01',
+      reviewDate: '2026-01-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['health', 'safety', 'policy', 'HSE', 'OHS', 'management'],
+      relatedPolicies: ['1023', '1024'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Policy Statement', content: '', order: 1 },
+        { id: '2', title: 'Management Commitment', content: '', order: 2 },
+        { id: '3', title: 'Responsibilities', content: '', order: 3 },
+        { id: '4', title: 'HSE Management System', content: '', order: 4 },
+        { id: '5', title: 'Performance Monitoring', content: '', order: 5 },
+        { id: '6', title: 'Continuous Improvement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1023',
+      title: 'Hazard Identification and Risk Assessment',
+      category: 'hse',
+      description: 'Procedures for identifying workplace hazards and conducting risk assessments using the 5x5 risk matrix.',
+      version: '2.4',
+      effectiveDate: '2024-09-01',
+      reviewDate: '2025-09-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['hazard', 'HIRA', 'risk assessment', 'matrix', 'identification'],
+      relatedPolicies: ['1022', '1024'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements', 'CSA Z1002'],
+      sections: [
+        { id: '1', title: 'Hazard Identification Process', content: '', order: 1 },
+        { id: '2', title: 'Risk Assessment Methodology', content: '', order: 2 },
+        { id: '3', title: '5x5 Risk Matrix', content: '', order: 3 },
+        { id: '4', title: 'Risk Ranking and Prioritization', content: '', order: 4 },
+        { id: '5', title: 'Control Measures', content: '', order: 5 },
+        { id: '6', title: 'Documentation Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1024',
+      title: 'Site Safety',
+      category: 'hse',
+      description: 'Site-specific safety requirements including site setup, hazard controls, and safe work practices for field operations.',
+      version: '2.1',
+      effectiveDate: '2024-07-15',
+      reviewDate: '2025-07-15',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['site', 'safety', 'field', 'setup', 'controls'],
+      relatedPolicies: ['1022', '1023', '1025'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Site Assessment', content: '', order: 1 },
+        { id: '2', title: 'Site Setup Requirements', content: '', order: 2 },
+        { id: '3', title: 'Exclusion Zones', content: '', order: 3 },
+        { id: '4', title: 'Signage Requirements', content: '', order: 4 },
+        { id: '5', title: 'Traffic Management', content: '', order: 5 },
+        { id: '6', title: 'Site Inspections', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1025',
+      title: 'Personal Protective Equipment',
+      category: 'hse',
+      description: 'PPE requirements, selection, use, maintenance, and training for all operational activities.',
+      version: '2.0',
+      effectiveDate: '2024-06-01',
+      reviewDate: '2025-06-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['PPE', 'protective', 'equipment', 'safety gear', 'protection'],
+      relatedPolicies: ['1024'],
+      regulatoryRefs: ['OH&S Act', 'CSA Standards'],
+      sections: [
+        { id: '1', title: 'PPE Requirements by Task', content: '', order: 1 },
+        { id: '2', title: 'Selection Criteria', content: '', order: 2 },
+        { id: '3', title: 'Use and Limitations', content: '', order: 3 },
+        { id: '4', title: 'Inspection and Maintenance', content: '', order: 4 },
+        { id: '5', title: 'Training Requirements', content: '', order: 5 },
+        { id: '6', title: 'Procurement Standards', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1026',
+      title: 'Emergency Response Plan',
+      category: 'hse',
+      description: 'Emergency response procedures for medical emergencies, fires, severe weather, and other emergency situations.',
+      version: '2.5',
+      effectiveDate: '2024-10-01',
+      reviewDate: '2025-04-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['emergency', 'response', 'plan', 'ERP', 'evacuation'],
+      relatedPolicies: ['1006', '1027', '1028'],
+      regulatoryRefs: ['OH&S Act', 'Fire Code'],
+      sections: [
+        { id: '1', title: 'Emergency Classification', content: '', order: 1 },
+        { id: '2', title: 'Response Procedures', content: '', order: 2 },
+        { id: '3', title: 'Evacuation Procedures', content: '', order: 3 },
+        { id: '4', title: 'Emergency Contacts', content: '', order: 4 },
+        { id: '5', title: 'Emergency Equipment', content: '', order: 5 },
+        { id: '6', title: 'Drill Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1027',
+      title: 'First Aid',
+      category: 'hse',
+      description: 'First aid requirements, equipment, training, and response procedures for workplace injuries.',
+      version: '1.8',
+      effectiveDate: '2024-05-01',
+      reviewDate: '2025-05-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['first aid', 'medical', 'injury', 'treatment', 'kit'],
+      relatedPolicies: ['1026'],
+      regulatoryRefs: ['OH&S Act', 'First Aid Regulation'],
+      sections: [
+        { id: '1', title: 'First Aid Requirements', content: '', order: 1 },
+        { id: '2', title: 'Training Standards', content: '', order: 2 },
+        { id: '3', title: 'First Aid Kit Contents', content: '', order: 3 },
+        { id: '4', title: 'Response Procedures', content: '', order: 4 },
+        { id: '5', title: 'Record Keeping', content: '', order: 5 },
+        { id: '6', title: 'Medical Transportation', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1028',
+      title: 'Fire Prevention and Response',
+      category: 'hse',
+      description: 'Fire prevention measures, fire fighting equipment, and emergency response procedures for fire incidents.',
+      version: '1.6',
+      effectiveDate: '2024-04-15',
+      reviewDate: '2025-04-15',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['fire', 'prevention', 'extinguisher', 'response', 'LiPo'],
+      relatedPolicies: ['1026'],
+      regulatoryRefs: ['Fire Code', 'NFPA Standards'],
+      sections: [
+        { id: '1', title: 'Fire Prevention Measures', content: '', order: 1 },
+        { id: '2', title: 'LiPo Battery Safety', content: '', order: 2 },
+        { id: '3', title: 'Fire Fighting Equipment', content: '', order: 3 },
+        { id: '4', title: 'Fire Response Procedures', content: '', order: 4 },
+        { id: '5', title: 'Evacuation', content: '', order: 5 },
+        { id: '6', title: 'Post-Fire Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1029',
+      title: 'Vehicle Safety',
+      category: 'hse',
+      description: 'Vehicle safety requirements including inspections, safe driving practices, and incident response.',
+      version: '1.5',
+      effectiveDate: '2024-03-01',
+      reviewDate: '2025-03-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['vehicle', 'driving', 'safety', 'inspection', 'fleet'],
+      relatedPolicies: ['1024'],
+      regulatoryRefs: ['Traffic Safety Act', 'Company Fleet Policy'],
+      sections: [
+        { id: '1', title: 'Vehicle Inspection Requirements', content: '', order: 1 },
+        { id: '2', title: 'Safe Driving Practices', content: '', order: 2 },
+        { id: '3', title: 'Journey Management', content: '', order: 3 },
+        { id: '4', title: 'Loading and Securing', content: '', order: 4 },
+        { id: '5', title: 'Incident Response', content: '', order: 5 },
+        { id: '6', title: 'Maintenance Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1030',
+      title: 'Working at Heights',
+      category: 'hse',
+      description: 'Safety requirements for working at heights including fall protection, equipment, and rescue procedures.',
+      version: '1.7',
+      effectiveDate: '2024-06-01',
+      reviewDate: '2025-06-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['heights', 'fall protection', 'ladder', 'scaffold', 'rescue'],
+      relatedPolicies: ['1025'],
+      regulatoryRefs: ['OH&S Act', 'Fall Protection Code'],
+      sections: [
+        { id: '1', title: 'Working at Heights Definition', content: '', order: 1 },
+        { id: '2', title: 'Fall Protection Requirements', content: '', order: 2 },
+        { id: '3', title: 'Equipment Standards', content: '', order: 3 },
+        { id: '4', title: 'Training Requirements', content: '', order: 4 },
+        { id: '5', title: 'Rescue Procedures', content: '', order: 5 },
+        { id: '6', title: 'Inspection Requirements', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1031',
+      title: 'Hazardous Materials',
+      category: 'hse',
+      description: 'Handling, storage, and disposal of hazardous materials including batteries, fuels, and chemicals.',
+      version: '2.0',
+      effectiveDate: '2024-08-01',
+      reviewDate: '2025-08-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['hazmat', 'hazardous', 'materials', 'WHMIS', 'SDS', 'battery'],
+      relatedPolicies: ['1028', '1032'],
+      regulatoryRefs: ['WHMIS Regulations', 'TDG Act'],
+      sections: [
+        { id: '1', title: 'WHMIS Requirements', content: '', order: 1 },
+        { id: '2', title: 'SDS Management', content: '', order: 2 },
+        { id: '3', title: 'Storage Requirements', content: '', order: 3 },
+        { id: '4', title: 'Handling Procedures', content: '', order: 4 },
+        { id: '5', title: 'Spill Response', content: '', order: 5 },
+        { id: '6', title: 'Disposal Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1032',
+      title: 'Environmental Protection',
+      category: 'hse',
+      description: 'Environmental protection measures including spill prevention, waste management, and environmental incident response.',
+      version: '1.8',
+      effectiveDate: '2024-07-01',
+      reviewDate: '2025-07-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['environmental', 'protection', 'spill', 'waste', 'pollution'],
+      relatedPolicies: ['1031'],
+      regulatoryRefs: ['Environmental Protection Act', 'Spill Reporting Regulation'],
+      sections: [
+        { id: '1', title: 'Environmental Responsibilities', content: '', order: 1 },
+        { id: '2', title: 'Spill Prevention', content: '', order: 2 },
+        { id: '3', title: 'Waste Management', content: '', order: 3 },
+        { id: '4', title: 'Spill Response', content: '', order: 4 },
+        { id: '5', title: 'Reporting Requirements', content: '', order: 5 },
+        { id: '6', title: 'Remediation Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1040',
+      title: 'Incident Investigation',
+      category: 'hse',
+      description: 'Procedures for investigating workplace incidents and near-misses to identify root causes and prevent recurrence.',
+      version: '2.3',
+      effectiveDate: '2024-11-01',
+      reviewDate: '2025-11-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['incident', 'investigation', 'root cause', 'analysis', 'near miss'],
+      relatedPolicies: ['1007', '1041'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Investigation Requirements', content: '', order: 1 },
+        { id: '2', title: 'Investigation Team', content: '', order: 2 },
+        { id: '3', title: 'Root Cause Analysis', content: '', order: 3 },
+        { id: '4', title: 'Documentation', content: '', order: 4 },
+        { id: '5', title: 'Corrective Actions', content: '', order: 5 },
+        { id: '6', title: 'Lessons Learned', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1041',
+      title: 'Corrective and Preventive Actions',
+      category: 'hse',
+      description: 'CAPA process for addressing non-conformances, incidents, and opportunities for improvement.',
+      version: '2.0',
+      effectiveDate: '2024-09-15',
+      reviewDate: '2025-09-15',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['CAPA', 'corrective', 'preventive', 'action', 'improvement'],
+      relatedPolicies: ['1040'],
+      regulatoryRefs: ['COR Requirements', 'ISO 45001'],
+      sections: [
+        { id: '1', title: 'CAPA Process', content: '', order: 1 },
+        { id: '2', title: 'Root Cause Requirements', content: '', order: 2 },
+        { id: '3', title: 'Action Planning', content: '', order: 3 },
+        { id: '4', title: 'Implementation', content: '', order: 4 },
+        { id: '5', title: 'Effectiveness Verification', content: '', order: 5 },
+        { id: '6', title: 'Closure Criteria', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1044',
+      title: 'Training and Competency',
+      category: 'hse',
+      description: 'HSE training requirements, competency assessment, and training records management.',
+      version: '2.2',
+      effectiveDate: '2024-08-01',
+      reviewDate: '2025-08-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['training', 'competency', 'qualification', 'assessment', 'certification'],
+      relatedPolicies: ['1010', '1011'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Training Matrix', content: '', order: 1 },
+        { id: '2', title: 'Mandatory Training', content: '', order: 2 },
+        { id: '3', title: 'Competency Assessment', content: '', order: 3 },
+        { id: '4', title: 'Refresher Requirements', content: '', order: 4 },
+        { id: '5', title: 'Records Management', content: '', order: 5 },
+        { id: '6', title: 'Training Evaluation', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1045',
+      title: 'Records and Documentation',
+      category: 'hse',
+      description: 'Requirements for HSE records retention, documentation standards, and record management.',
+      version: '1.8',
+      effectiveDate: '2024-06-15',
+      reviewDate: '2025-06-15',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['records', 'documentation', 'retention', 'filing', 'audit'],
+      relatedPolicies: ['1022'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements', 'Privacy Act'],
+      sections: [
+        { id: '1', title: 'Document Control', content: '', order: 1 },
+        { id: '2', title: 'Required Records', content: '', order: 2 },
+        { id: '3', title: 'Retention Periods', content: '', order: 3 },
+        { id: '4', title: 'Storage Requirements', content: '', order: 4 },
+        { id: '5', title: 'Access and Confidentiality', content: '', order: 5 },
+        { id: '6', title: 'Disposal Procedures', content: '', order: 6 }
+      ]
+    }
+  ]
+
+  try {
+    // Check if policies already exist
+    const existingSnapshot = await getDocs(query(policiesRef, limit(1)))
+    if (!existingSnapshot.empty) {
+      return { success: false, count: 0, error: 'Policies already exist. Clear existing policies first.' }
+    }
+
+    const batch = writeBatch(db)
+    const now = serverTimestamp()
+
+    SAMPLE_POLICIES.forEach((policy) => {
+      const docRef = doc(policiesRef)
+      batch.set(docRef, {
+        ...policy,
+        type: 'default',
+        isTemplate: false,
+        isLatest: true,
+        content: '',
+        attachments: [],
+        permissions: {
+          viewRoles: [],
+          editRoles: ['admin', 'manager'],
+          approveRoles: ['admin']
+        },
+        acknowledgmentSettings: {
+          required: false,
+          requiredRoles: [],
+          deadline: null,
+          reacknowledgmentPeriod: null,
+          signatureRequired: false,
+          signatureType: 'checkbox'
+        },
+        createdAt: now,
+        createdBy: userId,
+        updatedAt: now,
+        updatedBy: userId
+      })
+    })
+
+    await batch.commit()
+
+    return { success: true, count: SAMPLE_POLICIES.length }
+  } catch (error) {
+    console.error('Error seeding policies:', error)
+    return { success: false, count: 0, error: error.message }
+  }
+}

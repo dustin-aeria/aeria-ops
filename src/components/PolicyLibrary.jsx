@@ -49,7 +49,7 @@ import {
   Settings
 } from 'lucide-react'
 import PolicyEditor from './policies/PolicyEditor'
-import { getPoliciesEnhanced, deletePolicyEnhanced } from '../lib/firestorePolicies'
+import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies } from '../lib/firestorePolicies'
 import { usePolicyPermissions, usePendingAcknowledgments } from '../hooks/usePolicyPermissions'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -1282,12 +1282,12 @@ function PolicyCard({ policy, view, onClick }) {
 
 // PolicyDetailModal removed - now using dedicated PolicyDetail page
 
-function EmptyState({ searchQuery, categoryFilter }) {
+function EmptyState({ searchQuery, categoryFilter, onSeedPolicies, seeding }) {
   return (
     <div className="text-center py-12">
       <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
       <h3 className="text-lg font-medium text-gray-900 mb-2">No policies found</h3>
-      <p className="text-gray-500">
+      <p className="text-gray-500 mb-4">
         {searchQuery
           ? `No policies match "${searchQuery}"`
           : categoryFilter
@@ -1295,6 +1295,25 @@ function EmptyState({ searchQuery, categoryFilter }) {
             : 'No policies available'
         }
       </p>
+      {!searchQuery && !categoryFilter && onSeedPolicies && (
+        <button
+          onClick={onSeedPolicies}
+          disabled={seeding}
+          className="btn-primary inline-flex items-center gap-2"
+        >
+          {seeding ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Seeding Policies...
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Seed Sample Policies (36 policies)
+            </>
+          )}
+        </button>
+      )}
     </div>
   )
 }
@@ -1415,6 +1434,7 @@ export default function PolicyLibrary() {
   const [editingPolicy, setEditingPolicy] = useState(null)
   const [deletingPolicy, setDeletingPolicy] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [seeding, setSeeding] = useState(false)
 
   // Load policies from Firestore
   const loadPolicies = async () => {
@@ -1455,6 +1475,28 @@ export default function PolicyLibrary() {
   // Handle delete policy
   const handleDeletePolicy = (policy) => {
     setDeletingPolicy(policy)
+  }
+
+  // Handle seed sample policies
+  const handleSeedPolicies = async () => {
+    if (!user) return
+
+    setSeeding(true)
+    setError('')
+
+    try {
+      const result = await seedSamplePolicies(user.uid)
+      if (result.success) {
+        await loadPolicies()
+      } else {
+        setError(result.error || 'Failed to seed policies')
+      }
+    } catch (err) {
+      setError('Failed to seed policies. Please try again.')
+      console.error('Error seeding policies:', err)
+    } finally {
+      setSeeding(false)
+    }
   }
 
   // Confirm delete
@@ -1706,7 +1748,12 @@ export default function PolicyLibrary() {
 
       {/* Policy List/Grid */}
       {filteredPolicies.length === 0 ? (
-        <EmptyState searchQuery={searchQuery} categoryFilter={categoryFilter} />
+        <EmptyState
+          searchQuery={searchQuery}
+          categoryFilter={categoryFilter}
+          onSeedPolicies={policies.length === 0 ? handleSeedPolicies : null}
+          seeding={seeding}
+        />
       ) : viewMode === 'list' ? (
         <div className="space-y-2">
           {filteredPolicies.map(policy => (
