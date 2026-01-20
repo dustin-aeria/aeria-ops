@@ -99,8 +99,8 @@ export function SiteSelector({
   }
   
   return (
-    <div 
-      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+    <div
+      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
     >
       <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
@@ -269,8 +269,8 @@ export function LayerToggles({
   }
   
   return (
-    <div 
-      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+    <div
+      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
     >
       <button
@@ -366,8 +366,8 @@ export function DrawingTools({
   const currentTools = toolGroups[activeLayer] || []
   
   return (
-    <div 
-      className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
+    <div
+      className="map-control-panel bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden pointer-events-auto"
       onWheel={handleWheel}
     >
       <button
@@ -497,7 +497,7 @@ export function BasemapSwitcher({ currentBasemap, onChangeBasemap }) {
   const IconComponent = current.icon === 'map' ? Map : current.icon === 'globe' ? Globe : Mountain
   
   return (
-    <div className="relative pointer-events-auto">
+    <div className="map-control-panel relative pointer-events-auto">
       <button
         type="button"
         onClick={(e) => {
@@ -568,8 +568,8 @@ export function ViewControls({
   onToggleFullscreen
 }) {
   return (
-    <div 
-      className="flex flex-col gap-1 bg-white rounded-lg shadow border border-gray-200 p-1 pointer-events-auto"
+    <div
+      className="map-control-panel flex flex-col gap-1 bg-white rounded-lg shadow border border-gray-200 p-1 pointer-events-auto"
       onWheel={handleWheel}
     >
       <button
@@ -714,7 +714,7 @@ export function MapControlsPanel({
     <>
       {/* Left/Right side controls */}
       <div
-        className={`absolute top-4 ${positionClasses} z-50 flex flex-col gap-3 max-h-[calc(100%-8rem)] overflow-y-auto pointer-events-auto`}
+        className={`map-control-panel absolute top-4 ${positionClasses} z-50 flex flex-col gap-3 max-h-[calc(100%-8rem)] overflow-y-auto pointer-events-auto`}
         style={{ overscrollBehavior: 'contain' }}
         onWheel={handleWheel}
       >
@@ -750,7 +750,7 @@ export function MapControlsPanel({
       </div>
       
       {/* Bottom right controls */}
-      <div className="absolute bottom-4 right-4 z-50 flex items-end gap-2">
+      <div className="map-control-panel absolute bottom-4 right-4 z-50 flex items-end gap-2 pointer-events-auto">
         <BasemapSwitcher
           currentBasemap={currentBasemap}
           onChangeBasemap={onChangeBasemap}
