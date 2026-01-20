@@ -175,6 +175,17 @@ export function useMapData(project, onUpdate, options = {}) {
   const [showAllSites, setShowAllSites] = useState(false)
 
   // ============================================
+  // SYNC activeSiteId with project.activeSiteId
+  // This ensures the hook's internal state stays in sync when
+  // the user selects a different site via the sidebar
+  // ============================================
+  useEffect(() => {
+    if (project?.activeSiteId && project.activeSiteId !== activeSiteId) {
+      setActiveSiteId(project.activeSiteId)
+    }
+  }, [project?.activeSiteId])
+
+  // ============================================
   // DERIVED STATE
   // ============================================
   
@@ -449,26 +460,35 @@ export function useMapData(project, onUpdate, options = {}) {
   
   /**
    * Update the active site's map data
+   * Uses project.activeSiteId as the source of truth to avoid race conditions
+   * when the user rapidly switches sites
    */
   const updateSiteMapData = useCallback((updater) => {
-    if (!activeSite || !onUpdate) return
-    
+    if (!onUpdate) return
+
+    // Use project.activeSiteId as source of truth, fall back to internal state
+    const targetSiteId = project?.activeSiteId || activeSiteId
+    if (!targetSiteId) return
+
+    const targetSite = sites.find(s => s.id === targetSiteId)
+    if (!targetSite) return
+
     const updatedSites = sites.map(site => {
-      if (site.id !== activeSiteId) return site
-      
-      const newMapData = typeof updater === 'function' 
-        ? updater(site.mapData) 
+      if (site.id !== targetSiteId) return site
+
+      const newMapData = typeof updater === 'function'
+        ? updater(site.mapData)
         : { ...site.mapData, ...updater }
-      
+
       return {
         ...site,
         mapData: newMapData,
         updatedAt: new Date().toISOString()
       }
     })
-    
+
     onUpdate({ sites: updatedSites })
-  }, [activeSite, activeSiteId, sites, onUpdate])
+  }, [project?.activeSiteId, activeSiteId, sites, onUpdate])
   
   /**
    * Add or update a marker element

@@ -558,10 +558,10 @@ export function BasemapSwitcher({ currentBasemap, onChangeBasemap }) {
 // VIEW CONTROLS COMPONENT
 // ============================================
 
-export function ViewControls({ 
-  onFitToSite, 
-  onFitToAll, 
-  onZoomIn, 
+export function ViewControls({
+  onFitToSite,
+  onFitToAll,
+  onZoomIn,
   onZoomOut,
   showAllSites,
   isFullscreen = false,
@@ -583,7 +583,7 @@ export function ViewControls({
       >
         <Plus className="w-5 h-5" />
       </button>
-      
+
       <button
         type="button"
         onClick={(e) => {
@@ -595,9 +595,9 @@ export function ViewControls({
       >
         <Minus className="w-5 h-5" />
       </button>
-      
+
       <div className="w-full h-px bg-gray-200 my-1" />
-      
+
       <button
         type="button"
         onClick={(e) => {
@@ -605,15 +605,15 @@ export function ViewControls({
           onFitToSite()
         }}
         className={`p-2 rounded transition-colors ${
-          !showAllSites 
-            ? 'text-aeria-navy bg-aeria-navy/10' 
+          !showAllSites
+            ? 'text-aeria-navy bg-aeria-navy/10'
             : 'text-gray-700 hover:bg-gray-100'
         }`}
         title="Fit to active site"
       >
         <Target className="w-5 h-5" />
       </button>
-      
+
       <button
         type="button"
         onClick={(e) => {
@@ -621,15 +621,15 @@ export function ViewControls({
           onFitToAll()
         }}
         className={`p-2 rounded transition-colors ${
-          showAllSites 
-            ? 'text-aeria-navy bg-aeria-navy/10' 
+          showAllSites
+            ? 'text-aeria-navy bg-aeria-navy/10'
             : 'text-gray-700 hover:bg-gray-100'
         }`}
         title="Fit to all sites"
       >
         <Maximize2 className="w-5 h-5" />
       </button>
-      
+
       {/* Fullscreen toggle */}
       {onToggleFullscreen && (
         <>
@@ -641,8 +641,8 @@ export function ViewControls({
               onToggleFullscreen()
             }}
             className={`p-2 rounded transition-colors ${
-              isFullscreen 
-                ? 'text-aeria-navy bg-aeria-navy/10' 
+              isFullscreen
+                ? 'text-aeria-navy bg-aeria-navy/10'
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
             title={isFullscreen ? "Exit fullscreen" : "Expand map"}
@@ -656,6 +656,37 @@ export function ViewControls({
         </>
       )}
     </div>
+  )
+}
+
+// ============================================
+// STANDALONE FULLSCREEN BUTTON
+// For use when map controls are hidden
+// ============================================
+
+export function FullscreenButton({ isFullscreen, onToggleFullscreen }) {
+  if (!onToggleFullscreen) return null
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggleFullscreen()
+      }}
+      className={`p-2 bg-white rounded-lg shadow border border-gray-200 transition-colors pointer-events-auto ${
+        isFullscreen
+          ? 'text-aeria-navy bg-aeria-navy/10'
+          : 'text-gray-700 hover:bg-gray-100'
+      }`}
+      title={isFullscreen ? "Exit fullscreen (Esc)" : "Expand map"}
+    >
+      {isFullscreen ? (
+        <Minimize2 className="w-5 h-5" />
+      ) : (
+        <Expand className="w-5 h-5" />
+      )}
+    </button>
   )
 }
 

@@ -27,7 +27,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import { useMapData, DRAWING_MODES } from '../../hooks/useMapData'
-import { MapControlsPanel } from './MapControls'
+import { MapControlsPanel, FullscreenButton } from './MapControls'
 import { MapLegend, SiteColorLegend } from './MapLegend'
 import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds } from '../../lib/mapDataStructures'
 import {
@@ -791,6 +791,16 @@ export function UnifiedProjectMap({
           isFullscreen={isFullscreen}
           onToggleFullscreen={handleToggleFullscreen}
         />
+      )}
+
+      {/* Fullscreen button - shown even when controls are hidden */}
+      {!showControls && mapLoaded && (
+        <div className="absolute top-4 right-4 z-10">
+          <FullscreenButton
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
+          />
+        </div>
       )}
       
       {/* Legend */}

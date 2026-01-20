@@ -119,25 +119,26 @@ function CollapsibleSection({ title, icon: Icon, children, defaultOpen = true, b
 // SITE MANAGEMENT PANEL
 // ============================================
 
-function SiteManagementPanel({ 
-  sites, 
-  activeSiteId, 
-  onSelectSite, 
-  onAddSite, 
+function SiteManagementPanel({
+  sites,
+  activeSiteId,
+  onSelectSite,
+  onAddSite,
   onDuplicateSite,
   onDeleteSite,
   onRenameSite
 }) {
   const [menuOpenId, setMenuOpenId] = useState(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
-  
+
   const handleStartEdit = (site) => {
     setEditingId(site.id)
     setEditName(site.name)
     setMenuOpenId(null)
   }
-  
+
   const handleSaveEdit = (siteId) => {
     if (editName.trim()) {
       onRenameSite(siteId, editName.trim())
@@ -145,20 +146,35 @@ function SiteManagementPanel({
     setEditingId(null)
     setEditName('')
   }
-  
+
+  const handleMenuToggle = (e, siteId) => {
+    e.stopPropagation()
+    if (menuOpenId === siteId) {
+      setMenuOpenId(null)
+    } else {
+      // Calculate position based on button location
+      const rect = e.currentTarget.getBoundingClientRect()
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.right - 144 // 144px = menu width (w-36 = 9rem = 144px)
+      })
+      setMenuOpenId(siteId)
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <h3 className="font-medium text-gray-900">Operation Sites</h3>
         <span className="text-sm text-gray-500">{sites.length}/10</span>
       </div>
-      
+
       <div className="divide-y divide-gray-100">
         {sites.map((site, index) => {
           const isActive = site.id === activeSiteId
           const isEditing = editingId === site.id
           const stats = getSiteStats(site)
-          
+
           return (
             <div
               key={site.id}
@@ -167,11 +183,11 @@ function SiteManagementPanel({
               }`}
               onClick={() => !isEditing && onSelectSite(site.id)}
             >
-              <div 
+              <div
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
               />
-              
+
               <div className="flex-1 min-w-0">
                 {isEditing ? (
                   <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
@@ -212,62 +228,66 @@ function SiteManagementPanel({
                   </>
                 )}
               </div>
-              
+
               {!isEditing && (
-                <div className="relative" onClick={e => e.stopPropagation()}>
+                <div onClick={e => e.stopPropagation()}>
                   <button
-                    onClick={() => setMenuOpenId(menuOpenId === site.id ? null : site.id)}
+                    onClick={(e) => handleMenuToggle(e, site.id)}
                     className="p-1 text-gray-400 hover:text-gray-600 rounded"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
-                  
-                  {menuOpenId === site.id && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-10"
-                        onClick={() => setMenuOpenId(null)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                        <button
-                          onClick={() => handleStartEdit(site)}
-                          className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <Pencil className="w-4 h-4" />
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => {
-                            onDuplicateSite(site.id)
-                            setMenuOpenId(null)
-                          }}
-                          className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Duplicate
-                        </button>
-                        {sites.length > 1 && (
-                          <button
-                            onClick={() => {
-                              onDeleteSite(site.id)
-                              setMenuOpenId(null)
-                            }}
-                            className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
             </div>
           )
         })}
       </div>
-      
+
+      {/* Fixed position dropdown menu - renders outside the overflow container */}
+      {menuOpenId && (
+        <>
+          <div
+            className="fixed inset-0 z-50"
+            onClick={() => setMenuOpenId(null)}
+          />
+          <div
+            className="fixed w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+            style={{ top: menuPosition.top, left: menuPosition.left }}
+          >
+            <button
+              onClick={() => handleStartEdit(sites.find(s => s.id === menuOpenId))}
+              className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" />
+              Rename
+            </button>
+            <button
+              onClick={() => {
+                onDuplicateSite(menuOpenId)
+                setMenuOpenId(null)
+              }}
+              className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Copy className="w-4 h-4" />
+              Duplicate
+            </button>
+            {sites.length > 1 && (
+              <button
+                onClick={() => {
+                  onDeleteSite(menuOpenId)
+                  setMenuOpenId(null)
+                }}
+                className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
       {sites.length < 10 && (
         <button
           onClick={onAddSite}
