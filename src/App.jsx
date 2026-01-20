@@ -12,6 +12,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import LoadingSpinner from './components/LoadingSpinner'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -36,41 +37,30 @@ import CapaDetail from './pages/CapaDetail'
 // Protected route wrapper
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
-  
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-aeria-navy border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner size="lg" message="Loading..." fullScreen />
   }
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
-  
+
   return children
 }
 
 // Public route wrapper (redirect to dashboard if already logged in)
 function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
-  
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-aeria-navy border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    )
+    return <LoadingSpinner size="lg" fullScreen />
   }
-  
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />
   }
-  
+
   return children
 }
 

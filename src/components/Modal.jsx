@@ -1,4 +1,5 @@
 import { useEffect, useRef, useId } from 'react'
+import PropTypes from 'prop-types'
 import { X } from 'lucide-react'
 
 export default function Modal({
@@ -121,6 +122,15 @@ export default function Modal({
   )
 }
 
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string,
+  children: PropTypes.node.isRequired,
+  size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'full']),
+  showClose: PropTypes.bool
+}
+
 // Modal footer helper component
 export function ModalFooter({ children }) {
   return (
@@ -128,4 +138,8 @@ export function ModalFooter({ children }) {
       {children}
     </div>
   )
+}
+
+ModalFooter.propTypes = {
+  children: PropTypes.node.isRequired
 }
