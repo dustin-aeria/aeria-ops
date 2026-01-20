@@ -22,6 +22,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Search,
   Grid,
@@ -34,23 +35,23 @@ import {
   X,
   Calendar,
   User,
-  Link,
   AlertCircle,
   CheckCircle2,
   Clock,
-  Download,
-  Printer,
-  BookOpen,
   Plane,
   Loader2,
   FolderOpen,
-  Scale,
   Plus,
   Pencil,
-  Trash2
+  Trash2,
+  History,
+  Bell,
+  Settings
 } from 'lucide-react'
-import PolicyModal from './PolicyModal'
-import { getPolicies, deletePolicy } from '../lib/firestore'
+import PolicyEditor from './policies/PolicyEditor'
+import { getPoliciesEnhanced, deletePolicyEnhanced } from '../lib/firestorePolicies'
+import { usePolicyPermissions, usePendingAcknowledgments } from '../hooks/usePolicyPermissions'
+import { useAuth } from '../contexts/AuthContext'
 
 // ============================================
 // POLICY DATA
@@ -1279,224 +1280,7 @@ function PolicyCard({ policy, view, onClick }) {
   )
 }
 
-function PolicyDetailModal({ policy, onClose, onEdit, onDelete, allPolicies }) {
-  if (!policy) return null
-
-  const category = CATEGORIES[policy.category]
-  const statusInfo = getStatusInfo(policy)
-
-  const categoryColors = {
-    blue: 'bg-blue-100 text-blue-700 border-blue-200',
-    purple: 'bg-purple-100 text-purple-700 border-purple-200',
-    green: 'bg-green-100 text-green-700 border-green-200'
-  }
-
-  const categoryBgColors = {
-    blue: 'bg-blue-50 border-blue-200',
-    purple: 'bg-purple-50 border-purple-200',
-    green: 'bg-green-50 border-green-200'
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className={`p-6 border-b ${categoryBgColors[category.color]}`}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-lg ${categoryColors[category.color]}`}>
-                <category.icon className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-2 py-0.5 rounded text-sm font-bold ${categoryColors[category.color]}`}>
-                    {policy.number}
-                  </span>
-                  <PolicyStatusBadge policy={policy} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">{policy.title}</h2>
-                <p className="text-sm text-gray-500 mt-1">{category.name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onEdit(policy)}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors text-gray-600 hover:text-aeria-navy"
-                title="Edit policy"
-              >
-                <Pencil className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => onDelete(policy)}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors text-gray-600 hover:text-red-600"
-                title="Delete policy"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Description */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-            <p className="text-gray-700">{policy.description || 'No description provided.'}</p>
-          </div>
-
-          {/* Metadata Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Version</p>
-              <p className="font-medium text-gray-900">{policy.version || '1.0'}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Effective Date</p>
-              <p className="font-medium text-gray-900">{formatDate(policy.effectiveDate)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Review Date</p>
-              <p className={`font-medium ${
-                statusInfo.status === 'overdue' ? 'text-red-600' :
-                statusInfo.status === 'due' ? 'text-amber-600' : 'text-gray-900'
-              }`}>
-                {formatDate(policy.reviewDate)}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Owner</p>
-              <p className="font-medium text-gray-900">{policy.owner || 'Not assigned'}</p>
-            </div>
-          </div>
-
-          {/* Sections */}
-          {policy.sections?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Sections</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <ol className="space-y-2">
-                  {policy.sections.map((section, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">
-                        {index + 1}
-                      </span>
-                      <span className="text-gray-700">{section}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-          )}
-
-          {/* Attachments */}
-          {policy.attachments?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Attachments</h3>
-              <div className="space-y-2">
-                {policy.attachments.map((attachment, index) => (
-                  <a
-                    key={index}
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <FileText className="w-5 h-5 text-gray-400" />
-                    <span className="flex-1 text-sm text-aeria-navy hover:underline">{attachment.name}</span>
-                    <Download className="w-4 h-4 text-gray-400" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Regulatory References */}
-          {policy.regulatoryRefs?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Regulatory References</h3>
-              <div className="flex flex-wrap gap-2">
-                {policy.regulatoryRefs.map((ref, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                  >
-                    <Scale className="w-3 h-3" />
-                    {ref}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Related Policies */}
-          {policy.relatedPolicies?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Related Policies</h3>
-              <div className="flex flex-wrap gap-2">
-                {policy.relatedPolicies.map((num) => {
-                  const related = allPolicies.find(p => p.number === num)
-                  return (
-                    <span
-                      key={num}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-aeria-navy/10 text-aeria-navy rounded-full text-sm"
-                    >
-                      <Link className="w-3 h-3" />
-                      {num}{related ? ` - ${related.title}` : ''}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Keywords */}
-          {policy.keywords?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Keywords</h3>
-              <div className="flex flex-wrap gap-2">
-                {policy.keywords.map((keyword, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
-                  >
-                    {keyword}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Policy ID: {policy.id}
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="btn-secondary flex items-center gap-2">
-              <Printer className="w-4 h-4" />
-              Print
-            </button>
-            <button
-              onClick={() => onEdit(policy)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Pencil className="w-4 h-4" />
-              Edit Policy
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+// PolicyDetailModal removed - now using dedicated PolicyDetail page
 
 function EmptyState({ searchQuery, categoryFilter }) {
   return (
@@ -1612,6 +1396,11 @@ function DeleteConfirmModal({ policy, onConfirm, onCancel, deleting }) {
 // ============================================
 
 export default function PolicyLibrary() {
+  const navigate = useNavigate()
+  const { user, userProfile } = useAuth()
+  const permissions = usePolicyPermissions()
+  const { pendingCount } = usePendingAcknowledgments()
+
   const [policies, setPolicies] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -1620,10 +1409,9 @@ export default function PolicyLibrary() {
   const [viewMode, setViewMode] = useState('list')
   const [sortBy, setSortBy] = useState('number')
   const [sortOrder, setSortOrder] = useState('asc')
-  const [selectedPolicy, setSelectedPolicy] = useState(null)
 
   // Modal states
-  const [showPolicyModal, setShowPolicyModal] = useState(false)
+  const [showPolicyEditor, setShowPolicyEditor] = useState(false)
   const [editingPolicy, setEditingPolicy] = useState(null)
   const [deletingPolicy, setDeletingPolicy] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -1632,7 +1420,7 @@ export default function PolicyLibrary() {
   const loadPolicies = async () => {
     try {
       setError('')
-      const data = await getPolicies()
+      const data = await getPoliciesEnhanced()
       setPolicies(data)
     } catch (err) {
       setError('Failed to load policies. Please try again.')
@@ -1646,25 +1434,27 @@ export default function PolicyLibrary() {
     loadPolicies()
   }, [])
 
+  // Handle policy click - navigate to detail page
+  const handlePolicyClick = (policy) => {
+    navigate(`/policies/${policy.id}`)
+  }
+
   // Handle policy saved (create/update)
   const handlePolicySaved = () => {
     loadPolicies()
     setEditingPolicy(null)
-    setShowPolicyModal(false)
-    setSelectedPolicy(null)
+    setShowPolicyEditor(false)
   }
 
   // Handle edit policy
   const handleEditPolicy = (policy) => {
     setEditingPolicy(policy)
-    setShowPolicyModal(true)
-    setSelectedPolicy(null)
+    setShowPolicyEditor(true)
   }
 
   // Handle delete policy
   const handleDeletePolicy = (policy) => {
     setDeletingPolicy(policy)
-    setSelectedPolicy(null)
   }
 
   // Confirm delete
@@ -1673,7 +1463,7 @@ export default function PolicyLibrary() {
 
     setIsDeleting(true)
     try {
-      await deletePolicy(deletingPolicy.id)
+      await deletePolicyEnhanced(deletingPolicy.id)
       await loadPolicies()
       setDeletingPolicy(null)
     } catch (err) {
@@ -1777,17 +1567,30 @@ export default function PolicyLibrary() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Pending Acknowledgments */}
+            {pendingCount > 0 && (
+              <button
+                onClick={() => navigate('/my-acknowledgments')}
+                className="flex items-center gap-2 px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="font-medium">{pendingCount} Pending</span>
+              </button>
+            )}
+
             {/* New Policy Button */}
-            <button
-              onClick={() => {
-                setEditingPolicy(null)
-                setShowPolicyModal(true)
-              }}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              New Policy
-            </button>
+            {permissions.canEdit && (
+              <button
+                onClick={() => {
+                  setEditingPolicy(null)
+                  setShowPolicyEditor(true)
+                }}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                New Policy
+              </button>
+            )}
 
             {/* Stats */}
             <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
@@ -1913,7 +1716,7 @@ export default function PolicyLibrary() {
               key={policy.id}
               policy={policy}
               view="list"
-              onClick={() => setSelectedPolicy(policy)}
+              onClick={() => handlePolicyClick(policy)}
             />
           ))}
         </div>
@@ -1924,28 +1727,17 @@ export default function PolicyLibrary() {
               key={policy.id}
               policy={policy}
               view="grid"
-              onClick={() => setSelectedPolicy(policy)}
+              onClick={() => handlePolicyClick(policy)}
             />
           ))}
         </div>
       )}
 
-      {/* Policy Detail Modal */}
-      {selectedPolicy && (
-        <PolicyDetailModal
-          policy={selectedPolicy}
-          allPolicies={policies}
-          onClose={() => setSelectedPolicy(null)}
-          onEdit={handleEditPolicy}
-          onDelete={handleDeletePolicy}
-        />
-      )}
-
       {/* Policy Create/Edit Modal */}
-      <PolicyModal
-        isOpen={showPolicyModal}
+      <PolicyEditor
+        isOpen={showPolicyEditor}
         onClose={() => {
-          setShowPolicyModal(false)
+          setShowPolicyEditor(false)
           setEditingPolicy(null)
         }}
         policy={editingPolicy}

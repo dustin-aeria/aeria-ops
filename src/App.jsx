@@ -24,6 +24,8 @@ import Aircraft from './pages/Aircraft'
 import Clients from './pages/Clients'
 import Settings from './pages/Settings'
 import PolicyLibrary from './components/PolicyLibrary'
+import PolicyDetail from './pages/PolicyDetail'
+import MyAcknowledgments from './pages/MyAcknowledgments'
 
 // Safety Module Pages
 import SafetyDashboard from './pages/SafetyDashboard'
@@ -92,6 +94,8 @@ function App() {
           <Route path="projects/:projectId" element={<ProjectView />} />
           <Route path="forms" element={<Forms />} />
           <Route path="policies" element={<PolicyLibrary />} />
+          <Route path="policies/:id" element={<PolicyDetail />} />
+          <Route path="my-acknowledgments" element={<MyAcknowledgments />} />
           <Route path="operators" element={<Operators />} />
           <Route path="aircraft" element={<Aircraft />} />
           <Route path="clients" element={<Clients />} />
