@@ -77,31 +77,32 @@ const MARKER_ICONS = {
   'target': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" fill="white"/><circle cx="12" cy="12" r="6" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="white"/></svg>`
 }
 
-// Create marker element
-const createMarkerElement = (color, icon = 'map-pin', size = 32, isSelected = false) => {
+// Create marker element - selection state is handled via CSS class, not at creation time
+const createMarkerElement = (color, icon = 'map-pin', size = 32) => {
   const el = document.createElement('div')
   el.className = 'map-marker'
   el.style.width = `${size}px`
   el.style.height = `${size}px`
   el.style.cursor = 'pointer'
-  el.style.position = 'relative'
+  el.style.transition = 'filter 0.15s ease, transform 0.15s ease'
 
   const svgTemplate = MARKER_ICONS[icon] || MARKER_ICONS['map-pin']
   el.innerHTML = svgTemplate.replace('currentColor', color)
 
-  // Add selection ring if selected
-  if (isSelected) {
-    el.style.filter = 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.8))'
-    const ring = document.createElement('div')
-    ring.style.position = 'absolute'
-    ring.style.inset = '-6px'
-    ring.style.border = '3px solid #3B82F6'
-    ring.style.borderRadius = '50%'
-    ring.style.animation = 'pulse 1.5s ease-in-out infinite'
-    el.appendChild(ring)
-  }
-
   return el
+}
+
+// Update marker selection visual
+const updateMarkerSelection = (markerEl, isSelected) => {
+  if (isSelected) {
+    markerEl.style.filter = 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.9))'
+    markerEl.style.transform = 'scale(1.15)'
+    markerEl.classList.add('map-marker-selected')
+  } else {
+    markerEl.style.filter = ''
+    markerEl.style.transform = ''
+    markerEl.classList.remove('map-marker-selected')
+  }
 }
 
 // ============================================
@@ -148,6 +149,9 @@ export function UnifiedProjectMap({
   const mapRef = useRef(null)
   const markersRef = useRef({})
   const drawRef = useRef(null)
+  // Store polygon/line element data for click lookups
+  const polygonsDataRef = useRef([])
+  const linesDataRef = useRef([])
   
   // ============================================
   // PHASE 1 FIX: Refs for drawing state
@@ -409,6 +413,7 @@ export function UnifiedProjectMap({
 
   // ============================================
   // RENDER MARKERS
+  // Separate from selection visual updates
   // ============================================
 
   useEffect(() => {
@@ -427,9 +432,11 @@ export function UnifiedProjectMap({
         const style = MAP_ELEMENT_STYLES[marker.elementType] || {}
         const color = marker._siteColor || style.color || '#3B82F6'
         const icon = style.icon || 'map-pin'
-        const isSelected = selectedElement?.id === marker.id
 
-        const el = createMarkerElement(color, icon, marker.isActive ? 32 : 24, isSelected)
+        const el = createMarkerElement(color, icon, marker.isActive ? 32 : 24)
+
+        // Store marker ID on element for selection tracking
+        el.dataset.markerId = marker.id
 
         // Add click handler
         el.addEventListener('click', (e) => {
@@ -455,7 +462,8 @@ export function UnifiedProjectMap({
         const isDraggable = editMode && marker.isActive
         const mapMarker = new mapboxgl.Marker({
           element: el,
-          draggable: isDraggable
+          draggable: isDraggable,
+          anchor: 'center'
         })
           .setLngLat([lng, lat])
           .setPopup(popup)
@@ -484,7 +492,22 @@ export function UnifiedProjectMap({
     addMarkersFromLayer(visibleMapElements.flightPlan.markers, 'flightPlan')
     addMarkersFromLayer(visibleMapElements.emergency.markers, 'emergency')
 
-  }, [visibleMapElements, mapLoaded, setSelectedElement, onElementSelect, editMode, selectedElement, updateElement])
+  }, [visibleMapElements, mapLoaded, setSelectedElement, onElementSelect, editMode, updateElement])
+
+  // ============================================
+  // UPDATE MARKER SELECTION VISUAL
+  // Separate effect to avoid recreating all markers on selection change
+  // ============================================
+
+  useEffect(() => {
+    // Update selection visual on all markers
+    Object.entries(markersRef.current).forEach(([markerId, mapMarker]) => {
+      const el = mapMarker.getElement()
+      if (el) {
+        updateMarkerSelection(el, selectedElement?.id === markerId)
+      }
+    })
+  }, [selectedElement])
 
   // ============================================
   // RENDER POLYGONS AND LINES
@@ -679,8 +702,79 @@ export function UnifiedProjectMap({
         }
       })
     }
-    
-  }, [visibleMapElements, mapLoaded, styleVersion]) // styleVersion forces re-render after basemap change
+
+    // Store polygon/line data for click lookups
+    polygonsDataRef.current = [...solidPolygons, ...hatchedPolygons]
+    linesDataRef.current = lines
+
+    // Add click handlers for polygon layers (only in edit mode)
+    const handlePolygonClick = (e) => {
+      if (!editMode) return
+      const feature = e.features?.[0]
+      if (feature?.properties?.id) {
+        const element = polygonsDataRef.current.find(p => p.id === feature.properties.id)
+        if (element && element.isActive) {
+          setSelectedElement(element)
+          onElementSelect?.(element)
+        }
+      }
+    }
+
+    const handleLineClick = (e) => {
+      if (!editMode) return
+      const feature = e.features?.[0]
+      if (feature?.properties?.id) {
+        const element = linesDataRef.current.find(l => l.id === feature.properties.id)
+        if (element && element.isActive) {
+          setSelectedElement(element)
+          onElementSelect?.(element)
+        }
+      }
+    }
+
+    // Register click handlers on polygon/line layers
+    const polygonLayers = ['polygons-fill', 'hatched-polygons-fill']
+    const lineLayers = ['lines']
+
+    polygonLayers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.on('click', layerId, handlePolygonClick)
+        map.on('mouseenter', layerId, () => {
+          if (editMode) map.getCanvas().style.cursor = 'pointer'
+        })
+        map.on('mouseleave', layerId, () => {
+          map.getCanvas().style.cursor = isDrawing ? 'crosshair' : 'grab'
+        })
+      }
+    })
+
+    lineLayers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.on('click', layerId, handleLineClick)
+        map.on('mouseenter', layerId, () => {
+          if (editMode) map.getCanvas().style.cursor = 'pointer'
+        })
+        map.on('mouseleave', layerId, () => {
+          map.getCanvas().style.cursor = isDrawing ? 'crosshair' : 'grab'
+        })
+      }
+    })
+
+    // Cleanup handlers
+    return () => {
+      polygonLayers.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+          map.off('click', layerId, handlePolygonClick)
+        }
+      })
+      lineLayers.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+          map.off('click', layerId, handleLineClick)
+        }
+      })
+    }
+
+  }, [visibleMapElements, mapLoaded, styleVersion, editMode, isDrawing, setSelectedElement, onElementSelect]) // styleVersion forces re-render after basemap change
 
   // ============================================
   // RENDER DRAWING PREVIEW
@@ -973,7 +1067,7 @@ export function UnifiedProjectMap({
 
       {/* Selection action panel - shows when element is selected in edit mode */}
       {editMode && selectedElement && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-xl border border-gray-200 p-3 min-w-[200px]">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-xl border border-gray-200 p-3 min-w-[200px] max-w-[280px]">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900 text-sm truncate">
@@ -981,10 +1075,27 @@ export function UnifiedProjectMap({
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
                 {selectedElement.elementType}
+                {selectedElement.geometry?.type === 'Polygon' && ' (boundary)'}
+                {selectedElement.geometry?.type === 'LineString' && ' (route)'}
               </p>
+              {/* Point coordinates */}
               {selectedElement.geometry?.coordinates && selectedElement.geometry.type === 'Point' && (
                 <p className="text-xs text-gray-400 mt-1 font-mono">
                   {selectedElement.geometry.coordinates[1]?.toFixed(6)}, {selectedElement.geometry.coordinates[0]?.toFixed(6)}
+                </p>
+              )}
+              {/* Polygon info */}
+              {selectedElement.geometry?.type === 'Polygon' && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {selectedElement.geometry.coordinates?.[0]?.length - 1 || 0} vertices
+                  {selectedElement.properties?.area && ` • ${(selectedElement.properties.area / 10000).toFixed(2)} ha`}
+                </p>
+              )}
+              {/* Line info */}
+              {selectedElement.geometry?.type === 'LineString' && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {selectedElement.geometry.coordinates?.length || 0} points
+                  {selectedElement.properties?.distance && ` • ${selectedElement.properties.distance.toFixed(0)}m`}
                 </p>
               )}
             </div>
@@ -1006,11 +1117,23 @@ export function UnifiedProjectMap({
             </button>
           </div>
           <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-            <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Drag</span>
-            <span>to move</span>
-            <span className="mx-1">|</span>
+            {/* Only show drag hint for Point geometry (markers) */}
+            {selectedElement.geometry?.type === 'Point' && (
+              <>
+                <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Drag</span>
+                <span>to move</span>
+                <span className="mx-1">|</span>
+              </>
+            )}
             <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Del</span>
             <span>to delete</span>
+            {selectedElement.geometry?.type !== 'Point' && (
+              <>
+                <span className="mx-1">|</span>
+                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Esc</span>
+                <span>to deselect</span>
+              </>
+            )}
           </div>
           <button
             onClick={() => setSelectedElement(null)}

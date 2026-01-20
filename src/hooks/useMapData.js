@@ -571,19 +571,29 @@ export function useMapData(project, onUpdate, options = {}) {
     const layer = style.layer
     
     updateSiteMapData(mapData => {
-      const newMapData = { ...mapData }
-      
+      // Start with existing data or empty object
+      const newMapData = mapData ? { ...mapData } : {}
+
+      // Ensure the layer structure exists
       if (!newMapData[layer]) {
         newMapData[layer] = {}
       }
-      
+
       // Handle array vs single element
       if (elementType === 'obstacles' || elementType === 'obstacle') {
+        // Ensure siteSurvey exists
+        if (!newMapData.siteSurvey) {
+          newMapData.siteSurvey = {}
+        }
         if (!Array.isArray(newMapData.siteSurvey.obstacles)) {
           newMapData.siteSurvey.obstacles = []
         }
         newMapData.siteSurvey.obstacles = [...newMapData.siteSurvey.obstacles, marker]
       } else if (elementType === 'musterPoints' || elementType === 'musterPoint') {
+        // Ensure emergency structure exists
+        if (!newMapData.emergency) {
+          newMapData.emergency = { musterPoints: [], evacuationRoutes: [] }
+        }
         if (!Array.isArray(newMapData.emergency.musterPoints)) {
           newMapData.emergency.musterPoints = []
         }
@@ -596,7 +606,7 @@ export function useMapData(project, onUpdate, options = {}) {
         // Single marker - replace existing
         newMapData[layer][elementType] = marker
       }
-      
+
       return newMapData
     })
     
@@ -655,25 +665,27 @@ export function useMapData(project, onUpdate, options = {}) {
     const route = createEvacuationRoute(coordinates, options)
     
     updateSiteMapData(mapData => {
-      const newMapData = { ...mapData }
-      
+      // Start with existing data or empty object
+      const newMapData = mapData ? { ...mapData } : {}
+
+      // Ensure emergency structure exists
       if (!newMapData.emergency) {
         newMapData.emergency = { musterPoints: [], evacuationRoutes: [] }
       }
       if (!Array.isArray(newMapData.emergency.evacuationRoutes)) {
         newMapData.emergency.evacuationRoutes = []
       }
-      
+
       // Set first one as primary if none exists
       if (newMapData.emergency.evacuationRoutes.length === 0) {
         route.isPrimary = true
       }
-      
+
       newMapData.emergency.evacuationRoutes = [
         ...newMapData.emergency.evacuationRoutes,
         route
       ]
-      
+
       return newMapData
     })
     
