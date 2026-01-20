@@ -8,9 +8,10 @@
  * - Drawing mode state
  * - Map element CRUD operations
  * 
- * FIXES APPLIED:
- * - Fixed obstacle/obstacles naming mismatch
- * - Fixed musterPoint/musterPoints naming mismatch (was breaking muster point tool)
+ * CRITICAL FIXES APPLIED:
+ * 1. Fixed musterPoint/musterPoints naming mismatch - muster points now create properly
+ * 2. Fixed obstacle/obstacles naming mismatch
+ * 3. Ensured elementType is always set when collecting markers for rendering
  * 
  * @location src/hooks/useMapData.js
  * @action REPLACE
@@ -264,6 +265,8 @@ export function useMapData(project, onUpdate, options = {}) {
           mapData.siteSurvey.obstacles.forEach(obs => {
             elements.siteSurvey.markers.push({
               ...obs,
+              // Ensure elementType is set for style lookup in renderer
+              elementType: obs.elementType || 'obstacles',
               siteId: site.id,
               siteName: site.name,
               isActive,
@@ -337,6 +340,8 @@ export function useMapData(project, onUpdate, options = {}) {
           mapData.emergency.musterPoints.forEach(point => {
             elements.emergency.markers.push({
               ...point,
+              // Ensure elementType is set for style lookup in renderer
+              elementType: point.elementType || 'musterPoints',
               siteId: site.id,
               siteName: site.name,
               isActive,
@@ -475,7 +480,7 @@ export function useMapData(project, onUpdate, options = {}) {
   const setMarker = useCallback((elementType, lngLat, options = {}) => {
     if (!activeSite) return null
     
-    // Handle singular/plural naming inconsistencies between DRAWING_MODES and MAP_ELEMENT_STYLES
+    // FIX: Handle singular/plural naming inconsistencies between DRAWING_MODES and MAP_ELEMENT_STYLES
     // DRAWING_MODES uses singular: 'obstacle', 'musterPoint'
     // MAP_ELEMENT_STYLES uses plural: 'obstacles', 'musterPoints'
     const styleKeyMap = {
