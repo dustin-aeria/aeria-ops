@@ -162,6 +162,9 @@ export function UnifiedProjectMap({
   const drawingModeRef = useRef(DRAWING_MODES.none)
   const completeDrawingRef = useRef(null)
   const addDrawingPointRef = useRef(null)
+  // Refs for edit mode and selection (for polygon/line clicks)
+  const editModeRef = useRef(editMode)
+  const setSelectedElementRef = useRef(setSelectedElement)
 
   // Track initial basemap to prevent unnecessary setStyle on first load
   // Initialize with 'streets' (the default) since basemap isn't available yet
@@ -236,6 +239,14 @@ export function UnifiedProjectMap({
   useEffect(() => {
     addDrawingPointRef.current = addDrawingPoint
   }, [addDrawingPoint])
+
+  useEffect(() => {
+    editModeRef.current = editMode
+  }, [editMode])
+
+  useEffect(() => {
+    setSelectedElementRef.current = setSelectedElement
+  }, [setSelectedElement])
 
   // ============================================
   // KEYBOARD HANDLER FOR DELETE
@@ -318,10 +329,13 @@ export function UnifiedProjectMap({
         const currentDrawingMode = drawingModeRef.current
         const currentCompleteDrawing = completeDrawingRef.current
         const currentAddDrawingPoint = addDrawingPointRef.current
-        
+        const currentEditMode = editModeRef.current
+        const currentSetSelectedElement = setSelectedElementRef.current
+
+        // Handle drawing mode clicks
         if (currentIsDrawing && currentDrawingMode.id !== 'none') {
           const lngLat = e.lngLat
-          
+
           if (currentDrawingMode.type === 'marker') {
             // For markers, complete immediately on click
             if (currentCompleteDrawing) {
@@ -331,6 +345,44 @@ export function UnifiedProjectMap({
             // For polygons/lines, add point
             if (currentAddDrawingPoint) {
               currentAddDrawingPoint(lngLat)
+            }
+          }
+          return // Don't process selection when drawing
+        }
+
+        // Handle polygon/line selection in edit mode (when not drawing)
+        if (currentEditMode && !currentIsDrawing) {
+          // Check for polygon/line clicks using queryRenderedFeatures
+          const polygonLineLayerIds = [
+            'polygons-fill', 'polygons-outline',
+            'hatched-polygons-fill', 'hatched-polygons-outline',
+            'lines'
+          ]
+
+          // Get only layers that exist
+          const existingLayers = polygonLineLayerIds.filter(id => map.getLayer(id))
+
+          if (existingLayers.length > 0) {
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: existingLayers
+            })
+
+            if (features.length > 0) {
+              const feature = features[0]
+              const elementId = feature.properties?.id
+
+              if (elementId) {
+                // Find the element in our data refs
+                let element = polygonsDataRef.current.find(p => p.id === elementId)
+                if (!element) {
+                  element = linesDataRef.current.find(l => l.id === elementId)
+                }
+
+                if (element && element.isActive) {
+                  currentSetSelectedElement?.(element)
+                  e.preventDefault?.()
+                }
+              }
             }
           }
         }
@@ -703,78 +755,41 @@ export function UnifiedProjectMap({
       })
     }
 
-    // Store polygon/line data for click lookups
+    // Store polygon/line data for click lookups (used by main map click handler)
     polygonsDataRef.current = [...solidPolygons, ...hatchedPolygons]
     linesDataRef.current = lines
 
-    // Add click handlers for polygon layers (only in edit mode)
-    const handlePolygonClick = (e) => {
-      if (!editMode) return
-      const feature = e.features?.[0]
-      if (feature?.properties?.id) {
-        const element = polygonsDataRef.current.find(p => p.id === feature.properties.id)
-        if (element && element.isActive) {
-          setSelectedElement(element)
-          onElementSelect?.(element)
-        }
+    // Add cursor change on hover for polygons/lines (click handled in main map click handler)
+    const interactiveLayers = ['polygons-fill', 'hatched-polygons-fill', 'lines']
+
+    const handleMouseEnter = () => {
+      if (editModeRef.current && !isDrawingRef.current) {
+        map.getCanvas().style.cursor = 'pointer'
       }
     }
 
-    const handleLineClick = (e) => {
-      if (!editMode) return
-      const feature = e.features?.[0]
-      if (feature?.properties?.id) {
-        const element = linesDataRef.current.find(l => l.id === feature.properties.id)
-        if (element && element.isActive) {
-          setSelectedElement(element)
-          onElementSelect?.(element)
-        }
-      }
+    const handleMouseLeave = () => {
+      map.getCanvas().style.cursor = isDrawingRef.current ? 'crosshair' : 'grab'
     }
 
-    // Register click handlers on polygon/line layers
-    const polygonLayers = ['polygons-fill', 'hatched-polygons-fill']
-    const lineLayers = ['lines']
-
-    polygonLayers.forEach(layerId => {
+    interactiveLayers.forEach(layerId => {
       if (map.getLayer(layerId)) {
-        map.on('click', layerId, handlePolygonClick)
-        map.on('mouseenter', layerId, () => {
-          if (editMode) map.getCanvas().style.cursor = 'pointer'
-        })
-        map.on('mouseleave', layerId, () => {
-          map.getCanvas().style.cursor = isDrawing ? 'crosshair' : 'grab'
-        })
+        map.on('mouseenter', layerId, handleMouseEnter)
+        map.on('mouseleave', layerId, handleMouseLeave)
       }
     })
 
-    lineLayers.forEach(layerId => {
-      if (map.getLayer(layerId)) {
-        map.on('click', layerId, handleLineClick)
-        map.on('mouseenter', layerId, () => {
-          if (editMode) map.getCanvas().style.cursor = 'pointer'
-        })
-        map.on('mouseleave', layerId, () => {
-          map.getCanvas().style.cursor = isDrawing ? 'crosshair' : 'grab'
-        })
-      }
-    })
-
-    // Cleanup handlers
+    // Cleanup hover handlers
     return () => {
-      polygonLayers.forEach(layerId => {
+      interactiveLayers.forEach(layerId => {
         if (map.getLayer(layerId)) {
-          map.off('click', layerId, handlePolygonClick)
-        }
-      })
-      lineLayers.forEach(layerId => {
-        if (map.getLayer(layerId)) {
-          map.off('click', layerId, handleLineClick)
+          map.off('mouseenter', layerId, handleMouseEnter)
+          map.off('mouseleave', layerId, handleMouseLeave)
         }
       })
     }
 
-  }, [visibleMapElements, mapLoaded, styleVersion, editMode, isDrawing, setSelectedElement, onElementSelect]) // styleVersion forces re-render after basemap change
+  }, [visibleMapElements, mapLoaded, styleVersion]) // styleVersion forces re-render after basemap change
 
   // ============================================
   // RENDER DRAWING PREVIEW
