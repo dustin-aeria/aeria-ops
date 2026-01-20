@@ -125,7 +125,8 @@ export function UnifiedProjectMap({
   const addDrawingPointRef = useRef(null)
 
   // Track initial basemap to prevent unnecessary setStyle on first load
-  const initialBasemapRef = useRef(basemap)
+  // Initialize with 'streets' (the default) since basemap isn't available yet
+  const initialBasemapRef = useRef('streets')
   
   // State
   const [mapLoaded, setMapLoaded] = useState(false)
