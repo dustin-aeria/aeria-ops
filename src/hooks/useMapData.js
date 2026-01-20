@@ -8,10 +8,8 @@
  * - Drawing mode state
  * - Map element CRUD operations
  * 
- * CRITICAL FIXES APPLIED:
- * 1. Fixed musterPoint/musterPoints naming mismatch - muster points now create properly
- * 2. Fixed obstacle/obstacles naming mismatch
- * 3. Ensured elementType is always set when collecting markers for rendering
+ * BATCH 6 FINAL:
+ * - Fixed obstacle/obstacles naming mismatch
  * 
  * @location src/hooks/useMapData.js
  * @action REPLACE
@@ -265,8 +263,7 @@ export function useMapData(project, onUpdate, options = {}) {
           mapData.siteSurvey.obstacles.forEach(obs => {
             elements.siteSurvey.markers.push({
               ...obs,
-              // Ensure elementType is set for style lookup in renderer
-              elementType: obs.elementType || 'obstacles',
+              elementType: obs.elementType || 'obstacles', // Ensure elementType is set
               siteId: site.id,
               siteName: site.name,
               isActive,
@@ -340,8 +337,7 @@ export function useMapData(project, onUpdate, options = {}) {
           mapData.emergency.musterPoints.forEach(point => {
             elements.emergency.markers.push({
               ...point,
-              // Ensure elementType is set for style lookup in renderer
-              elementType: point.elementType || 'musterPoints',
+              elementType: point.elementType || 'musterPoints', // Ensure elementType is set
               siteId: site.id,
               siteName: site.name,
               isActive,
@@ -480,14 +476,12 @@ export function useMapData(project, onUpdate, options = {}) {
   const setMarker = useCallback((elementType, lngLat, options = {}) => {
     if (!activeSite) return null
     
-    // FIX: Handle singular/plural naming inconsistencies between DRAWING_MODES and MAP_ELEMENT_STYLES
-    // DRAWING_MODES uses singular: 'obstacle', 'musterPoint'
-    // MAP_ELEMENT_STYLES uses plural: 'obstacles', 'musterPoints'
-    const styleKeyMap = {
-      'obstacle': 'obstacles',
-      'musterPoint': 'musterPoints'
-    }
-    const styleKey = styleKeyMap[elementType] || elementType
+    // FIX: Handle singular/plural naming mismatch
+    // DRAWING_MODES uses 'obstacle'/'musterPoint' but MAP_ELEMENT_STYLES uses 'obstacles'/'musterPoints'
+    let styleKey = elementType
+    if (elementType === 'obstacle') styleKey = 'obstacles'
+    if (elementType === 'musterPoint') styleKey = 'musterPoints'
+    
     const style = MAP_ELEMENT_STYLES[styleKey]
     if (!style) {
       console.warn(`No style found for element type: ${elementType} (tried: ${styleKey})`)
