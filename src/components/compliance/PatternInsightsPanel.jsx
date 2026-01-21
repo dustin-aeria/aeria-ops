@@ -35,6 +35,7 @@ import {
   FileBox
 } from 'lucide-react'
 import { useRequirementAnalysis } from '../../hooks/useRegulatoryPatterns'
+import { REGULATORY_REFERENCES } from '../../lib/regulatoryPatterns'
 
 // ============================================
 // CATEGORY ICONS & COLORS
@@ -136,7 +137,34 @@ function CollapsibleSection({ title, icon: Icon, children, defaultExpanded = fal
 }
 
 function RegulatoryRefCard({ regulatoryRef, analysis }) {
-  const { lookupRegulation } = require('../../hooks/useRegulatoryPatterns').useRegulatoryPatterns()
+  // Direct lookup without hooks
+  const lookupRegulation = (refId) => {
+    const normalizedId = refId?.toUpperCase().replace(/\s+/g, ' ')
+    if (REGULATORY_REFERENCES[normalizedId]) {
+      return REGULATORY_REFERENCES[normalizedId]
+    }
+    // Try partial match (e.g., "CAR 903.02(d)" matches "CAR 903.02")
+    const baseRef = normalizedId?.replace(/\([a-z]\)+$/i, '').trim()
+    if (REGULATORY_REFERENCES[baseRef]) {
+      const baseInfo = REGULATORY_REFERENCES[baseRef]
+      const subPartMatch = normalizedId.match(/\(([a-z])\)/i)
+      if (subPartMatch && baseInfo.subParts) {
+        const subPartKey = subPartMatch[1].toLowerCase()
+        const subPartInfo = baseInfo.subParts[subPartKey]
+        if (subPartInfo) {
+          return {
+            ...baseInfo,
+            id: normalizedId,
+            subPart: subPartKey,
+            subPartInfo: typeof subPartInfo === 'string' ? { description: subPartInfo } : subPartInfo
+          }
+        }
+      }
+      return baseInfo
+    }
+    return null
+  }
+
   const refInfo = lookupRegulation(regulatoryRef)
 
   if (!refInfo) {
