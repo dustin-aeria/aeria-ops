@@ -1021,6 +1021,145 @@ export async function retirePolicy(id, userId) {
 }
 
 // ============================================
+// POLICY CONTENT UPDATE FUNCTION
+// ============================================
+
+/**
+ * Update existing policies with full content from policyContent.js
+ * This function reads the POLICY_CONTENT data and updates matching policies
+ * in Firestore with the extracted section content.
+ *
+ * @param {string} userId - User ID performing the update
+ * @returns {Promise<{success: boolean, updated: number, skipped: number, errors: Array}>}
+ */
+export async function updatePoliciesWithContent(userId = null) {
+  // Dynamically import the policy content to avoid circular dependencies
+  const { POLICY_CONTENT } = await import('../data/policyContent.js')
+
+  const results = {
+    success: true,
+    updated: 0,
+    skipped: 0,
+    errors: []
+  }
+
+  try {
+    // Get all existing policies
+    const snapshot = await getDocs(policiesRef)
+
+    if (snapshot.empty) {
+      return { ...results, success: false, errors: ['No policies found in database'] }
+    }
+
+    const batch = writeBatch(db)
+    let batchCount = 0
+    const MAX_BATCH_SIZE = 500 // Firestore limit
+
+    for (const docSnapshot of snapshot.docs) {
+      const policy = docSnapshot.data()
+      const policyNumber = policy.number
+
+      // Check if we have content for this policy
+      const content = POLICY_CONTENT[policyNumber]
+
+      if (!content) {
+        results.skipped++
+        continue
+      }
+
+      // Transform sections to include content
+      const updatedSections = content.sections.map((section, index) => ({
+        id: `section_${index}`,
+        title: section.title,
+        content: section.content || '',
+        order: index
+      }))
+
+      // Update the policy document
+      batch.update(docSnapshot.ref, {
+        sections: updatedSections,
+        description: content.description || policy.description,
+        regulatoryRefs: content.regulatoryRefs || policy.regulatoryRefs || [],
+        keywords: content.keywords || policy.keywords || [],
+        updatedAt: serverTimestamp(),
+        updatedBy: userId
+      })
+
+      results.updated++
+      batchCount++
+
+      // Commit batch if approaching limit
+      if (batchCount >= MAX_BATCH_SIZE) {
+        await batch.commit()
+        batchCount = 0
+      }
+    }
+
+    // Commit any remaining updates
+    if (batchCount > 0) {
+      await batch.commit()
+    }
+
+    return results
+  } catch (error) {
+    console.error('Error updating policies with content:', error)
+    return { ...results, success: false, errors: [error.message] }
+  }
+}
+
+/**
+ * Update a single policy with content from policyContent.js
+ *
+ * @param {string} policyId - The Firestore document ID
+ * @param {string} policyNumber - The policy number (e.g., "1001")
+ * @param {string} userId - User ID performing the update
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function updateSinglePolicyContent(policyId, policyNumber, userId = null) {
+  const { POLICY_CONTENT } = await import('../data/policyContent.js')
+
+  const content = POLICY_CONTENT[policyNumber]
+
+  if (!content) {
+    return { success: false, error: `No content found for policy ${policyNumber}` }
+  }
+
+  try {
+    const policyRef = doc(db, 'policies', policyId)
+
+    const updatedSections = content.sections.map((section, index) => ({
+      id: `section_${index}`,
+      title: section.title,
+      content: section.content || '',
+      order: index
+    }))
+
+    await updateDoc(policyRef, {
+      sections: updatedSections,
+      description: content.description,
+      regulatoryRefs: content.regulatoryRefs || [],
+      keywords: content.keywords || [],
+      updatedAt: serverTimestamp(),
+      updatedBy: userId
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating policy content:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Get list of policy numbers that have content available
+ * @returns {Promise<string[]>}
+ */
+export async function getAvailableContentPolicyNumbers() {
+  const { getAvailablePolicyNumbers } = await import('../data/policyContent.js')
+  return getAvailablePolicyNumbers()
+}
+
+// ============================================
 // SEED DATA FUNCTION
 // ============================================
 

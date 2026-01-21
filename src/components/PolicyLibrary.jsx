@@ -49,7 +49,7 @@ import {
   Settings
 } from 'lucide-react'
 import PolicyEditor from './policies/PolicyEditor'
-import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies } from '../lib/firestorePolicies'
+import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies, updatePoliciesWithContent } from '../lib/firestorePolicies'
 import { usePolicyPermissions, usePendingAcknowledgments } from '../hooks/usePolicyPermissions'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -1451,6 +1451,7 @@ export default function PolicyLibrary() {
   const [deletingPolicy, setDeletingPolicy] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [populatingContent, setPopulatingContent] = useState(false)
 
   // Load policies from Firestore
   const loadPolicies = async () => {
@@ -1517,6 +1518,29 @@ export default function PolicyLibrary() {
       console.error('Error seeding policies:', err)
     } finally {
       setSeeding(false)
+    }
+  }
+
+  // Handle populate policy content from extracted PDFs
+  const handlePopulateContent = async () => {
+    if (!user) return
+
+    setPopulatingContent(true)
+    setError('')
+
+    try {
+      const result = await updatePoliciesWithContent(user.uid)
+      if (result.success) {
+        await loadPolicies()
+        alert(`Successfully updated ${result.updated} policies with content. ${result.skipped} policies skipped (no content available).`)
+      } else {
+        setError(result.errors?.join(', ') || 'Failed to populate content')
+      }
+    } catch (err) {
+      setError('Failed to populate policy content. Please try again.')
+      console.error('Error populating content:', err)
+    } finally {
+      setPopulatingContent(false)
     }
   }
 
@@ -1638,6 +1662,28 @@ export default function PolicyLibrary() {
               >
                 <Bell className="w-4 h-4" />
                 <span className="font-medium">{pendingCount} Pending</span>
+              </button>
+            )}
+
+            {/* Populate Content Button - only show when there are policies */}
+            {policies.length > 0 && (
+              <button
+                onClick={handlePopulateContent}
+                disabled={populatingContent}
+                className="btn-secondary flex items-center gap-2"
+                title="Populate policies with extracted PDF content"
+              >
+                {populatingContent ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Populate Content
+                  </>
+                )}
               </button>
             )}
 
