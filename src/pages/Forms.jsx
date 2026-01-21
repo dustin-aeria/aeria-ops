@@ -199,7 +199,7 @@ function FormField({ field, value, onChange, formData }) {
     }
     
     // Default to showing the field if condition can't be parsed
-    console.warn('Could not parse showIf condition:', condition)
+    logger.warn('Could not parse showIf condition:', condition)
     return true
   }
   

@@ -12,6 +12,7 @@
  */
 
 import { findRelevantDocs, searchKnowledgeBase } from './firestoreKnowledgeBase'
+import { logger } from './logger'
 import { getAutoPopulateSuggestions } from '../components/compliance/SmartPopulate'
 import {
   mapRequirementToPatterns,
@@ -665,7 +666,7 @@ export async function getComprehensiveSuggestions(operatorId, requirement, proje
   try {
     suggestions.patternAnalysis = getPatternBasedSuggestions(requirement)
   } catch (err) {
-    console.warn('Pattern analysis failed:', err)
+    logger.warn('Pattern analysis failed:', err)
     suggestions.patternAnalysis = null
   }
 
@@ -679,7 +680,7 @@ export async function getComprehensiveSuggestions(operatorId, requirement, proje
       keywords: [...(requirement.keywords || []), ...searchTerms]
     })
   } catch (err) {
-    console.warn('KB search failed:', err)
+    logger.warn('KB search failed:', err)
     suggestions.fromKnowledgeBase = { directMatches: [], relatedMatches: [], gaps: [] }
   }
 

@@ -29,6 +29,7 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { POPULATION_CATEGORIES, calculatePolygonArea } from '../../lib/mapDataStructures'
+import { logger } from '../../lib/logger'
 
 // ============================================
 // COORDINATE INPUT TOOL
@@ -190,7 +191,7 @@ export function LocationSearch({ onSelectLocation, placeholder = "Search for a l
         setError('No results found')
       }
     } catch (err) {
-      console.error('Geocoding error:', err)
+      logger.error('Geocoding error:', err)
       setError('Search failed. Please try again.')
     } finally {
       setLoading(false)

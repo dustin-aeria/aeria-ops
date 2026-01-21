@@ -27,6 +27,7 @@ import {
   ChevronLeft
 } from 'lucide-react'
 import { getAircraft, createAircraft } from '../lib/firestore'
+import { logger } from '../lib/logger'
 
 // ============================================
 // STATUS CONFIGURATION
@@ -299,7 +300,7 @@ export default function NoAircraftAssignedModal({
       const data = await getAircraft()
       setAllAircraft(data)
     } catch (err) {
-      console.error('Failed to load aircraft:', err)
+      logger.error('Failed to load aircraft:', err)
       setError('Failed to load aircraft inventory')
     } finally {
       setLoading(false)
@@ -331,7 +332,7 @@ export default function NoAircraftAssignedModal({
       onAircraftSelected(newAircraft)
       onClose()
     } catch (err) {
-      console.error('Failed to create aircraft:', err)
+      logger.error('Failed to create aircraft:', err)
       setError('Failed to add aircraft. Please try again.')
       setSaving(false)
     }

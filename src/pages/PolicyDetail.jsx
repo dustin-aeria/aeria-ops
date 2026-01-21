@@ -57,6 +57,7 @@ import PolicyEditor from '../components/policies/PolicyEditor'
 import AcknowledgmentDashboard from '../components/policies/AcknowledgmentDashboard'
 import { getPolicyContent } from '../data/policyContent'
 import { useBranding } from '../components/BrandingSettings'
+import { logger } from '../lib/logger'
 
 const CATEGORY_CONFIG = {
   rpas: { name: 'RPAS Operations', icon: Plane, color: 'blue' },
@@ -161,7 +162,7 @@ export default function PolicyDetail() {
       setPolicy(data)
     } catch (err) {
       setError('Failed to load policy')
-      console.error(err)
+      logger.error('Error loading policy:', err)
     } finally {
       setLoading(false)
     }

@@ -29,6 +29,7 @@ import { getAircraft } from '../../lib/firestore'
 import AircraftSpecSheet, { generateAircraftSpecPDF } from '../AircraftSpecSheet'
 import { useBranding } from '../BrandingSettings'
 import { BrandedPDF } from '../../lib/pdfExportService'
+import { logger } from '../../lib/logger'
 
 // ============================================
 // STATUS CONFIGURATION
@@ -75,7 +76,7 @@ export default function ProjectEquipment({ project, onUpdate }) {
         const data = await getAircraft()
         setAllAircraft(data)
       } catch (err) {
-        console.error('Failed to load aircraft:', err)
+        logger.error('Failed to load aircraft:', err)
       } finally {
         setLoading(false)
       }
@@ -156,7 +157,7 @@ export default function ProjectEquipment({ project, onUpdate }) {
       const pdf = generateEquipmentOverviewPDF(project, assignedAircraft, branding)
       pdf.save(`equipment-overview_${project.projectCode || project.name}_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (err) {
-      console.error('Export failed:', err)
+      logger.error('Export failed:', err)
     } finally {
       setExporting(false)
     }

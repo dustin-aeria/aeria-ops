@@ -30,6 +30,7 @@ import {
   writeBatch
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { logger } from './logger'
 
 // ============================================
 // COLLECTION REFERENCES
@@ -1123,7 +1124,7 @@ export async function updatePoliciesWithContent(userId = null) {
 
     return results
   } catch (error) {
-    console.error('Error updating policies with content:', error)
+    logger.error('Error updating policies with content:', error)
     return { ...results, success: false, errors: [error.message] }
   }
 }
@@ -1166,7 +1167,7 @@ export async function updateSinglePolicyContent(policyId, policyNumber, userId =
 
     return { success: true }
   } catch (error) {
-    console.error('Error updating policy content:', error)
+    logger.error('Error updating policy content:', error)
     return { success: false, error: error.message }
   }
 }
@@ -2412,7 +2413,7 @@ export async function seedSamplePolicies(userId) {
 
     return { success: true, count: SAMPLE_POLICIES.length }
   } catch (error) {
-    console.error('Error seeding policies:', error)
+    logger.error('Error seeding policies:', error)
     return { success: false, count: 0, error: error.message }
   }
 }
@@ -2479,7 +2480,7 @@ export async function seedMissingPolicies(userId) {
       skipped: SAMPLE_POLICIES.length - missingPolicies.length
     }
   } catch (error) {
-    console.error('Error seeding missing policies:', error)
+    logger.error('Error seeding missing policies:', error)
     return { success: false, added: 0, skipped: 0, error: error.message }
   }
 }
@@ -2568,7 +2569,7 @@ export async function seedFromMasterPolicies(userId) {
 
     return { success: true, count: masterPolicies.length }
   } catch (error) {
-    console.error('Error seeding from master policies:', error)
+    logger.error('Error seeding from master policies:', error)
     return { success: false, count: 0, error: error.message }
   }
 }
@@ -2662,7 +2663,7 @@ export async function seedMissingFromMaster(userId) {
       skipped: masterPolicies.length - missingPolicies.length
     }
   } catch (error) {
-    console.error('Error seeding missing from master:', error)
+    logger.error('Error seeding missing from master:', error)
     return { success: false, added: 0, skipped: 0, error: error.message }
   }
 }
@@ -2682,7 +2683,7 @@ export async function checkForMasterUpdates() {
     // Check for updates
     return await checkForUpdates(operatorPolicies)
   } catch (error) {
-    console.error('Error checking for master updates:', error)
+    logger.error('Error checking for master updates:', error)
     return []
   }
 }
@@ -2742,7 +2743,7 @@ export async function updateFromMaster(policyId, preserveCustomizations = true, 
 
     return { success: true }
   } catch (error) {
-    console.error('Error updating from master:', error)
+    logger.error('Error updating from master:', error)
     return { success: false, error: error.message }
   }
 }

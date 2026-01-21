@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { getPolicyVersions, rollbackToVersion } from '../../lib/firestorePolicies'
 import { usePolicyPermissions } from '../../hooks/usePolicyPermissions'
+import { logger } from '../../lib/logger'
 
 /**
  * Format a Firestore timestamp or date string
@@ -235,7 +236,7 @@ export default function PolicyVersionHistory({ policy, onVersionRestored }) {
       }
     } catch (err) {
       setError('Failed to load version history')
-      console.error('Error loading versions:', err)
+      logger.error('Error loading versions:', err)
     } finally {
       setLoading(false)
     }

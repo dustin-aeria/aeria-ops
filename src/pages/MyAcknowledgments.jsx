@@ -35,6 +35,7 @@ import {
   getPoliciesEnhanced
 } from '../lib/firestorePolicies'
 import PolicyAcknowledgment from '../components/policies/PolicyAcknowledgment'
+import { logger } from '../lib/logger'
 
 const CATEGORY_ICONS = {
   rpas: Plane,
@@ -159,7 +160,7 @@ export default function MyAcknowledgments() {
       setAllPolicies(policies)
     } catch (err) {
       setError('Failed to load acknowledgment data')
-      console.error(err)
+      logger.error('Error loading acknowledgments:', err)
     } finally {
       setLoading(false)
     }

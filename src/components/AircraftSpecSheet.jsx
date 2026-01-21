@@ -33,6 +33,7 @@ import {
   Ruler
 } from 'lucide-react'
 import { BrandedPDF } from '../lib/pdfExportService'
+import { logger } from '../lib/logger'
 
 // ============================================
 // STATUS CONFIGURATION
@@ -188,7 +189,7 @@ export default function AircraftSpecSheet({ aircraft, isOpen, onClose, branding 
       const pdf = generateAircraftSpecPDF(aircraft, branding)
       pdf.save(`spec-sheet_${aircraft.nickname || aircraft.serialNumber || 'aircraft'}_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (err) {
-      console.error('PDF export failed:', err)
+      logger.error('PDF export failed:', err)
     } finally {
       setExporting(false)
     }

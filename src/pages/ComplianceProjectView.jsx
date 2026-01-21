@@ -27,6 +27,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getComplianceProject } from '../lib/firestoreCompliance'
 import { ComplianceProjectEditor, KnowledgeBasePanel, BatchIndexPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
+import { logger } from '../lib/logger'
 
 // Source type icons
 const SOURCE_ICONS = {
@@ -69,7 +70,7 @@ export default function ComplianceProjectView() {
         setProject(data)
       }
     } catch (err) {
-      console.error('Error loading project:', err)
+      logger.error('Error loading project:', err)
       setError(err.message)
     } finally {
       setLoading(false)

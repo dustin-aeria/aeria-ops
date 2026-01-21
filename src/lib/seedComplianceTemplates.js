@@ -11,6 +11,7 @@
  */
 
 import { seedComplianceTemplate } from './firestoreCompliance'
+import { logger } from './logger'
 
 // ============================================
 // GENERAL COMPLIANCE PROJECT TEMPLATE
@@ -1541,7 +1542,7 @@ export async function seedAllComplianceTemplates(userId = null) {
       })
       results.seeded.push(template.id)
     } catch (error) {
-      console.error(`Error seeding template ${template.id}:`, error)
+      logger.error(`Error seeding template ${template.id}:`, error)
       results.errors.push({ id: template.id, error: error.message })
       results.success = false
     }

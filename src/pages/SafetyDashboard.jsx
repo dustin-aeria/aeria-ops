@@ -27,6 +27,7 @@ import {
   Loader2,
   FileDown
 } from 'lucide-react'
+import { logger } from '../lib/logger'
 
 // Stat card component
 function StatCard({ title, value, subtitle, icon: Icon, color = 'bg-white', link }) {
@@ -202,7 +203,7 @@ export default function SafetyDashboard() {
       
       setLastRefresh(new Date())
     } catch (err) {
-      console.error('Error loading safety dashboard:', err)
+      logger.error('Error loading safety dashboard:', err)
       setError('Failed to load safety data. Please try again.')
     } finally {
       setLoading(false)
@@ -253,7 +254,7 @@ export default function SafetyDashboard() {
       })
       
     } catch (err) {
-      console.error('Error exporting COR report:', err)
+      logger.error('Error exporting COR report:', err)
       alert('Failed to generate COR Program Report. Please try again.')
     } finally {
       setExporting(false)

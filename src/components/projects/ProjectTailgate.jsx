@@ -36,6 +36,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { BrandedPDF } from '../../lib/pdfExportService'
+import { logger } from '../../lib/logger'
 
 // Default tailgate data structure
 const createDefaultTailgateDay = (date) => ({
@@ -409,7 +410,7 @@ export default function ProjectTailgate({ project, onUpdate }) {
       const filename = `Tailgate_${project.projectCode || project.name || 'briefing'}_Day${selectedDayIndex + 1}_${currentDay.date || 'nodate'}.pdf`
       pdf.save(filename)
     } catch (err) {
-      console.error('PDF export failed:', err)
+      logger.error('PDF export failed:', err)
       alert('Failed to export PDF. Please try again.')
     } finally {
       setExporting(false)

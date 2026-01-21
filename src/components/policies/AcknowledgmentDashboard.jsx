@@ -34,6 +34,7 @@ import {
   getPoliciesEnhanced
 } from '../../lib/firestorePolicies'
 import { getOperators } from '../../lib/firestore'
+import { logger } from '../../lib/logger'
 
 /**
  * Format timestamp
@@ -197,7 +198,7 @@ export default function AcknowledgmentDashboard({ policyId = null }) {
       }
     } catch (err) {
       setError('Failed to load data')
-      console.error(err)
+      logger.error('Error loading acknowledgments:', err)
     } finally {
       setLoading(false)
     }
@@ -210,7 +211,7 @@ export default function AcknowledgmentDashboard({ policyId = null }) {
       const data = await getAcknowledgments(selectedPolicy)
       setAcknowledgments(data)
     } catch (err) {
-      console.error('Failed to load acknowledgments:', err)
+      logger.error('Failed to load acknowledgments:', err)
     }
   }
 

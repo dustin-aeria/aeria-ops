@@ -43,6 +43,7 @@ import {
   PhoneCall,
   Bell
 } from 'lucide-react'
+import { logger } from '../../lib/logger'
 
 // Extract with fallbacks
 const FORM_TEMPLATES = formDefs.FORM_TEMPLATES || {}
@@ -98,7 +99,7 @@ const getAvailableForms = () => {
   try {
     const templates = FORM_TEMPLATES || {}
     if (typeof templates !== 'object' || templates === null) {
-      console.warn('FORM_TEMPLATES is not an object:', templates)
+      logger.warn('FORM_TEMPLATES is not an object:', templates)
       return []
     }
     return Object.values(templates).map(form => {
@@ -115,7 +116,7 @@ const getAvailableForms = () => {
       }
     }).filter(Boolean)
   } catch (e) {
-    console.error('Error in getAvailableForms:', e)
+    logger.error('Error in getAvailableForms:', e)
     return []
   }
 }
@@ -294,7 +295,7 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
         })
       }
     } catch (err) {
-      console.error('Error initializing form data:', err)
+      logger.error('Error initializing form data:', err)
     }
     
     return initial
@@ -366,7 +367,7 @@ function FormModal({ form, formTemplate, project, operators = [], aircraft = [],
           setGettingLocation(false)
         },
         (error) => {
-          console.error('Error getting location:', error)
+          logger.error('Error getting location:', error)
           setGettingLocation(false)
         }
       )
@@ -1990,7 +1991,7 @@ export default function ProjectForms({ project, onUpdate }) {
         setAircraft(acs || [])
         setClients(cls || [])
       } catch (err) {
-        console.error('Error loading data:', err)
+        logger.error('Error loading data:', err)
         setOperators([])
         setError(err.message)
       } finally {
@@ -2073,7 +2074,7 @@ export default function ProjectForms({ project, onUpdate }) {
       // FIX #8 & #9: Pass branding and clientBranding to export
       await exportFormToPDF(form, template, project, operators, exportBranding, clientBranding)
     } catch (err) {
-      console.error('Error exporting form:', err)
+      logger.error('Error exporting form:', err)
       alert('Error exporting form to PDF. Please try again.')
     }
   }

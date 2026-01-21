@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { logger } from '../lib/logger'
 import {
   searchKnowledgeBase,
   getIndexStatus,
@@ -56,7 +57,7 @@ export function useKnowledgeBase() {
       setIndexStatus(status)
     } catch (err) {
       setError(err.message)
-      console.error('Error loading index status:', err)
+      logger.error('Error loading index status:', err)
     } finally {
       setLoading(false)
     }
@@ -68,7 +69,7 @@ export function useKnowledgeBase() {
     try {
       return await searchKnowledgeBase(user.uid, query, options)
     } catch (err) {
-      console.error('Search error:', err)
+      logger.error('Search error:', err)
       throw err
     }
   }, [user])
@@ -79,7 +80,7 @@ export function useKnowledgeBase() {
     try {
       return await findRelevantDocs(user.uid, requirement)
     } catch (err) {
-      console.error('Error finding docs:', err)
+      logger.error('Error finding docs:', err)
       throw err
     }
   }, [user])
@@ -90,7 +91,7 @@ export function useKnowledgeBase() {
     try {
       return await findByRegulatoryRef(user.uid, regulatoryRef)
     } catch (err) {
-      console.error('Error finding by reg ref:', err)
+      logger.error('Error finding by reg ref:', err)
       throw err
     }
   }, [user])
@@ -139,7 +140,7 @@ export function useKnowledgeBase() {
       await loadIndexStatus()
       return result
     } catch (err) {
-      console.error('Error indexing policy:', err)
+      logger.error('Error indexing policy:', err)
       throw err
     }
   }, [user, loadIndexStatus])
@@ -152,7 +153,7 @@ export function useKnowledgeBase() {
       await loadIndexStatus()
       return result
     } catch (err) {
-      console.error('Error indexing project:', err)
+      logger.error('Error indexing project:', err)
       throw err
     }
   }, [user, loadIndexStatus])
@@ -165,7 +166,7 @@ export function useKnowledgeBase() {
       await loadIndexStatus()
       return result
     } catch (err) {
-      console.error('Error indexing equipment:', err)
+      logger.error('Error indexing equipment:', err)
       throw err
     }
   }, [user, loadIndexStatus])
@@ -178,7 +179,7 @@ export function useKnowledgeBase() {
       await loadIndexStatus()
       return result
     } catch (err) {
-      console.error('Error indexing crew:', err)
+      logger.error('Error indexing crew:', err)
       throw err
     }
   }, [user, loadIndexStatus])

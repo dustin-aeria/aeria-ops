@@ -12,6 +12,8 @@
  * @action REPLACE
  */
 
+import { logger } from './logger'
+
 const JSPDF_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 const AUTOTABLE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js'
 
@@ -175,7 +177,7 @@ export class BrandedPDF {
       if (this.clientBranding?.logo) {
         try {
           this.doc.addImage(this.clientBranding.logo, 'PNG', this.pageWidth - this.margin - 45, 100, 35, 25)
-        } catch (e) { console.warn('Client logo error:', e) }
+        } catch (e) { logger.warn('Client logo error:', e) }
       }
       nextY = 140
     }
@@ -310,7 +312,7 @@ export class BrandedPDF {
         this.doc.addImage(this.branding.operator.logo, 'PNG', logoX, logoY, logoWidth, logoHeight)
       } catch (e) {
         // Fallback to text if logo fails
-        console.warn('Header logo error:', e)
+        logger.warn('Header logo error:', e)
         const rightText = this.branding.operator.name.split(' ')[0] || ''
         const rightWidth = this.doc.getTextWidth(rightText)
         this.doc.setFont('helvetica', 'normal')
@@ -360,7 +362,7 @@ export class BrandedPDF {
         // Move page number to left of logo
         this.doc.text(pageText, logoX - pageWidth - 5, footerY)
       } catch (e) {
-        console.warn('Footer client logo error:', e)
+        logger.warn('Footer client logo error:', e)
         this.doc.text(pageText, this.pageWidth - this.margin - pageWidth, footerY)
       }
     } else {

@@ -1976,7 +1976,7 @@ export default function PolicyLibrary() {
       }
     } catch (err) {
       setError('Failed to populate policy content. Please try again.')
-      console.error('Error populating content:', err)
+      logger.error('Error populating content:', err)
     } finally {
       setPopulatingContent(false)
     }
@@ -1993,7 +1993,7 @@ export default function PolicyLibrary() {
       setDeletingPolicy(null)
     } catch (err) {
       setError('Failed to delete policy. Please try again.')
-      console.error('Error deleting policy:', err)
+      logger.error('Error deleting policy:', err)
     } finally {
       setIsDeleting(false)
     }
@@ -2009,7 +2009,7 @@ export default function PolicyLibrary() {
       ))
     } catch (err) {
       setError('Failed to update policy. Please try again.')
-      console.error('Error updating policy field:', err)
+      logger.error('Error updating policy field:', err)
       throw err // Re-throw so the inline editor knows it failed
     }
   }

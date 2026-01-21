@@ -19,6 +19,7 @@ import {
 import { getOperators, deleteOperator } from '../lib/firestore'
 import OperatorModal from '../components/OperatorModal'
 import { format, differenceInDays } from 'date-fns'
+import { logger } from '../lib/logger'
 
 const roleColors = {
   PIC: 'bg-blue-100 text-blue-700',
@@ -48,7 +49,7 @@ export default function Operators() {
       const data = await getOperators()
       setOperators(data)
     } catch (err) {
-      console.error('Error loading operators:', err)
+      logger.error('Error loading operators:', err)
     } finally {
       setLoading(false)
     }
@@ -63,7 +64,7 @@ export default function Operators() {
       await deleteOperator(operatorId)
       setOperators(prev => prev.filter(o => o.id !== operatorId))
     } catch (err) {
-      console.error('Error deleting operator:', err)
+      logger.error('Error deleting operator:', err)
       alert('Failed to delete operator')
     }
     setMenuOpen(null)

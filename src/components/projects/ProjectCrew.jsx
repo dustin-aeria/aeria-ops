@@ -13,6 +13,7 @@ import {
   User
 } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
+import { logger } from '../../lib/logger'
 
 const roleOptions = [
   { value: 'PIC', label: 'Pilot in Command', description: 'Primary flight operations authority' },
@@ -51,7 +52,7 @@ export default function ProjectCrew({ project, onUpdate }) {
       const data = await getOperators()
       setOperators(data.filter(op => op.status === 'active'))
     } catch (err) {
-      console.error('Error loading operators:', err)
+      logger.error('Error loading operators:', err)
     } finally {
       setLoading(false)
     }

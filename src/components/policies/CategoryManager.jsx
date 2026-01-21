@@ -44,6 +44,7 @@ import {
   DEFAULT_CATEGORIES
 } from '../../lib/firestorePolicies'
 import { usePolicyPermissions } from '../../hooks/usePolicyPermissions'
+import { logger } from '../../lib/logger'
 
 // Available icons for categories
 const AVAILABLE_ICONS = {
@@ -431,7 +432,7 @@ export default function CategoryManager() {
       setCategories(data)
     } catch (err) {
       setError('Failed to load categories')
-      console.error(err)
+      logger.error('Error with category:', err)
     } finally {
       setLoading(false)
     }

@@ -37,6 +37,7 @@ import {
 } from '../../lib/firestorePolicies'
 import { usePolicyPermissions } from '../../hooks/usePolicyPermissions'
 import { useAuth } from '../../contexts/AuthContext'
+import { logger } from '../../lib/logger'
 
 /**
  * Category icons
@@ -348,7 +349,7 @@ export default function PolicyTemplates({ onTemplateAdopted }) {
       setCategories(categoriesData)
     } catch (err) {
       setError('Failed to load templates')
-      console.error(err)
+      logger.error('Error with template:', err)
     } finally {
       setLoading(false)
     }

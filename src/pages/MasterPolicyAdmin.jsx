@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { usePolicyPermissions } from '../hooks/usePolicyPermissions'
+import { logger } from '../lib/logger'
 import {
   getMasterPolicies,
   getMasterPolicy,
@@ -307,7 +308,7 @@ function VersionHistoryModal({ policy, onClose }) {
       const data = await getMasterPolicyVersions(policy.id)
       setVersions(data)
     } catch (err) {
-      console.error('Error loading versions:', err)
+      logger.error('Error loading versions:', err)
     } finally {
       setLoading(false)
     }
@@ -530,7 +531,7 @@ export default function MasterPolicyAdmin() {
       setPolicies(data)
     } catch (err) {
       setError('Failed to load master policies')
-      console.error(err)
+      logger.error('Error:', err)
     } finally {
       setLoading(false)
     }
@@ -541,7 +542,7 @@ export default function MasterPolicyAdmin() {
       const data = await getMasterPolicyStats()
       setStats(data)
     } catch (err) {
-      console.error('Error loading stats:', err)
+      logger.error('Error loading stats:', err)
     }
   }
 

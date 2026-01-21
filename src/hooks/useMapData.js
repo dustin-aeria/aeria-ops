@@ -16,6 +16,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { logger } from '../lib/logger'
 import {
   MAP_LAYERS,
   MAP_ELEMENT_STYLES,
@@ -501,7 +502,7 @@ export function useMapData(project, onUpdate, options = {}) {
 
     const targetSite = currentSites.find(s => s.id === targetSiteId)
     if (!targetSite) {
-      console.warn(`[useMapData] Target site ${targetSiteId} not found in sites array`)
+      logger.warn(`[useMapData] Target site ${targetSiteId} not found in sites array`)
       return
     }
 
@@ -537,7 +538,7 @@ export function useMapData(project, onUpdate, options = {}) {
     
     const style = MAP_ELEMENT_STYLES[styleKey]
     if (!style) {
-      console.warn(`No style found for element type: ${elementType} (tried: ${styleKey})`)
+      logger.warn(`No style found for element type: ${elementType} (tried: ${styleKey})`)
       return null
     }
     

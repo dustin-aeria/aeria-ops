@@ -1,7 +1,9 @@
+import { logger } from './logger'
+
 // ============================================
 // SORA 2.5 Configuration
 // JARUS SORA 2.5 Compliant
-// 
+//
 // AUDIT LOG:
 // - 2026-01-19: Full audit against JARUS documents
 //   - Added missing OSOs: 10, 11, 12, 21, 22
@@ -791,7 +793,7 @@ export function calculateFinalGRC(iGRC, mitigations = {}) {
     const rob = mitigations.M1B.robustness
     // Check for invalid combination
     if (mitigations.M1A?.robustness === 'medium') {
-      console.warn('M1A(medium) cannot be combined with M1B')
+      logger.warn('M1A(medium) cannot be combined with M1B')
     } else {
       if (rob === 'medium') reduction -= 1
       else if (rob === 'high') reduction -= 2

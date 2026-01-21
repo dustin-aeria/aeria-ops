@@ -13,6 +13,8 @@
  * @action NEW
  */
 
+import { logger } from './logger'
+
 const CACHE_NAME = 'aeria-map-tiles-v2'
 const MAX_TILES_PER_CACHE = 500 // Limit to prevent excessive storage use
 const TILE_SIZE = 256
@@ -115,7 +117,7 @@ export async function cacheMapTiles(bounds, options = {}) {
   } = options
   
   if (!('caches' in window)) {
-    console.warn('Cache API not supported')
+    logger.warn('Cache API not supported')
     return { success: false, cached: 0, failed: 0, error: 'Cache API not supported' }
   }
   
@@ -190,7 +192,7 @@ export async function cacheMapTiles(bounds, options = {}) {
           failed++
         }
       } catch (err) {
-        console.error(`Failed to cache tile ${z}/${x}/${y}:`, err)
+        logger.error(`Failed to cache tile ${z}/${x}/${y}:`, err)
         failed++
       }
     }))
@@ -221,7 +223,7 @@ export async function clearMapCache() {
     await caches.delete(CACHE_NAME)
     return true
   } catch (err) {
-    console.error('Failed to clear map cache:', err)
+    logger.error('Failed to clear map cache:', err)
     return false
   }
 }
@@ -243,7 +245,7 @@ export async function getCacheStatus() {
       usedMB: ((estimate.usage || 0) / (1024 * 1024)).toFixed(2)
     }
   } catch (err) {
-    console.error('Failed to get cache status:', err)
+    logger.error('Failed to get cache status:', err)
     return { used: 0, available: 0, usedMB: '0' }
   }
 }

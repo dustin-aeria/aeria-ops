@@ -35,6 +35,7 @@ import {
   AlertCircle,
   WifiOff
 } from 'lucide-react'
+import { logger } from '../../lib/logger'
 
 // ============================================
 // MAPBOX TOKEN
@@ -314,7 +315,7 @@ export function UnifiedProjectMap({
       })
       
       map.on('error', (e) => {
-        console.error('Map error:', e)
+        logger.error('Map error:', e)
         setMapError('Failed to load map')
       })
       
@@ -409,7 +410,7 @@ export function UnifiedProjectMap({
         mapRef.current = null
       }
     } catch (err) {
-      console.error('Failed to initialize map:', err)
+      logger.error('Failed to initialize map:', err)
       setMapError('Failed to initialize map')
     }
   }, []) // Only run once on mount

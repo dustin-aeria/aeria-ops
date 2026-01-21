@@ -46,6 +46,7 @@ import {
   calculateMaxSAIL
 } from '../../lib/pdfExportServiceMultiSite'
 import { sailColors } from '../../lib/soraConfig'
+import { logger } from '../../lib/logger'
 
 // ============================================
 // EXPORT SECTIONS CONFIGURATION
@@ -603,7 +604,7 @@ export default function ProjectExport({ project, onUpdate }) {
       setPdfExportProgress(null)
       
     } catch (err) {
-      console.error('PDF export failed:', err)
+      logger.error('PDF export failed:', err)
       setPdfExportProgress('Export failed')
       setTimeout(() => setPdfExportProgress(null), 3000)
     } finally {
@@ -654,7 +655,7 @@ export default function ProjectExport({ project, onUpdate }) {
           break
       }
     } catch (err) {
-      console.error('Export failed:', err)
+      logger.error('Export failed:', err)
     } finally {
       setExporting(false)
       setExportType(null)

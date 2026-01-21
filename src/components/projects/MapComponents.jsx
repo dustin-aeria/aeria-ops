@@ -7,9 +7,10 @@
 // ============================================
 
 import { useState, useEffect, useRef } from 'react'
-import { 
+import {
   MapPin, X, Loader2, Search, Target, Route, CheckCircle2
 } from 'lucide-react'
+import { logger } from '../../lib/logger'
 
 // ============================================
 // MAP PREVIEW COMPONENT (Read-only inline display)
@@ -732,7 +733,7 @@ export function MapEditorModal({
         mapRef.current.setView([parseFloat(lat), parseFloat(lon)], 15)
       }
     } catch (err) {
-      console.error('Search error:', err)
+      logger.error('Search error:', err)
     } finally {
       setSearching(false)
     }

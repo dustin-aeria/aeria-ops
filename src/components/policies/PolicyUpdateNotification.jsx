@@ -27,6 +27,7 @@ import {
 import { checkForMasterUpdates, updateFromMaster } from '../../lib/firestorePolicies'
 import { getMasterPolicy } from '../../lib/firestoreMasterPolicies'
 import { useAuth } from '../../contexts/AuthContext'
+import { logger } from '../../lib/logger'
 
 /**
  * Badge component showing number of available updates
@@ -61,7 +62,7 @@ function UpdateItem({ update, onApply, onDismiss, applying }) {
       const master = await getMasterPolicy(update.masterPolicyId)
       setMasterPreview(master)
     } catch (err) {
-      console.error('Error loading preview:', err)
+      logger.error('Error loading preview:', err)
     } finally {
       setLoadingPreview(false)
     }
@@ -198,7 +199,7 @@ export function PolicyUpdatesPanel({ onClose }) {
       const data = await checkForMasterUpdates()
       setUpdates(data)
     } catch (err) {
-      console.error('Error loading updates:', err)
+      logger.error('Error loading updates:', err)
     } finally {
       setLoading(false)
     }
@@ -212,10 +213,10 @@ export function PolicyUpdatesPanel({ onClose }) {
         // Remove from updates list
         setUpdates(prev => prev.filter(u => u.operatorPolicyId !== policyId))
       } else {
-        console.error('Update failed:', result.error)
+        logger.error('Update failed:', result.error)
       }
     } catch (err) {
-      console.error('Error applying update:', err)
+      logger.error('Error applying update:', err)
     } finally {
       setApplying(null)
     }
@@ -313,7 +314,7 @@ export function usePolicyUpdates() {
   useEffect(() => {
     checkForMasterUpdates()
       .then(setUpdates)
-      .catch(console.error)
+      .catch(err => logger.error('Error:', err))
       .finally(() => setLoading(false))
   }, [])
 
