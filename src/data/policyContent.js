@@ -1593,6 +1593,1055 @@ Reporting Obligations:
     ]
   },
 
+  '1016': {
+    number: '1016',
+    title: 'CRM - Pressure & Stress Management Policy',
+    category: 'crm',
+    description: 'Establishes structured protocols for recognizing, managing, and mitigating pressure and stress during RPAS operations to ensure operators remain composed and make sound decisions.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada Advisory Circular 700-042', 'CRM Manual'],
+    keywords: ['pressure', 'stress', 'management', 'coping', 'stressors', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured protocols for recognizing, managing, and mitigating pressure and stress during RPAS operations. Effective stress management ensures operators remain composed, make sound decisions, and maintain operational safety even under high-pressure conditions.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and all supporting staff engaged in mission activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Pressure: External demands or expectations placed on operators (e.g., deadlines, client requirements).
+• Stress: Physical, mental, or emotional strain caused when demands exceed perceived capacity.
+• Stressors: Internal or external factors that may impair judgment, communication, or performance.
+
+References:
+• CRM Manual, Section: Pressure and Stress Management
+• HSE Policy: Stress & Fatigue Management
+• Transport Canada Advisory Circular 700-042, Appendix A`
+      },
+      {
+        title: 'Policy Statement',
+        content: `All RPAS crew must recognize and proactively manage pressure and stress to maintain mission safety and effectiveness. Operators must use structured strategies and escalation protocols to reduce stress impacts and openly communicate when stress levels compromise performance.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission (Anticipate Stress):
+• Conduct stress self-assessment and share potential stressors during the team briefing.
+• Identify external demands (client expectations, weather, deadlines) that could create pressure.
+
+During Mission (Manage Stress):
+• Apply stress-reduction techniques such as tactical breathing, visualization, and goal setting.
+• Rotate tasks during long missions to avoid cognitive overload.
+• Use P.A.C.E. escalation protocol if stress is compromising decision-making or safety.
+
+Post-Mission (Debrief & Learn):
+• Conduct structured debrief to review stressors encountered.
+• Document effective strategies and lessons learned for continuous improvement.
+
+Tools, Forms, or Checklists:
+• Pre-Mission Stress Self-Assessment Checklist
+• P.A.C.E. Communication Protocol for stress escalation
+• Post-Mission Stress Review Log
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs 901.19 (crew fitness for duty).
+• Integration with HSE Fatigue and Stress Management Policy.
+
+Reporting or Escalation:
+• Stress-related issues reported during debriefs.
+• Critical stress conditions escalated immediately to Operations Manager or Accountable Executive.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide training on stress recognition and coping strategies.
+• Monitor stress-related trends from debrief reports.
+
+Supervisors:
+• Reinforce stress reduction practices during mission planning and briefings.
+• Ensure adequate rest and workload distribution.
+
+Staff:
+• Apply stress management strategies.
+• Report if stress impacts safe performance.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Field audits of team communication and stress handling.
+• Review of post-mission debrief logs for stress-related issues.
+• Annual refresher training on stress and pressure management.
+
+Consequences for Non-Compliance:
+• Corrective coaching or retraining for lapses in stress management.
+• Disciplinary action if unmanaged stress leads to unsafe operation.
+
+Reporting Obligations:
+• Stress-related incidents documented in mission reports.
+• Significant stress-related operational risks reported to Accountable Executive.`
+      }
+    ]
+  },
+
+  '1017': {
+    number: '1017',
+    title: 'CRM - Fatigue Management Policy',
+    category: 'crm',
+    description: 'Establishes structured protocols for recognizing, preventing, and mitigating fatigue during RPAS operations to ensure crew members remain alert and capable.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada CAR 901.19', 'CRM Manual'],
+    keywords: ['fatigue', 'management', 'rest', 'alertness', 'acute fatigue', 'chronic fatigue', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured protocols for recognizing, preventing, and mitigating fatigue during RPAS operations. Fatigue management ensures that crew members remain alert, capable, and safe while performing duties.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and all supporting staff involved in RPAS missions.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Fatigue: A state of physical and/or mental exhaustion that reduces an operator's ability to perform safely and effectively.
+• Acute Fatigue: Short-term exhaustion due to recent activity or inadequate rest.
+• Chronic Fatigue: Long-term cumulative exhaustion from sustained stress or insufficient recovery.
+
+References:
+• CRM Manual, Section: Fatigue Management
+• HSE Fatigue Management Policy
+• Transport Canada CAR 901.19 (Crew Fitness for Duty)`
+      },
+      {
+        title: 'Policy Statement',
+        content: `All RPAS crew must monitor and manage fatigue proactively. Operators must complete fatigue self-assessments, comply with rest and break schedules, and report fatigue concerns without fear of reprisal. Fatigue-related risks must be addressed immediately to ensure safe and effective operations.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission:
+• All operators complete a fatigue self-assessment.
+• PIC or Operations Manager reviews team readiness and identifies potential fatigue risks.
+
+During Mission:
+• For missions longer than 2 hours, all operators take a 15-minute break every 2 hours.
+• VO monitors crew members, including PIC, for signs of fatigue (e.g., slower responses, irritability).
+• If fatigue detected, tasks are reassigned or additional breaks are enforced.
+
+Post-Mission:
+• Crew discusses fatigue challenges during debrief.
+• Fatigue incidents or near-misses are documented for trend analysis and future mitigation.
+
+Tools, Forms, or Checklists:
+• Pre-Mission Fatigue Self-Assessment Form
+• Fatigue Monitoring Log (completed by VO during extended missions)
+• Post-Mission Fatigue Review Template
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs Part IX crew duty/rest regulations (CAR 901.19).
+• Alignment with HSE Fatigue Management protocols.
+
+Reporting or Escalation:
+• Fatigue-related safety issues logged in mission reports.
+• Severe fatigue cases escalated to the Operations Manager or Accountable Executive immediately.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide fatigue awareness training and enforce rest requirements.
+• Monitor fatigue-related trends across operations.
+
+Supervisors:
+• Enforce work-rest cycles and breaks.
+• Reallocate workload if crew fatigue is observed.
+
+Staff:
+• Arrive fit for duty, having taken adequate rest.
+• Report fatigue honestly and without delay.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Fatigue assessments recorded before each mission.
+• VO monitoring during flight operations.
+• Post-mission reviews of fatigue-related concerns.
+
+Consequences for Non-Compliance:
+• Retraining or corrective coaching for failure to follow fatigue protocols.
+• Disciplinary action if intentional disregard of fatigue policy leads to safety risk.
+
+Reporting Obligations:
+• Fatigue-related incidents documented in mission and HSE reports.
+• Critical fatigue issues reported to Accountable Executive.`
+      }
+    ]
+  },
+
+  '1018': {
+    number: '1018',
+    title: 'CRM - Workload Management Policy',
+    category: 'crm',
+    description: 'Establishes structured practices for distributing, prioritizing, and managing workload during RPAS operations to prevent task overload and reduce error risk.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada Advisory Circular 700-042', 'CRM Manual'],
+    keywords: ['workload', 'management', 'task prioritization', 'delegation', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured practices for distributing, prioritizing, and managing workload during RPAS operations. Effective workload management prevents task overload, reduces error risk, and ensures operators maintain situational awareness and mission safety.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and any support crew involved in RPAS mission execution.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Workload Management: The process of balancing tasks among crew members to maintain safe and effective operations.
+• Task Prioritization: Determining which tasks must be completed first to support mission-critical objectives.
+• Delegation: Assigning responsibilities to distribute cognitive and physical workload.
+
+References:
+• CRM Manual, Section: Workload Management
+• RPAS Operations Manual (General Procedures: Team Briefing Flow, Data Debrief Flow)
+• Transport Canada Advisory Circular 700-042, Appendix A`
+      },
+      {
+        title: 'Policy Statement',
+        content: `All operational teams must manage workload effectively by prioritizing critical tasks, delegating responsibilities, and maintaining balance across crew members. Workload must be planned before missions, monitored during operations, and reviewed afterwards to ensure continuous improvement.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission (Plan Workload):
+• Define objectives and allocate tasks during the team briefing.
+• Confirm task assignments, risk factors, and contingency workload strategies.
+
+During Mission (Manage Workload):
+• PIC focuses on flight-critical tasks (aircraft control, safety decisions).
+• VO provides support through airspace scanning, monitoring telemetry, and reporting hazards.
+• Adjust task distribution dynamically if workload exceeds safe thresholds.
+
+Post-Mission (Review Workload):
+• Conduct structured debrief to review workload effectiveness.
+• Capture lessons learned and update workload planning practices.
+
+Tools, Forms, or Checklists:
+• Pre-Mission Task Allocation Checklist
+• Real-Time Task Monitoring Log
+• Post-Mission Workload Review Form
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs Part IX regarding PIC responsibility and operational oversight.
+• Integration with SOPs (Team Briefing Flow, Task Reassignment Protocols).
+
+Reporting or Escalation:
+• Workload-related challenges logged in mission reports.
+• Escalation to Operations Manager if workload distribution compromises safety.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide training on task prioritization, delegation, and dynamic workload adjustment.
+• Review workload-related reports and audits.
+
+Supervisors:
+• Ensure adequate crew numbers for mission complexity.
+• Verify contingency task reassignment procedures are in place.
+
+Staff:
+• Manage workload actively and honestly.
+• Request support when individual workload exceeds safe levels.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Field audits during operations.
+• Review of debrief reports and workload assessments.
+• Annual training refreshers on workload management strategies.
+
+Consequences for Non-Compliance:
+• Retraining for poor workload management practices.
+• Disciplinary measures for intentional disregard of workload protocols.
+
+Reporting Obligations:
+• Workload-related safety issues documented in operational logs.
+• Critical incidents escalated to the Accountable Executive.`
+      }
+    ]
+  },
+
+  '1019': {
+    number: '1019',
+    title: 'CRM - Decision Making Process Policy',
+    category: 'crm',
+    description: 'Establishes structured decision-making protocols for RPAS operations to ensure safe, timely, and informed choices that align with mission objectives and safety standards.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada Advisory Circular 700-042', 'CRM Manual'],
+    keywords: ['decision making', 'decision matrix', 'collaborative', 'risk assessment', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured decision-making protocols for RPAS operations. Effective decision-making ensures safe, timely, and informed choices that align with mission objectives, safety standards, and regulatory requirements.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and support personnel engaged in planning, execution, and debriefing of RPAS missions.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Decision-Making: The cognitive process of evaluating information and selecting a course of action.
+• Real-Time Decision Matrix: A structured framework for evaluating risk and options in dynamic scenarios.
+• Collaborative Decision-Making: A process where PICs, VOs, and crew members contribute input to support effective outcomes.
+
+References:
+• CRM Manual, Section: Decision-Making Process
+• RPAS Operations Manual (General & Emergency Procedures)
+• Transport Canada Advisory Circular 700-042, Appendix A`
+      },
+      {
+        title: 'Policy Statement',
+        content: `All RPAS crew must apply structured decision-making processes during mission planning, execution, and post-mission review. Decisions must prioritize safety, comply with SOPs and CARs, and leverage input from all team members to ensure effective outcomes.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission (Planned Decisions):
+• Use decision matrices and risk assessment tools during planning.
+• Establish clear decision-making roles and criteria before operations.
+
+During Mission (Real-Time Decisions):
+• PIC makes final operational decisions, supported by VO and crew input.
+• Apply structured tools such as decision matrices for complex or high-risk scenarios.
+• Adjust mission plans as conditions evolve (weather, equipment, or airspace changes).
+
+Post-Mission (Review Decisions):
+• Review effectiveness of decisions in debrief.
+• Document successes, failures, and lessons learned for training.
+
+Tools, Forms, or Checklists:
+• Decision Matrix Templates
+• Risk Assessment Forms (Site Survey, CONOPS, SORA)
+• Post-Mission Decision Review Log
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs Part IX regarding PIC authority and operational risk assessments.
+• Adherence to SOPs for structured planning and risk-based decision processes.
+
+Reporting or Escalation:
+• Critical mission decisions documented in flight logs and debrief reports.
+• Escalation to Accountable Executive if operational decisions compromise safety.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide training in structured decision-making models and risk assessment tools.
+• Ensure decision-making reviews are integrated into safety audits.
+
+Supervisors:
+• Validate that risk-based frameworks (CONOPS, SORA) are applied.
+• Lead structured reviews of decision-making in debriefs.
+
+Staff:
+• Participate in decision-making processes by contributing accurate observations and feedback.
+• Challenge unsafe decisions respectfully and escalate when required.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Field audits of decision-making practices during missions.
+• Review of decision documentation in planning and debrief reports.
+• Annual CRM training refreshers with scenario-based decision exercises.
+
+Consequences for Non-Compliance:
+• Coaching or retraining for failure to use structured decision-making tools.
+• Disciplinary measures for reckless or non-compliant decisions.
+
+Reporting Obligations:
+• All high-risk or emergency-related decisions documented in operational records.
+• Critical decision failures reported to the Accountable Executive.`
+      }
+    ]
+  },
+
+  '1020': {
+    number: '1020',
+    title: 'CRM - Leadership & Team Building Policy',
+    category: 'crm',
+    description: 'Establishes structured practices for developing leadership, teamwork, and professional discipline in RPAS operations to ensure safety, accountability, and mission success.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada Advisory Circular 700-042', 'CRM Manual'],
+    keywords: ['leadership', 'team building', 'authority', 'assertiveness', 'collaboration', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured practices for developing leadership, teamwork, and professional discipline in RPAS operations. Effective leadership and team cohesion ensure safety, accountability, and mission success.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and supporting staff.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Leadership: The ability to influence, guide, and support team members while maintaining accountability for safety and mission outcomes.
+• Team Building: Processes that foster trust, communication, and collaboration among team members.
+• Authority & Assertiveness: Exercising legitimate decision-making power while encouraging respectful challenge and input.
+
+References:
+• CRM Manual, Section: Leadership and Team Building
+• RPAS Operations Manual (Team Briefing & Debrief Protocols)
+• Transport Canada Advisory Circular 700-042, Appendix A`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Every operator is recognized as a leader and must demonstrate professionalism, discipline, and collaboration. Leadership practices must emphasize safety, integrity, communication, and trust, while team-building efforts must strengthen cohesion, engagement, and accountability.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission (Build Leadership & Cohesion):
+• Conduct structured team briefings, clearly defining roles and responsibilities.
+• Establish trust through open communication and professional discipline.
+• Encourage questions and input to promote inclusivity and engagement.
+
+During Mission (Lead & Coordinate):
+• PIC maintains clear authority and ensures decisions align with SOPs and safety.
+• Crew members exercise assertiveness by raising concerns respectfully.
+• Leaders distribute workload effectively, monitoring for stress or fatigue.
+
+Post-Mission (Review & Strengthen):
+• Conduct structured debriefs, including leadership effectiveness and team performance.
+• Document lessons learned on leadership, communication, and group dynamics.
+• Incorporate findings into ongoing training and team-building exercises.
+
+Tools, Forms, or Checklists:
+• Team Briefing Checklist
+• Leadership & Team Dynamics Debrief Template
+• Conflict Resolution Protocol
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs Part IX regarding PIC authority and crew responsibilities.
+• Adherence to SOPs for leadership, communication, and workload balance.
+
+Reporting or Escalation:
+• Leadership or team conflicts must be documented during debriefs.
+• Escalation to Operations Manager for unresolved team issues.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide leadership training and mentorship opportunities.
+• Review leadership effectiveness during audits and debriefs.
+
+Supervisors:
+• Monitor team dynamics and intervene to resolve conflicts.
+• Reinforce standards of professionalism and ethical conduct.
+
+Staff:
+• Uphold discipline, professionalism, and accountability.
+• Participate in team-building exercises and provide feedback.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Field observation of leadership practices and team interactions.
+• Review of debrief documentation related to leadership and team dynamics.
+• Annual leadership and teamwork refresher training.
+
+Consequences for Non-Compliance:
+• Coaching or retraining for poor leadership or teamwork practices.
+• Disciplinary measures for repeated failures to adhere to leadership standards.
+
+Reporting Obligations:
+• Leadership or team-related issues must be logged in mission reports.
+• Significant conflicts escalated to the Accountable Executive.`
+      }
+    ]
+  },
+
+  '1021': {
+    number: '1021',
+    title: 'CRM - Automation & Technology Management Policy',
+    category: 'crm',
+    description: 'Establishes structured procedures for the effective use, monitoring, and management of automation and technology in RPAS operations to reduce human error and prevent over-reliance.',
+    version: '1.0',
+    effectiveDate: '2025-09-16',
+    reviewDate: '2026-02-01',
+    owner: 'Chief Pilot',
+    status: 'active',
+    regulatoryRefs: ['Transport Canada Advisory Circular 700-042', 'CRM Manual'],
+    keywords: ['automation', 'technology', 'mode awareness', 'automation bias', 'manual proficiency', 'CRM'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To establish structured procedures for the effective use, monitoring, and management of automation and technology in RPAS operations. Proper management of automation reduces human error, prevents over-reliance, and ensures operators remain engaged and capable of manual intervention.
+
+Scope:
+Applies to all RPAS operational personnel, including Pilots in Command (PICs), Visual Observers (VOs), Operations Managers, subcontractors, and technical support staff involved in RPAS operations and equipment management.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Automation: Technology that performs tasks with limited or no direct human input (e.g., autopilot, Return-to-Home functions).
+• Automation Bias: Over-reliance on automated systems, leading to reduced operator vigilance.
+• Mode Awareness: Understanding which automation mode is active and how it affects RPAS performance.
+
+References:
+• CRM Manual, Section: Automation and Technology Management
+• RPAS Operations Manual (Power-Up Flow, Fail-Safe Functions)
+• Transport Canada Advisory Circular 700-042, Appendix A`
+      },
+      {
+        title: 'Policy Statement',
+        content: `All RPAS crew must actively monitor and manage automation, ensuring safe operation and effective integration of technology into missions. Operators must maintain proficiency in manual operations, avoid over-reliance on automation, and apply best practices for technology management.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Mission:
+• Verify all automation systems (RTH, geofencing, autopilot) are configured and tested.
+• Confirm software and firmware are up to date.
+• Review automation settings during the team briefing.
+
+During Mission:
+• Maintain mode awareness by announcing active modes (e.g., "Switching to autopilot").
+• Continuously monitor telemetry and automation performance.
+• Be prepared to assume manual control immediately if automation performance is abnormal.
+• Avoid over-reliance by periodically hand-flying to confirm manual proficiency.
+
+Post-Mission:
+• Debrief automation use, including effectiveness and any anomalies.
+• Document technology issues in maintenance logs and mission reports.
+• Capture lessons learned for integration into training and SOP refinements.
+
+Tools, Forms, or Checklists:
+• Pre-Flight Automation Setup Checklist
+• In-Flight Mode Awareness Log
+• Post-Mission Automation Debrief Form
+
+Safety/Compliance/Quality Requirements:
+• Compliance with CARs Part IX crew responsibilities and fail-safe requirements.
+• Strict adherence to manufacturer's guidance on automation and firmware management.
+
+Reporting or Escalation:
+• Automation anomalies documented in post-flight debrief and maintenance records.
+• Critical failures escalated immediately to Maintenance Manager and Operations Manager.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide training in automation best practices and failure recognition.
+• Ensure updates to SOPs reflect emerging technologies and lessons learned.
+
+Supervisors:
+• Monitor automation usage during operations and verify compliance with protocols.
+• Lead reviews of automation-related issues during post-mission debriefs.
+
+Staff:
+• Maintain manual flying proficiency.
+• Apply automation cautiously, avoiding over-reliance.
+• Report technology issues immediately.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Field audits of automation usage.
+• Review of telemetry data for automation activation patterns.
+• Training evaluations to confirm manual proficiency.
+
+Consequences for Non-Compliance:
+• Corrective retraining for misuse or over-reliance on automation.
+• Disciplinary action if failure to manage automation leads to unsafe operation.
+
+Reporting Obligations:
+• Automation-related incidents documented in mission reports and maintenance logs.
+• Major technology failures escalated to the Accountable Executive.`
+      }
+    ]
+  },
+
+  // ============================================
+  // HSE POLICIES (1022-1053)
+  // ============================================
+
+  '1022': {
+    number: '1022',
+    title: 'HSE Health & Safety Pledge',
+    category: 'hse',
+    description: 'Formalizes the Health & Safety Pledge as a top-level policy anchoring the Zero Harm culture, linking day-to-day field practice to the Safety Management System.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['Canada Labour Code Part II', 'BC OHS Regulation'],
+    keywords: ['zero harm', 'safety pledge', 'SMS', 'HSMS', 'commitment', 'prevention'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+To formalize the Health & Safety Pledge as a top-level policy that anchors our Zero Harm culture, clarifies expectations, and links day-to-day field practice to our Safety Management System (SMS). This policy consolidates the company's commitment to prevention, empowerment, open communication, regulatory compliance, collaboration, and continuous improvement.
+
+Scope:
+This policy applies to all personnel (employees, managers, contractors, students/interns) and all worksites, field operations, offices, and client locations, including RPAS (drone) operations and related lab/data workflows.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Zero Harm: An organizational goal to eliminate workplace incidents, injuries, and occupational illness through prevention, design, and disciplined execution.
+• SMS / HSMS: Safety (Health & Safety) Management System that integrates policy, roles, procedures, training, hazard/risk control, incident learning, and audits.
+• RPAS: Remotely Piloted Aircraft System; includes the aircraft, control station, payloads, and supporting equipment.
+
+References:
+• HSE Policy (master program) — Sections on Management Commitment, Workers' Rights, SMS, and core policies.
+• RPAS Operations Manual — Roles, procedures, emergency protocols, communications, and planning documents.
+• Crew Resource Management (CRM) Manual — Stress, fatigue, communications, decision-making, workload, and SA protocols.
+• Applicable legislation/regulation: Canada Labour Code Part II; BC OHS Regulation & Guidelines; other client/site rules as applicable.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization commits to a Zero Harm workplace where every person is empowered and expected to act safely, speak up, and stop or refuse unsafe work. We will:
+• Prevent harm through robust hazard identification and risk controls, strong planning, and disciplined field execution.
+• Empower & train people with the tools, competence, and authority to do the job safely and to intervene when conditions change.
+• Maintain open communication and non-retaliation, encouraging reporting of hazards, near misses, and ideas for improvement.
+• Comply with and exceed applicable OHS and environmental legislation, client requirements, and aviation rules for RPAS.
+• Collaborate with clients, contractors, and partners to align standards on shared worksites.
+• Continuously improve via audits, inspections, KPIs, and lessons learned from incidents and near misses.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Orientation & Acknowledgment:
+• Before starting work, all personnel complete orientation covering rights, duties, major hazards, ERP, and reporting pathways, and sign acknowledgment of this policy.
+
+Tailgate & Operational Briefs:
+• Each shift or task begins with a tailgate reviewing the plan, hazards/controls, role clarity, communications, and changes on site (including RPAS-specific items when applicable).
+
+Hazard ID & Near-Miss Reporting:
+• Use FLHA/FLRA and observation/near-miss forms. Submit promptly; no retaliation. Immediate controls are applied and documented.
+
+Refuse/Stop Unsafe Work:
+• Any worker may stop the job or refuse work they reasonably believe is unsafe. Supervisor/HSE investigates at once; alternate duties provided if needed until resolved.
+
+Competency, Training & Recency:
+• Maintain required certifications (e.g., First Aid, WHMIS, RPAS Advanced/ROC-A, wildlife/bear awareness). Meet recency/practice requirements; record in training matrix.
+
+Emergency Readiness:
+• Keep site ERP current (muster points, contacts, first aid). Run drills at required intervals; update gaps.
+
+Audits, Inspections & KPIs:
+• Complete scheduled inspections, management walkthroughs, and audits. Track leading/lagging indicators; review trends quarterly.
+
+Incident Response & Learning:
+• Report incidents immediately. Conduct preliminary and full investigations; implement and verify corrective actions. Share lessons learned in meetings/tailgates.
+
+Tools, Forms, or Checklists:
+• Orientation checklist; FLHA/FLRA; Site Survey; ERP; Incident/Near-Miss forms; Training Matrix; KPI dashboard; RPAS planning docs (Flight Plan, CONOPS, SORA) where applicable.
+
+Safety/Compliance/Quality Requirements:
+• Apply the Hierarchy of Controls; adhere to RPAS limitations/airspace approvals; keep records to regulatory retention standards; meet client/site rules.
+
+Reporting or Escalation:
+• Hazards/near misses → Supervisor & HSE same day
+• Stop-work/refusal → Immediate supervisor/HSE
+• Incidents → per matrix (first aid, medical, hospitalization) and regulatory notifications as applicable
+• Unresolved safety issues → escalate to Accountable Executive`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Demonstrate visible safety leadership; resource the HSMS; ensure legal and client compliance; approve training and equipment; review KPIs and audits; remove barriers to safe work; sign off on amendments.
+
+Supervisors:
+• Plan safe work; run briefings; verify FLHAs and controls; enforce PPE; investigate reports; coach for safe behaviors; coordinate ERP and drills; ensure contractor alignment.
+
+Staff:
+• Work to plan and controls; wear required PPE; report hazards and near misses; participate in training and drills; stop work or refuse unsafe work when required; protect the environment.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Scheduled inspections, spot checks, and audits; KPI tracking (training completion, FLHA completion, inspection closure rates, incident trends); management reviews.
+
+Consequences for Non-Compliance:
+• Coaching → retraining → removal from site → progressive discipline up to termination and/or contractor removal, proportional to risk and recurrence.
+
+Reporting Obligations:
+• Maintain records per retention schedule; complete statutory notifications (e.g., WorkSafeBC/TC where applicable); share lessons learned internally.`
+      }
+    ]
+  },
+
+  '1023': {
+    number: '1023',
+    title: 'HSE Commitment Statement',
+    category: 'hse',
+    description: 'Affirms the organization\'s core dedication to health, safety, and environmental protection, establishing safety as a foundational value and promoting a culture of zero harm.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC OHS Regulation', 'Health & Safety Policy'],
+    keywords: ['commitment', 'zero harm', 'HSMS', 'proactive', 'leadership', 'safety culture'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This statement exists to affirm the organization's core dedication to health, safety, and environmental protection. Its objectives are to establish safety as a foundational value, promote a culture of zero harm, ensure compliance with regulations, and empower all stakeholders to contribute to a safe workplace, ultimately solving the problem of preventable incidents, injuries, and occupational illnesses.
+
+Scope:
+This statement applies to all employees, contractors, clients, visitors, and third parties involved in operations, including all departments, roles, activities, and locations where the company conducts business.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Zero Harm Philosophy: A guiding principle aiming for a workplace free from incidents, injuries, and occupational illnesses.
+• Health and Safety Management System (HSMS): A proactive framework for developing, implementing, and sustaining health and safety policies and procedures.
+• Proactive Risk Management: The process of identifying, assessing, and mitigating risks before they cause harm.
+
+References:
+• BC OHS Regulation (e.g., s.3.12 Refusal of Unsafe Work).
+• Health & Safety Policy.
+• Environmental Policy.
+• Relevant federal and provincial health, safety, and environmental legislation.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to fostering a safe, healthy, and productive work environment for all employees, contractors, clients, and visitors. Safety is a core value that guides our decisions, strengthens operations, and ensures well-being. We adhere to a Zero Harm Philosophy, integrating safety into every aspect of our culture through leadership, compliance, continuous improvement, and employee empowerment.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Leadership Commitment: Leadership sets the tone by integrating safety into organizational culture and providing resources for the HSMS.
+• Risk Assessment: Conduct regular reviews, audits, and hazard assessments to identify and mitigate risks.
+• Open Communication: Engage in open communication to raise and address safety concerns without reprisal.
+• Training and Empowerment: Train and empower employees to report hazards, participate in safety initiatives, and adhere to best practices.
+• Stakeholder Collaboration: Collaborate with stakeholders to ensure unified safety approaches and recognize contributions to improvements.
+
+Tools, Forms, or Checklists:
+• Hazard assessment forms (e.g., FLRA/FLHA)
+• Audit checklists
+• Incident reporting forms
+• Training records
+
+Safety/Compliance/Quality Requirements:
+All actions must comply with relevant regulations, exceed industry standards where possible, and prioritize proactive risk management to prevent harm.
+
+Reporting or Escalation:
+Report safety concerns immediately to supervisors or HSE Representatives; escalate unresolved issues to management for corrective action and documentation.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Lead by example, allocate resources, ensure compliance, and promote a culture of safety through policies and support.
+
+Supervisors:
+• Ensure teams adhere to safety procedures, conduct inspections, address hazards, and reinforce employee rights like refusing unsafe work.
+
+Staff:
+• Comply with safe practices, report hazards, participate in training, and contribute to safety improvements.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through regular audits, inspections, performance reviews, and sharing of metrics to assess adherence and effectiveness.
+
+Consequences for Non-Compliance:
+• Progressive discipline, including warnings, retraining, suspension, or termination, depending on severity.
+
+Reporting Obligations:
+• All incidents, near-misses, and concerns must be reported promptly to HSE Representatives; breaches are documented and escalated as needed.`
+      }
+    ]
+  },
+
+  '1024': {
+    number: '1024',
+    title: 'HSE Workers Rights Policy',
+    category: 'hse',
+    description: 'Affirms and protects the rights of workers, ensuring they are informed of their legal entitlements, empowered to exercise them, and safeguarded from retaliation.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Workers Compensation Act', 'BC OHS Regulation'],
+    keywords: ['worker rights', 'refuse unsafe work', 'retaliation', 'fair treatment', 'safety'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to affirm and protect the rights of workers, ensuring they are informed of their legal entitlements, empowered to exercise them, and safeguarded from retaliation. Its objectives include promoting a safe workplace, enhancing worker confidence, and addressing issues like unsafe conditions or unfair treatment.
+
+Scope:
+This policy applies to all employees, including full-time, part-time, and temporary staff, across all departments, roles, activities, and locations where the company operates.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Worker Rights: Legal and organizational entitlements ensuring safe working conditions, fair treatment, and the ability to refuse unsafe work.
+• Refusal of Unsafe Work: The right of a worker to refuse work they believe is hazardous, as outlined in applicable regulations.
+• Retaliation: Any adverse action taken against a worker for exercising their rights.
+
+References:
+• BC Workers Compensation Act (e.g., Part 3 Division 4 - Right to Refuse Unsafe Work).
+• BC Occupational Health and Safety Regulation.
+• Health & Safety Policy.
+• Internal Refuse Unsafe Work Policy.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to upholding the rights of all workers, ensuring they have the right to a safe workplace, the ability to refuse unsafe work without fear of reprisal, and access to fair treatment and support. We pledge to foster an environment where these rights are respected and actively protected through policy enforcement and education.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Rights Awareness: Provide initial and ongoing training on worker rights to all employees.
+• Hazard Reporting: Establish a process for workers to report unsafe conditions or concerns.
+• Refusal Process: Outline and communicate the procedure for refusing unsafe work, including immediate supervisor notification.
+• Investigation: Conduct prompt and impartial investigations into reported issues or refusals.
+• Resolution and Feedback: Implement corrective actions and provide feedback to workers on outcomes.
+
+Tools, Forms, or Checklists:
+• Worker rights training materials
+• Hazard report forms
+• Refusal of unsafe work checklist
+• Investigation logs
+
+Safety/Compliance/Quality Requirements:
+Compliance with Workers Compensation Act and OHS Regulation, ensuring thorough and fair handling of all reports.
+
+Reporting or Escalation:
+Workers report concerns to supervisors; escalate unresolved issues to HSE Representatives or management within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Ensure worker rights are integrated into policies, provide training, and protect against retaliation.
+
+Supervisors:
+• Support workers in exercising their rights, address reported hazards, and escalate issues as needed.
+
+Staff:
+• Understand and exercise their rights, report hazards, and participate in training programs.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through quarterly reviews of training records, incident reports, and worker feedback surveys to ensure rights are upheld.
+
+Consequences for Non-Compliance:
+• Disciplinary actions including warnings, retraining, or termination for violations, with legal action possible for retaliation.
+
+Reporting Obligations:
+• All rights-related incidents or refusals must be reported to HSE Representatives within 24 hours for documentation.`
+      }
+    ]
+  },
+
+  '1025': {
+    number: '1025',
+    title: 'HSE Safety Management System Policy',
+    category: 'hse',
+    description: 'Establishes a comprehensive Safety Management System (SMS) to ensure a safe and healthy work environment through hazard identification, risk management, and continuous improvement.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC OHS Regulation', 'Workers Compensation Act', 'ISO 45001:2018'],
+    keywords: ['SMS', 'safety management', 'hazard identification', 'risk assessment', 'continuous improvement'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to establish a comprehensive Safety Management System (SMS) to ensure a safe and healthy work environment. Its objectives include identifying hazards, managing risks, ensuring compliance with regulations, and fostering continuous improvement to prevent workplace incidents and injuries.
+
+Scope:
+This policy applies to all employees, contractors, and visitors involved in operations, covering all departments, roles, activities, and locations where the company conducts business.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Safety Management System (SMS): A structured framework for managing safety risks and ensuring compliance with health and safety regulations.
+• Hazard Identification: The process of recognizing potential sources of harm in the workplace.
+• Risk Assessment: Evaluating the likelihood and severity of identified hazards to implement controls.
+
+References:
+• BC Occupational Health and Safety Regulation.
+• Workers Compensation Act (British Columbia).
+• Health & Safety Policy.
+• ISO 45001:2018 Occupational Health and Safety Management Systems.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to implementing and maintaining an effective Safety Management System to proactively manage health and safety risks. We aim to provide a safe working environment by identifying hazards, assessing risks, ensuring regulatory compliance, and promoting a culture of safety through continuous monitoring and improvement.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• System Development: Design and document the SMS framework, including policies and procedures.
+• Hazard Identification: Conduct regular hazard assessments to identify potential risks in the workplace.
+• Risk Control: Implement and monitor control measures to mitigate identified risks.
+• Training Implementation: Provide ongoing safety training to all personnel to ensure competency.
+• Performance Review: Conduct periodic reviews and audits to assess SMS effectiveness and compliance.
+
+Tools, Forms, or Checklists:
+• Hazard assessment forms (e.g., FLRA/FLHA)
+• Risk control checklists
+• Training records
+• Audit templates
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation, ISO 45001 standards, and internal safety protocols during all procedures.
+
+Reporting or Escalation:
+Report hazards or issues to supervisors; escalate unresolved matters to HSE Representatives or management within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Accountable for developing, funding, and overseeing the SMS, ensuring resources and leadership support its implementation.
+
+Supervisors:
+• Ensure team compliance with SMS procedures, conduct regular safety checks, and report hazards promptly.
+
+Staff:
+• Participate in training, report hazards, and follow SMS protocols to maintain a safe workplace.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly safety audits, incident investigations, and annual SMS performance reviews to ensure adherence.
+
+Consequences for Non-Compliance:
+• Disciplinary actions including warnings, retraining, or termination, with legal action possible for serious breaches.
+
+Reporting Obligations:
+• All hazards, incidents, or non-compliance issues must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
+  },
+
+  '1026': {
+    number: '1026',
+    title: 'HSE Certifications & Qualifications Policy',
+    category: 'hse',
+    description: 'Ensures all personnel possess the necessary certifications and qualifications to perform their roles safely and effectively, maintaining compliance with regulatory and industry standards.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC OHS Regulation', 'Workers Compensation Act', 'ISO 45001'],
+    keywords: ['certification', 'qualification', 'training', 'competency', 'safety-sensitive'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to ensure all personnel possess the necessary certifications and qualifications to perform their roles safely and effectively. Its objectives include maintaining a skilled workforce, ensuring compliance with regulatory and industry standards, and reducing risks associated with inadequate training, addressing the problem of competency gaps in safety-critical tasks.
+
+Scope:
+This policy applies to all employees, contractors, and supervisors involved in operations, covering all roles, activities, and locations where safety-sensitive work is conducted.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Certification: Official recognition that an individual has completed required training and meets specific safety or technical standards.
+• Qualification: Demonstrated competency or experience required for a specific job role or task.
+• Safety-Sensitive Work: Tasks where performance lapses could lead to serious injury or environmental harm.
+
+References:
+• BC Occupational Health and Safety Regulation.
+• Workers Compensation Act (British Columbia).
+• Health & Safety Policy.
+• Industry-specific certification standards (e.g., COR, ISO 45001).`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to ensuring that all employees, contractors, and supervisors hold the appropriate certifications and qualifications for their roles. We prioritize safety by mandating ongoing training, verification of credentials, and adherence to industry standards to maintain a competent and safe workforce.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Credential Assessment: Evaluate the current certifications and qualifications of all personnel.
+• Training Enrollment: Enroll individuals in required training programs based on role requirements.
+• Certification Verification: Confirm and document the validity of all certifications and qualifications.
+• Recertification Scheduling: Schedule and track regular recertification to maintain competency.
+• Audit Compliance: Conduct periodic audits to ensure ongoing adherence to certification standards.
+
+Tools, Forms, or Checklists:
+• Certification tracking forms
+• Training enrollment logs
+• Audit checklists
+• Qualification verification templates
+
+Safety/Compliance/Quality Requirements:
+Compliance with BC OHS Regulation, industry certification standards, and internal safety protocols during all procedures.
+
+Reporting or Escalation:
+Report certification issues to supervisors; escalate unresolved concerns to HSE Representatives or management within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee the development and funding of certification programs, ensuring resources are available for training and compliance.
+
+Supervisors:
+• Verify team members' certifications, enforce training participation, and report gaps to management.
+
+Staff:
+• Maintain current certifications, participate in required training, and report expired credentials promptly.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through quarterly audits of certification records, training attendance logs, and periodic skill assessments to ensure adherence.
+
+Consequences for Non-Compliance:
+• Disciplinary actions including suspension from safety-sensitive tasks, retraining, or termination for failure to maintain required credentials.
+
+Reporting Obligations:
+• All certification lapses or training needs must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
   '1027': {
     number: '1027',
     title: 'HSE Health & Safety Policy',
@@ -1680,6 +2729,1450 @@ Disciplinary actions including warnings, retraining, or termination, with legal 
 
 Reporting Obligations:
 All incidents, hazards, or non-compliance issues must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
+  },
+
+  '1028': {
+    number: '1028',
+    title: 'Personal Protective Equipment Policy',
+    category: 'hse',
+    description: 'Mandates the use of personal protective equipment (PPE) to mitigate workplace hazards and ensure the safety of all personnel.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 8)', 'Workers Compensation Act', 'CSA Z94.1-15'],
+    keywords: ['PPE', 'safety', 'protective equipment', 'hazard', 'helmet', 'gloves', 'safety glasses'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to ensure the safety of all personnel by mandating the use of personal protective equipment (PPE) to mitigate workplace hazards. Its objectives include reducing injury risks, ensuring compliance with safety regulations, and fostering a culture of safety, addressing the problem of exposure to physical, chemical, and biological hazards.
+
+Scope:
+This policy applies to all employees, contractors, and visitors working in or visiting company sites where PPE is required, including all operational areas, construction sites, and maintenance zones.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Personal Protective Equipment (PPE): Specialized clothing or equipment (e.g., helmets, gloves, safety glasses) worn to protect against workplace hazards.
+• Hazard Assessment: The process of identifying risks requiring PPE use.
+• Compliance: Adherence to legal and company safety standards regarding PPE.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 8 - Personal Protective Equipment)
+• Workers Compensation Act (British Columbia)
+• Company Health & Safety Policy
+• CSA Z94.1-15 (Industrial Protective Headwear)`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization requires all employees, contractors, and visitors to use appropriate personal protective equipment as identified through hazard assessments. We are committed to providing, maintaining, and enforcing the use of PPE to ensure a safe working environment and comply with all relevant health and safety regulations.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Hazard Assessment: Conduct site-specific hazard assessments to determine required PPE.
+• PPE Provision: Supply appropriate PPE to all personnel based on assessment results.
+• Training Session: Conduct training on proper PPE selection, use, and maintenance.
+• Inspection Routine: Regularly inspect PPE for wear and ensure proper fit.
+• Compliance Check: Monitor and enforce PPE usage during all relevant activities.
+
+Roles & Responsibilities for Each Step:
+• Hazard Assessment: HSE Representatives and supervisors
+• PPE Provision: Management and procurement team
+• Training Session: Training coordinators and HSE Management
+• Inspection Routine: Supervisors and safety officers
+• Compliance Check: HSE team and site supervisors
+
+Tools, Forms, or Checklists:
+• Hazard assessment forms (e.g., FLRA/FLHA)
+• PPE inventory logs
+• Training attendance sheets
+• Inspection checklists
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 8, CSA standards, and internal safety protocols during PPE use and maintenance.
+
+Reporting or Escalation:
+Report PPE issues or non-compliance to supervisors; escalate unresolved concerns to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Ensure PPE is provided, funded, and integrated into safety programs, holding accountability for compliance.
+
+Supervisors:
+• Verify PPE use by teams, conduct inspections, and address non-compliance immediately.
+
+Staff:
+• Wear and maintain assigned PPE, report defects, and follow training guidelines.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily site inspections, monthly PPE audits, and worker feedback to ensure consistent use and condition.
+
+Consequences for Non-Compliance:
+• Verbal warnings, mandatory retraining, or removal from site for failure to wear PPE, with potential termination for repeated violations.
+
+Reporting Obligations:
+• All PPE-related incidents or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1029': {
+    number: '1029',
+    title: 'Vehicle Safety Policy',
+    category: 'hse',
+    description: 'Promotes safe operation, maintenance, and use of vehicles to prevent accidents, injuries, and property damage.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 16)', 'Workers Compensation Act', 'CSA Z150-16'],
+    keywords: ['vehicle', 'safety', 'driving', 'inspection', 'maintenance', 'spotter', 'fleet'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to promote safe operation, maintenance, and use of vehicles to prevent accidents, injuries, and property damage. Its objectives include ensuring compliance with regulatory standards, reducing vehicle-related risks, and fostering a culture of safe driving, addressing the high incidence of vehicle strikes and collisions in operational environments.
+
+Scope:
+This policy applies to all employees, contractors, and authorized drivers operating company vehicles or personal vehicles for business purposes, covering all operational sites, travel routes, and field activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Vehicle: Any motorized equipment used for transport, including trucks, vans, heavy machinery, and off-road vehicles.
+• Pre-Shift Inspection: A daily visual and functional check of vehicle components to ensure operational safety.
+• Spotter: A trained individual responsible for observing and signaling during vehicle maneuvers, such as backing up.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 16 - Mobile Equipment)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Company Distracted Driving Policy
+• CSA Standards (e.g., Z150-16 for forklift safety)
+• WorkSafeBC Guidelines on Vehicle Safety`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to ensuring the safe operation and maintenance of all vehicles used in our operations. We require all drivers to adhere to regulatory standards, conduct pre-use inspections, and follow safe driving practices to prevent accidents and protect workers, pedestrians, and property.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Pre-Shift Inspection: Perform a daily inspection of vehicle components, including tires, brakes, lights, and safety devices.
+• Driver Authorization: Verify driver qualifications, licensing, and training before assigning vehicle use.
+• Site Traffic Management: Plan routes to minimize backing, use spotters for maneuvers, and segregate pedestrian and vehicle paths.
+• Maintenance Scheduling: Conduct regular scheduled maintenance and immediate repairs for identified defects.
+• Incident Reporting: Document and investigate all vehicle incidents or near-misses promptly.
+
+Roles & Responsibilities for Each Step:
+• Pre-Shift Inspection: Assigned drivers and operators
+• Driver Authorization: Supervisors and HSE Management
+• Site Traffic Management: Site supervisors and spotters
+• Maintenance Scheduling: Fleet managers and maintenance team
+• Incident Reporting: All involved parties, overseen by HSE Representatives
+
+Tools, Forms, or Checklists:
+• Vehicle pre-trip inspection checklists
+• Driver training logs
+• Incident report forms
+• Maintenance schedules
+
+Safety/Compliance/Quality Requirements:
+Compliance with BC OHS Regulation Part 16, including seat belt usage, restraint systems, and visibility enhancements; adherence to WorkSafeBC guidelines for site traffic.
+
+Reporting or Escalation:
+Report defects or incidents immediately to supervisors; escalate serious issues or non-compliance to HSE Representatives or management within 24 hours for investigation.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide resources for vehicle maintenance, ensure driver training programs, and enforce policy compliance through audits.
+
+Supervisors:
+• Assign qualified drivers, monitor site traffic, and conduct spotter oversight during high-risk maneuvers.
+
+Staff:
+• Complete pre-shift inspections, follow safe driving protocols, wear required PPE (e.g., high-visibility vests), and report hazards.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through weekly vehicle inspections, monthly fleet audits, driver performance reviews, and site traffic observations.
+
+Consequences for Non-Compliance:
+• Progressive discipline, including warnings, suspension of driving privileges, retraining, or termination, with immediate vehicle removal for unsafe conditions.
+
+Reporting Obligations:
+• All vehicle incidents, defects, or near-misses must be reported to HSE Representatives within 24 hours; annual MVR checks required for drivers.`
+      }
+    ]
+  },
+
+  '1030': {
+    number: '1030',
+    title: 'COVID-19 Policy',
+    category: 'hse',
+    description: 'Protects the health and safety of all personnel by mitigating the spread of COVID-19 through compliance with public health directives.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act', 'BC Public Health Orders'],
+    keywords: ['COVID-19', 'pandemic', 'health', 'safety', 'PPE', 'isolation', 'screening'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to protect the health and safety of all personnel by mitigating the spread of COVID-19. Its objectives include ensuring compliance with public health directives, reducing workplace transmission, and supporting a safe return to work, addressing the ongoing challenge of infectious disease control.
+
+Scope:
+This policy applies to all employees, contractors, and visitors at company sites, covering all operational areas, offices, and remote work environments where company activities occur.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• COVID-19: A respiratory illness caused by the SARS-CoV-2 virus, subject to ongoing public health measures.
+• Self-Isolation: Voluntary or mandated separation of individuals with symptoms or exposure to prevent spread.
+• Public Health Directives: Guidelines issued by provincial or federal health authorities (e.g., BC Centre for Disease Control).
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Company Health & Safety Policy
+• BC Public Health Orders (as updated)`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to protecting the health and safety of all employees, contractors, and visitors by implementing measures to prevent the spread of COVID-19. We will comply with current public health directives, provide necessary resources, and promote a safe workplace through education, screening, and response protocols.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Health Screening: Conduct daily symptom checks or temperature screenings at entry points.
+• PPE Usage: Require masks and other PPE in high-risk or crowded areas as per health guidelines.
+• Sanitization Routine: Ensure regular cleaning and provision of hand sanitizing stations.
+• Isolation Protocol: Implement self-isolation for symptomatic or exposed individuals with paid leave.
+• Communication Update: Provide ongoing updates on policy changes and health advisories.
+
+Roles & Responsibilities for Each Step:
+• Health Screening: Site supervisors and HSE Representatives
+• PPE Usage: All employees, supervised by supervisors
+• Sanitization Routine: Facilities team and cleaning staff
+• Isolation Protocol: HR and management
+• Communication Update: HSE Management and leadership team
+
+Tools, Forms, or Checklists:
+• Health screening logs
+• PPE distribution records
+• Cleaning schedules
+• Isolation request forms
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Public Health Orders, OHS Regulation Part 4, and internal safety protocols for infectious disease control.
+
+Reporting or Escalation:
+Report symptoms or exposures to supervisors; escalate confirmed cases to HSE Representatives or management within 24 hours for contact tracing.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Provide resources for screening, PPE, and cleaning, ensuring compliance with health directives and supporting affected workers.
+
+Supervisors:
+• Monitor screening and PPE use, enforce isolation protocols, and report issues promptly.
+
+Staff:
+• Participate in screenings, wear required PPE, self-isolate when necessary, and report symptoms immediately.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily entry logs, weekly sanitation audits, and employee feedback to ensure adherence to protocols.
+
+Consequences for Non-Compliance:
+• Verbal warnings, mandatory retraining, or removal from site for refusal to follow health measures, with termination possible for repeated violations.
+
+Reporting Obligations:
+• All symptoms, exposures, or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1031': {
+    number: '1031',
+    title: 'Pandemic Disease Policy',
+    category: 'hse',
+    description: 'Safeguards the health and safety of all personnel during a pandemic disease outbreak by minimizing transmission and ensuring business continuity.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act', 'BC Public Health Emergency Guidelines'],
+    keywords: ['pandemic', 'disease', 'health', 'safety', 'outbreak', 'continuity', 'contact tracing'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to safeguard the health and safety of all personnel during a pandemic disease outbreak. Its objectives include minimizing transmission, ensuring business continuity, and complying with public health measures, addressing the challenge of managing widespread infectious diseases.
+
+Scope:
+This policy applies to all employees, contractors, and visitors at company sites, encompassing all operational areas, offices, and remote work settings during a declared pandemic.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Pandemic Disease: A widespread infectious disease outbreak declared by public health authorities, requiring coordinated response measures.
+• Business Continuity: Maintaining critical operations during a pandemic through remote work or adjusted schedules.
+• Contact Tracing: Identifying and notifying individuals exposed to a confirmed case.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Company Health & Safety Policy
+• BC Public Health Emergency Guidelines`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to protecting the health and safety of all employees, contractors, and visitors during a pandemic disease outbreak. We will implement preventive measures, support business continuity, and comply with public health directives to minimize transmission and ensure a safe working environment.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Outbreak Monitoring: Track public health announcements and assess pandemic risks.
+• Preparedness Plan: Activate emergency protocols, including remote work and resource allocation.
+• Health Measures: Enforce hygiene practices, PPE use, and social distancing as required.
+• Contact Tracing: Identify and manage exposure incidents with support from health authorities.
+• Policy Review: Update procedures based on evolving pandemic conditions and feedback.
+
+Roles & Responsibilities for Each Step:
+• Outbreak Monitoring: HSE Management and leadership team
+• Preparedness Plan: Management and HR
+• Health Measures: Supervisors and all employees
+• Contact Tracing: HSE Representatives and HR
+• Policy Review: HSE team and management
+
+Tools, Forms, or Checklists:
+• Pandemic response plan
+• Exposure tracking forms
+• PPE inventory logs
+• Hygiene audit checklists
+
+Safety/Compliance/Quality Requirements:
+Compliance with BC Public Health Emergency Guidelines, OHS Regulation Part 4, and internal safety protocols during a pandemic.
+
+Reporting or Escalation:
+Report symptoms or exposures to supervisors; escalate confirmed cases or issues to HSE Representatives within 24 hours for action.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop and fund pandemic response plans, ensure resource availability, and communicate updates to all personnel.
+
+Supervisors:
+• Enforce health measures, monitor compliance, and support affected workers with isolation protocols.
+
+Staff:
+• Follow hygiene and distancing rules, report symptoms, and participate in contact tracing efforts.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily health checks, weekly compliance audits, and feedback surveys during a pandemic to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, mandatory retraining, or removal from site for non-adherence, with termination possible for repeated violations.
+
+Reporting Obligations:
+• All symptoms, exposures, or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1032': {
+    number: '1032',
+    title: 'Open Communication Policy',
+    category: 'hse',
+    description: 'Encourages transparent and effective communication to enhance safety, resolve issues, and foster a collaborative workplace.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 3)', 'Workers Compensation Act'],
+    keywords: ['communication', 'transparency', 'safety', 'reporting', 'retaliation', 'anonymous'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to encourage transparent and effective communication to enhance safety, resolve issues, and foster a collaborative workplace. Its objectives include ensuring all personnel can raise concerns without fear, improving decision-making, and addressing the challenge of communication barriers in high-risk environments.
+
+Scope:
+This policy applies to all employees, contractors, and visitors, covering all departments, roles, activities, and locations where company operations occur.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Open Communication: A culture where all personnel can freely report safety concerns, suggestions, or issues without retaliation.
+• Retaliation: Any adverse action against an individual for raising a concern or exercising their rights.
+• Anonymous Reporting: A method allowing concerns to be submitted without disclosing the reporter's identity.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 3 - Rights and Responsibilities)
+• Workers Compensation Act (British Columbia), Part 3 - Worker Rights
+• Company Harassment & Violence Policy
+• Company Health & Safety Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to maintaining an open communication environment where all employees, contractors, and visitors can raise health, safety, or workplace concerns without fear of reprisal. We encourage proactive dialogue, provide accessible reporting channels, and ensure timely responses to foster a collaborative and safe workplace.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Awareness Training: Conduct initial and ongoing training on communication rights and channels.
+• Concern Submission: Provide multiple reporting options, including direct supervisors and anonymous hotlines.
+• Issue Investigation: Promptly investigate all reported concerns with impartiality.
+• Feedback Provision: Communicate outcomes and actions taken back to the reporter where possible.
+• Policy Evaluation: Regularly review the policy's effectiveness based on feedback and incident data.
+
+Roles & Responsibilities for Each Step:
+• Awareness Training: Training coordinators and HSE Management
+• Concern Submission: All employees, supported by supervisors
+• Issue Investigation: HSE Representatives and management
+• Feedback Provision: HSE team and supervisors
+• Policy Evaluation: Management and HSE Management
+
+Tools, Forms, or Checklists:
+• Training attendance logs
+• Concern report forms
+• Investigation checklists
+• Feedback survey templates
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 3, ensuring no retaliation and maintaining confidentiality as per legal standards.
+
+Reporting or Escalation:
+Report concerns to supervisors or via anonymous channels; escalate unresolved issues to HSE Representatives within 48 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Establish communication channels, protect against retaliation, and ensure policy enforcement.
+
+Supervisors:
+• Facilitate open dialogue, receive reports, and escalate issues as needed without prejudice.
+
+Staff:
+• Actively participate by reporting concerns, attending training, and supporting a transparent culture.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through quarterly reviews of concern reports, training completion rates, and employee surveys to assess effectiveness.
+
+Consequences for Non-Compliance:
+• Disciplinary actions including warnings or termination for retaliation, with retraining mandated for policy breaches.
+
+Reporting Obligations:
+• All concerns or incidents of retaliation must be reported to HSE Representatives within 48 hours.`
+      }
+    ]
+  },
+
+  '1033': {
+    number: '1033',
+    title: 'Drug & Alcohol Policy',
+    category: 'hse',
+    description: 'Ensures a safe and productive workplace by preventing the use, possession, or distribution of drugs and alcohol that could impair performance or safety.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act', 'WorkSafeBC Guidelines'],
+    keywords: ['drug', 'alcohol', 'impairment', 'testing', 'safety', 'rehabilitation', 'workplace'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to ensure a safe and productive workplace by preventing the use, possession, or distribution of drugs and alcohol that could impair performance or safety. Its objectives include reducing workplace accidents, ensuring compliance with legal standards, and supporting affected individuals, addressing the risks posed by substance-related impairment.
+
+Scope:
+This policy applies to all employees, contractors, and visitors at company sites, covering all work hours, company premises, vehicles, and business-related activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Impairment: A state where drug or alcohol use affects an individual's ability to perform work safely.
+• Random Testing: Unannounced drug and alcohol screening conducted on a periodic basis.
+• Rehabilitation Program: A structured support plan for employees seeking assistance with substance issues.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Company Health & Safety Policy
+• WorkSafeBC Guidelines on Substance Use in the Workplace`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization prohibits the use, possession, or distribution of drugs and alcohol during work hours or on company premises. We are committed to maintaining a drug- and alcohol-free workplace, providing support for rehabilitation, and enforcing testing to ensure safety and compliance with all applicable regulations.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Awareness Training: Conduct initial and annual training on policy requirements and support options.
+• Testing Protocol: Implement random, post-incident, and reasonable suspicion drug and alcohol testing.
+• Violation Reporting: Require immediate reporting of suspected violations by any personnel.
+• Intervention Support: Offer confidential assistance and referral to rehabilitation programs for affected employees.
+• Compliance Review: Regularly audit testing records and policy adherence.
+
+Roles & Responsibilities for Each Step:
+• Awareness Training: Training coordinators and HSE Management
+• Testing Protocol: HSE Representatives and designated testing officers
+• Violation Reporting: All employees and supervisors
+• Intervention Support: HR and management
+• Compliance Review: HSE team and management
+
+Tools, Forms, or Checklists:
+• Training attendance logs
+• Testing consent forms
+• Violation report templates
+• Audit checklists
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 4, WorkSafeBC guidelines, and privacy laws during testing and support processes.
+
+Reporting or Escalation:
+Report violations or concerns to supervisors; escalate confirmed cases to HSE Representatives or management within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop and fund the policy, provide testing resources, and support rehabilitation efforts.
+
+Supervisors:
+• Monitor for signs of impairment, conduct initial investigations, and report violations.
+
+Staff:
+• Comply with the policy, report suspected violations, and seek help if needed without fear of reprisal.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through random testing records, incident reviews, and annual policy audits to ensure adherence.
+
+Consequences for Non-Compliance:
+• Immediate suspension pending investigation, mandatory rehabilitation, or termination for confirmed violations, with legal action possible for distribution.
+
+Reporting Obligations:
+• All suspected impairments or violations must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1034': {
+    number: '1034',
+    title: 'Refuse Unsafe Work Policy',
+    category: 'hse',
+    description: 'Empowers workers to refuse unsafe work without fear of reprisal, ensuring a safe workplace and compliance with legal rights.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Workers Compensation Act (Part 3, Division 4)', 'BC Occupational Health and Safety Regulation (Section 3.12)', 'WorkSafeBC Guidelines'],
+    keywords: ['refuse', 'unsafe work', 'safety', 'rights', 'hazard', 'retaliation', 'investigation'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to empower workers to refuse unsafe work without fear of reprisal, ensuring a safe workplace. Its objectives include protecting workers from hazards, complying with legal rights, and addressing the challenge of unrecognized or uncontrolled workplace risks.
+
+Scope:
+This policy applies to all employees, covering all work sites, tasks, and activities where safety concerns may arise.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Refusal of Unsafe Work: The legal right of a worker to refuse a task they believe poses an imminent danger to their health or safety.
+• Imminent Danger: A condition or practice that could cause immediate serious injury or death.
+• Retaliation: Any adverse action taken against a worker for exercising their right to refuse unsafe work.
+
+References:
+• BC Workers Compensation Act (Part 3, Division 4 - Right to Refuse Unsafe Work)
+• BC Occupational Health and Safety Regulation (Section 3.12 - Refusal of Unsafe Work)
+• Company Health & Safety Policy
+• WorkSafeBC Guidelines on Worker Rights`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization recognizes and supports the right of all employees to refuse unsafe work when they have reasonable cause to believe it poses an imminent danger. We are committed to investigating refusals promptly, ensuring no retaliation, and implementing corrective measures to maintain a safe working environment.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Initial Refusal: Worker notifies their supervisor of the unsafe condition and refuses the task.
+• Immediate Assessment: Supervisor assesses the situation and consults with the worker.
+• Investigation Process: HSE Representative investigates the reported hazard with worker input.
+• Resolution Action: Implement corrective measures or confirm work can resume safely.
+• Documentation Update: Record the refusal, investigation, and resolution in company records.
+
+Roles & Responsibilities for Each Step:
+• Initial Refusal: Worker
+• Immediate Assessment: Supervisor
+• Investigation Process: HSE Representative and supervisor
+• Resolution Action: HSE team and management
+• Documentation Update: HSE Representative and HR
+
+Tools, Forms, or Checklists:
+• Refusal report form
+• Hazard assessment checklist (e.g., FLRA/FLHA)
+• Investigation log
+• Resolution record
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Workers Compensation Act Part 3 and OHS Regulation Section 3.12, ensuring thorough investigation and no retaliation.
+
+Reporting or Escalation:
+Worker reports refusal to supervisor; escalate unresolved issues to HSE Representatives or WorkSafeBC within 24 hours if necessary.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Ensure policy awareness, provide resources for investigations, and protect against retaliation.
+
+Supervisors:
+• Receive refusals, conduct initial assessments, and escalate to HSE as needed.
+
+Staff:
+• Exercise their right to refuse unsafe work, provide details to support their concern, and cooperate with investigations.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly reviews of refusal reports, training records, and worker feedback to ensure policy adherence.
+
+Consequences for Non-Compliance:
+• Disciplinary action against supervisors or management for retaliation, with retraining mandated for policy breaches.
+
+Reporting Obligations:
+• All refusals and investigation outcomes must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
+  },
+
+  '1035': {
+    number: '1035',
+    title: 'Harassment & Violence Policy',
+    category: 'hse',
+    description: 'Prevents and addresses harassment and violence in the workplace, ensuring a respectful and safe environment for all personnel.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Workers Compensation Act (Part 3, Division 4)', 'BC Occupational Health and Safety Regulation (Section 4.27)', 'WorkSafeBC Guidelines'],
+    keywords: ['harassment', 'violence', 'safety', 'workplace', 'respect', 'investigation', 'support'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to prevent and address harassment and violence in the workplace, ensuring a respectful and safe environment. Its objectives include protecting all personnel from abuse, complying with legal obligations, and fostering a supportive environment, addressing the challenge of workplace misconduct and safety risks.
+
+Scope:
+This policy applies to all employees, contractors, and visitors, covering all work sites, company events, and business-related interactions.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Harassment: Unwelcome conduct, including verbal, physical, or psychological actions, that creates a hostile work environment.
+• Violence: Any physical force or threat that causes or is likely to cause harm.
+• Workplace: All locations where company business is conducted, including remote work settings.
+
+References:
+• BC Workers Compensation Act (Part 3, Division 4 - Violence in the Workplace)
+• BC Occupational Health and Safety Regulation (Section 4.27 - Violence in the Workplace)
+• Company Health & Safety Policy
+• WorkSafeBC Guidelines on Workplace Violence Prevention`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to maintaining a workplace free from harassment and violence. We prohibit any form of misconduct, provide support for those affected, and ensure prompt investigation and resolution of incidents, while complying with all relevant health and safety regulations.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Awareness Training: Conduct initial and ongoing training on recognizing and reporting harassment and violence.
+• Incident Reporting: Provide confidential channels for reporting incidents to supervisors or HR.
+• Investigation Process: Conduct impartial investigations into reported incidents with documented findings.
+• Support Provision: Offer resources, including counseling, to affected individuals.
+• Policy Review: Evaluate and update the policy based on incident trends and feedback.
+
+Roles & Responsibilities for Each Step:
+• Awareness Training: Training coordinators and HSE Management
+• Incident Reporting: All employees, supported by supervisors
+• Investigation Process: HR and HSE Representatives
+• Support Provision: HR and management
+• Policy Review: Management and HSE team
+
+Tools, Forms, or Checklists:
+• Training attendance logs
+• Incident report forms
+• Investigation checklists
+• Support resource lists
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Workers Compensation Act Part 3 and OHS Regulation Section 4.27, ensuring confidentiality and fairness in all proceedings.
+
+Reporting or Escalation:
+Report incidents to supervisors or HR; escalate unresolved cases to HSE Representatives within 48 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop and enforce the policy, provide resources, and ensure no retaliation against reporters.
+
+Supervisors:
+• Receive reports, initiate investigations, and support affected workers.
+
+Staff:
+• Report incidents, participate in training, and contribute to a respectful workplace.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through quarterly reviews of incident reports, training records, and employee surveys to ensure policy effectiveness.
+
+Consequences for Non-Compliance:
+• Disciplinary actions including warnings, suspension, or termination for perpetrators, with retraining for policy breaches.
+
+Reporting Obligations:
+• All incidents of harassment or violence must be reported to HR or HSE Representatives within 48 hours.`
+      }
+    ]
+  },
+
+  '1036': {
+    number: '1036',
+    title: 'Environmental Policy',
+    category: 'hse',
+    description: 'Integrates health, safety, and environmental principles to minimize environmental impact and ensure worker safety.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Environmental Management Act', 'BC Occupational Health and Safety Regulation (Part 4)', 'ISO 14001:2015'],
+    keywords: ['environmental', 'HSE', 'sustainability', 'pollution', 'compliance', 'impact', 'waste'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to integrate health, safety, and environmental (HSE) principles to minimize environmental impact and ensure worker safety. Its objectives include complying with regulations, reducing ecological harm, and fostering sustainable practices, addressing challenges like pollution and resource depletion.
+
+Scope:
+This policy applies to all employees, contractors, and visitors, covering all operational sites, projects, and activities that affect health, safety, or the environment.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• HSE: Health, Safety, and Environmental management framework to protect workers and the ecosystem.
+• Environmental Impact: Any effect on air, water, soil, or biodiversity from company operations.
+• Sustainable Practice: Methods that meet current needs without compromising future resources.
+
+References:
+• BC Environmental Management Act
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Company Health & Safety Policy
+• ISO 14001:2015 Environmental Management Systems`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is dedicated to integrating health, safety, and environmental stewardship into all operations. We commit to complying with applicable laws, minimizing our environmental footprint, promoting sustainable practices, and ensuring the well-being of all personnel through proactive HSE management.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Environmental Assessment: Conduct initial and periodic assessments of environmental risks at all sites.
+• Safety Integration: Incorporate safety protocols with environmental controls in daily operations.
+• Waste Management: Implement recycling, reduction, and proper disposal practices.
+• Training Program: Provide ongoing HSE training for all personnel.
+• Compliance Audit: Perform regular audits to ensure adherence to HSE standards.
+
+Roles & Responsibilities for Each Step:
+• Environmental Assessment: HSE Representatives and environmental officers
+• Safety Integration: Supervisors and safety officers
+• Waste Management: Facilities team and project managers
+• Training Program: Training coordinators and HSE Management
+• Compliance Audit: HSE team and external auditors
+
+Tools, Forms, or Checklists:
+• Environmental impact assessment forms
+• Safety checklists
+• Waste tracking logs
+• Training records
+• Audit reports
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Environmental Management Act, OHS Regulation Part 4, and ISO 14001 standards during all procedures.
+
+Reporting or Escalation:
+Report environmental or safety issues to supervisors; escalate unresolved concerns to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee HSE policy development, allocate resources, and ensure compliance with environmental laws.
+
+Supervisors:
+• Monitor site compliance, enforce safety and environmental practices, and report issues.
+
+Staff:
+• Follow HSE protocols, report hazards or spills, and participate in training.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly environmental audits, safety inspections, and annual HSE performance reviews.
+
+Consequences for Non-Compliance:
+• Warnings, retraining, or termination for violations, with legal action possible for significant environmental breaches.
+
+Reporting Obligations:
+• All incidents, spills, or non-compliance must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
+  },
+
+  '1037': {
+    number: '1037',
+    title: 'Security Policy',
+    category: 'hse',
+    description: 'Protects the physical and information assets from unauthorized access, theft, or damage.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Personal Information Protection Act (PIPA)', 'BC Occupational Health and Safety Regulation (Part 4)', 'ISO/IEC 27001:2013'],
+    keywords: ['security', 'access control', 'cybersecurity', 'breach', 'data', 'protection', 'assets'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to protect the physical and information assets from unauthorized access, theft, or damage. Its objectives include ensuring a secure workplace, complying with legal standards, and mitigating security risks, addressing challenges like data breaches and physical intrusions.
+
+Scope:
+This policy applies to all employees, contractors, and visitors, covering all company premises, vehicles, equipment, and digital systems used for business purposes.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Security Breach: Unauthorized access to or disclosure of sensitive information or physical assets.
+• Access Control: Measures to restrict entry to authorized personnel only.
+• Cybersecurity: Protection of digital systems from threats like hacking or malware.
+
+References:
+• BC Personal Information Protection Act (PIPA)
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Company Health & Safety Policy
+• ISO/IEC 27001:2013 Information Security Management`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to maintaining a secure environment for all personnel, assets, and information. We prohibit unauthorized access or misuse of company resources, enforce robust security measures, and ensure compliance with applicable laws to safeguard our operations and data.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Access Management: Issue and monitor access credentials for physical and digital systems.
+• Security Training: Conduct initial and periodic training on security protocols.
+• Incident Reporting: Require immediate reporting of security breaches or suspicious activities.
+• System Monitoring: Implement surveillance and cybersecurity monitoring tools.
+• Policy Review: Regularly assess and update security measures based on incidents and audits.
+
+Roles & Responsibilities for Each Step:
+• Access Management: IT department and site supervisors
+• Security Training: Training coordinators and HSE Management
+• Incident Reporting: All employees and contractors
+• System Monitoring: IT and security teams
+• Policy Review: Management and HSE team
+
+Tools, Forms, or Checklists:
+• Access log sheets
+• Training attendance records
+• Incident report forms
+• Monitoring dashboards
+• Audit checklists
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC PIPA, OHS Regulation Part 4, and ISO/IEC 27001 standards during all security processes.
+
+Reporting or Escalation:
+Report incidents to supervisors or IT; escalate serious breaches to HSE Representatives or management within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop and fund security measures, ensure policy enforcement, and provide training resources.
+
+Supervisors:
+• Monitor access compliance, respond to initial reports, and escalate as needed.
+
+Staff:
+• Follow security protocols, report breaches, and safeguard assigned credentials.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through weekly access reviews, monthly security audits, and incident tracking to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, suspension, or termination for breaches, with legal action possible for intentional violations.
+
+Reporting Obligations:
+• All security incidents or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1038': {
+    number: '1038',
+    title: 'Waste Disposal Policy',
+    category: 'hse',
+    description: 'Manages waste disposal responsibly, minimizing environmental impact and ensuring compliance with regulations.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Environmental Management Act', 'BC Occupational Health and Safety Regulation (Part 5)', 'Waste Discharge Regulation'],
+    keywords: ['waste', 'disposal', 'recycling', 'hazardous', 'environment', 'segregation', 'compliance'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to manage waste disposal responsibly, minimizing environmental impact and ensuring compliance with regulations. Its objectives include promoting recycling, reducing landfill waste, and preventing pollution, addressing the challenge of improper waste handling in operational activities.
+
+Scope:
+This policy applies to all employees, contractors, and visitors, covering all work sites, projects, and activities generating waste.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Waste: Any material discarded from operations, including hazardous and non-hazardous substances.
+• Recycling: The process of converting waste into reusable materials.
+• Hazardous Waste: Materials that pose a risk to health or the environment, requiring special disposal.
+
+References:
+• BC Environmental Management Act
+• BC Occupational Health and Safety Regulation (Part 5 - Chemical Agents and Biological Agents)
+• Company HSE Environmental Policy
+• Waste Discharge Regulation (British Columbia)`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to managing waste responsibly to protect the environment and comply with all applicable laws. We encourage waste reduction, promote recycling, and ensure proper disposal of hazardous materials to maintain a sustainable and safe workplace.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Waste Identification: Categorize waste as hazardous or non-hazardous during operations.
+• Segregation Process: Separate waste into designated bins for recycling, compost, and disposal.
+• Disposal Coordination: Arrange for licensed contractors to handle hazardous waste removal.
+• Training Session: Provide initial and ongoing training on waste management practices.
+• Compliance Audit: Conduct regular audits to verify adherence to disposal protocols.
+
+Roles & Responsibilities for Each Step:
+• Waste Identification: Project managers and supervisors
+• Segregation Process: All employees and contractors
+• Disposal Coordination: Facilities team and HSE Representatives
+• Training Session: Training coordinators and HSE Management
+• Compliance Audit: HSE team and environmental officers
+
+Tools, Forms, or Checklists:
+• Waste classification forms
+• Segregation bin labels
+• Disposal manifests
+• Training logs
+• Audit checklists
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Environmental Management Act, OHS Regulation Part 5, and Waste Discharge Regulation during all waste handling.
+
+Reporting or Escalation:
+Report waste issues or spills to supervisors; escalate non-compliance to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee waste management programs, provide resources, and ensure regulatory compliance.
+
+Supervisors:
+• Monitor waste segregation, enforce procedures, and report violations.
+
+Staff:
+• Follow waste disposal protocols, segregate materials, and report hazards.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through weekly waste audits, disposal records review, and employee feedback to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, retraining, or termination for improper disposal, with legal action possible for hazardous waste violations.
+
+Reporting Obligations:
+• All waste incidents or non-compliance must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
+  },
+
+  '1039': {
+    number: '1039',
+    title: 'Fatigue Management Policy',
+    category: 'hse',
+    description: 'Prevents fatigue-related incidents by managing work hours and promoting well-being for all personnel.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Section 4.43)', 'Workers Compensation Act', 'WorkSafeBC Guidelines'],
+    keywords: ['fatigue', 'work hours', 'rest', 'safety', 'scheduling', 'breaks', 'well-being'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to prevent fatigue-related incidents by managing work hours and promoting well-being. Its objectives include reducing errors, ensuring safety compliance, and supporting healthy work-life balance, addressing the challenge of fatigue in high-risk operational environments.
+
+Scope:
+This policy applies to all employees, contractors, and supervisors, covering all work sites, shifts, and activities where fatigue may impact performance.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Fatigue: A state of physical or mental exhaustion that reduces a worker's ability to perform safely.
+• Work Hour Limits: Maximum allowable hours per shift or week to prevent fatigue.
+• Rest Break: Scheduled downtime to allow recovery from work demands.
+
+References:
+• BC Occupational Health and Safety Regulation (Section 4.43 - Fatigue Management)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Company Health & Safety Policy
+• WorkSafeBC Guidelines on Fatigue Management`
+      },
+      {
+        title: 'Policy Statement',
+        content: `The organization is committed to managing fatigue to ensure the safety and health of all personnel. We enforce work hour limits, provide rest breaks, and encourage reporting of fatigue symptoms, while complying with all relevant health and safety regulations.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Work Scheduling: Establish shift schedules adhering to maximum hour limits (e.g., 12 hours per shift, 60 hours per week).
+• Fatigue Monitoring: Train supervisors to recognize fatigue signs and conduct regular check-ins.
+• Rest Breaks: Mandate and enforce scheduled breaks (e.g., 30 minutes every 5 hours).
+• Reporting Process: Allow workers to report fatigue concerns without reprisal.
+• Review Adjustment: Assess and adjust schedules based on fatigue incident data.
+
+Roles & Responsibilities for Each Step:
+• Work Scheduling: Management and HR
+• Fatigue Monitoring: Supervisors and HSE Representatives
+• Rest Breaks: All employees, monitored by supervisors
+• Reporting Process: All employees, supported by supervisors
+• Review Adjustment: HSE team and management
+
+Tools, Forms, or Checklists:
+• Shift schedules
+• Fatigue observation checklists
+• Break log sheets
+• Incident report forms
+• Review records
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Section 4.43 and WorkSafeBC fatigue guidelines during scheduling and monitoring.
+
+Reporting or Escalation:
+Report fatigue concerns to supervisors; escalate persistent issues to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop schedules, provide training, and ensure compliance with fatigue limits.
+
+Supervisors:
+• Monitor worker fatigue, enforce breaks, and report concerns to management.
+
+Staff:
+• Adhere to schedules, take required breaks, and report fatigue symptoms promptly.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through weekly schedule reviews, fatigue incident logs, and employee feedback to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, schedule adjustments, or disciplinary action for exceeding limits, with retraining for supervisors failing to enforce.
+
+Reporting Obligations:
+• All fatigue incidents or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  // ============================================
+  // HSE POLICIES (1040-1053)
+  // ============================================
+
+  '1040': {
+    number: '1040',
+    title: 'HSE - Company Rules',
+    category: 'hse',
+    description: 'Outlines the general rules at Aeria Solutions Ltd. to ensure a safe, productive, and respectful workplace.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act (BC) Part 3'],
+    keywords: ['company rules', 'conduct', 'compliance', 'safety', 'workplace', 'misconduct'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This document outlines the general rules at Aeria Solutions Ltd. to ensure a safe, productive, and respectful workplace. Its objectives include maintaining order, promoting professionalism, and ensuring compliance with legal and company standards, addressing issues like misconduct and safety violations.
+
+Scope:
+These rules apply to all employees, contractors, and visitors at Aeria Solutions Ltd., covering all work sites, company events, and business-related activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Misconduct: Behavior that violates company standards, including insubordination or harassment.
+• Compliance: Adherence to company rules, policies, and applicable laws.
+• Workplace: All locations where company business is conducted, including remote settings.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Aeria Solutions Ltd. Health & Safety Policy
+• Aeria Solutions Ltd. Harassment & Violence Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. expects all personnel to adhere to these company rules to maintain a safe, respectful, and efficient workplace. Violations will be addressed through appropriate disciplinary actions, with a commitment to fairness and compliance with all legal obligations.
+
+Company Rules:
+• General Conduct: Treat all personnel with respect; no harassment, bullying, or discrimination.
+• Safety Compliance: Wear required PPE, follow safety procedures, and report hazards immediately.
+• Work Hours: Adhere to scheduled shifts and take mandated rest breaks.
+• Substance Use: No use, possession, or distribution of drugs or alcohol during work hours.
+• Property Use: Use company equipment and resources only for authorized purposes.
+• Confidentiality: Protect sensitive company information and client data.
+• Attendance: Arrive on time and notify supervisors of absences in advance.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Rule Distribution:
+• Provide all personnel with a copy of the company rules during onboarding.
+
+Training Session:
+• Conduct training to explain rules and their importance.
+
+Violation Reporting:
+• Require immediate reporting of rule breaches by any individual.
+
+Investigation Process:
+• Investigate reported violations with documented findings.
+
+Enforcement Action:
+• Apply disciplinary measures based on the severity of the breach.
+
+Roles & Responsibilities for Each Step:
+• Rule Distribution: HR and supervisors
+• Training Session: Training coordinators and HSE Management
+• Violation Reporting: All employees and contractors
+• Investigation Process: HR and management
+• Enforcement Action: Management and HR
+
+Tools, Forms, or Checklists:
+• Rule acknowledgment forms
+• Training attendance logs
+• Incident report templates
+• Investigation checklists
+• Disciplinary records
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 4 and internal policies during rule enforcement and training.
+
+Reporting or Escalation:
+Report violations to supervisors; escalate unresolved issues to HR or management within 48 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop, distribute, and enforce rules, ensuring resources for training and compliance.
+
+Supervisors:
+• Monitor adherence, receive reports, and initiate investigations.
+
+Staff:
+• Follow rules, report violations, and participate in training.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly rule audits, incident reviews, and employee feedback to ensure adherence.
+
+Consequences for Non-Compliance:
+• Verbal warnings, written reprimands, suspension, or termination based on violation severity.
+
+Reporting Obligations:
+• All rule breaches must be reported to supervisors within 48 hours.`
+      }
+    ]
+  },
+
+  '1041': {
+    number: '1041',
+    title: 'HSE - General Safety Rules',
+    category: 'hse',
+    description: 'Establishes general safety rules at Aeria Solutions Ltd. to prevent workplace injuries and ensure a safe environment.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act (BC) Part 3'],
+    keywords: ['safety rules', 'PPE', 'hazard', 'workplace safety', 'emergency', 'compliance'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This document establishes general safety rules at Aeria Solutions Ltd. to prevent workplace injuries and ensure a safe environment. Its objectives include promoting awareness, ensuring compliance with safety standards, and addressing hazards across all operations.
+
+Scope:
+These rules apply to all employees, contractors, and visitors at Aeria Solutions Ltd., covering all work sites, tasks, and activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Hazard: Any condition or activity with the potential to cause injury or illness.
+• Personal Protective Equipment (PPE): Gear such as helmets, gloves, and safety glasses to protect workers.
+• Safety Compliance: Adherence to established safety protocols and regulations.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Aeria Solutions Ltd. Health & Safety Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. requires all personnel to follow these general safety rules to maintain a safe workplace. Compliance is mandatory, and violations will be addressed to protect the health and safety of everyone on site.
+
+General Safety Rules:
+• PPE Usage: Wear required PPE (e.g., hard hats, safety boots) at all times in designated areas.
+• Hazard Awareness: Report unsafe conditions, equipment, or behaviors immediately.
+• Equipment Operation: Use machinery and tools only with proper training and authorization.
+• Housekeeping: Keep work areas clean, organized, and free of clutter.
+• Emergency Preparedness: Know and follow evacuation and emergency procedures.
+• No Horseplay: Prohibit running, fighting, or other unsafe behaviors on site.
+• Substance Prohibition: Avoid working under the influence of drugs or alcohol.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Rule Orientation:
+• Provide safety rule training during onboarding and refresher sessions.
+
+Hazard Reporting:
+• Require immediate reporting of unsafe conditions or behaviors.
+
+PPE Enforcement:
+• Ensure proper use and maintenance of required PPE.
+
+Safety Inspections:
+• Conduct regular site inspections to verify rule adherence.
+
+Incident Response:
+• Investigate and document all safety incidents promptly.
+
+Roles & Responsibilities for Each Step:
+• Rule Orientation: Training coordinators and HSE Management
+• Hazard Reporting: All employees and contractors
+• PPE Enforcement: Supervisors and safety officers
+• Safety Inspections: HSE Representatives and supervisors
+• Incident Response: HSE team and management
+
+Tools, Forms, or Checklists:
+• Training attendance logs
+• Hazard report forms
+• PPE inspection checklists
+• Site inspection records
+• Incident reports
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 4 and internal safety protocols during all activities.
+
+Reporting or Escalation:
+Report hazards or incidents to supervisors; escalate unresolved issues to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Develop and enforce safety rules, provide training resources, and ensure compliance.
+
+Supervisors:
+• Monitor rule adherence, conduct inspections, and respond to reports.
+
+Staff:
+• Follow safety rules, wear PPE, and report hazards or violations.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily safety checks, monthly audits, and incident reviews to ensure adherence.
+
+Consequences for Non-Compliance:
+• Verbal warnings, retraining, suspension, or termination based on violation severity.
+
+Reporting Obligations:
+• All safety incidents or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1042': {
+    number: '1042',
+    title: 'HSE - Grounds for Dismissal',
+    category: 'hse',
+    description: 'Outlines the grounds for dismissal at Aeria Solutions Ltd. to maintain a safe and productive workplace.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Employment Standards Act', 'Workers Compensation Act (BC) Part 3'],
+    keywords: ['dismissal', 'termination', 'misconduct', 'discipline', 'performance', 'violations'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This document outlines the grounds for dismissal at Aeria Solutions Ltd. to maintain a safe and productive workplace. Its objectives include ensuring fair enforcement, complying with legal standards, and addressing serious misconduct or performance issues.
+
+Scope:
+This policy applies to all employees at Aeria Solutions Ltd., covering all work sites, shifts, and business-related activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Dismissal: The termination of employment due to serious misconduct or repeated policy violations.
+• Misconduct: Intentional or negligent behavior that violates company rules or laws.
+• Progressive Discipline: A process of warnings and corrective actions before dismissal.
+
+References:
+• BC Employment Standards Act
+• BC Workers Compensation Act (Part 3 - Rights and Responsibilities)
+• Aeria Solutions Ltd. Company Rules
+• Aeria Solutions Ltd. Harassment & Violence Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. may dismiss employees for serious or repeated violations of company policies, legal obligations, or performance standards. Dismissal will follow a fair process, including investigation and documentation, while adhering to applicable employment laws.
+
+Grounds for Dismissal:
+
+Serious Misconduct:
+• Physical violence or threats
+• Theft or fraud
+• Possession or distribution of illegal substances
+
+Repeated Violations:
+• Failure to follow safety rules after warnings
+• Chronic absenteeism or tardiness
+• Harassment or discrimination after corrective action
+
+Performance Issues:
+• Consistent failure to meet job standards despite training
+• Gross negligence leading to safety incidents
+
+Legal Violations:
+• Conviction of a crime affecting workplace safety or trust
+• Breach of confidentiality agreements`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Incident Identification:
+• Document alleged violations or performance issues.
+
+Investigation Process:
+• Conduct a thorough and impartial investigation.
+
+Notification Meeting:
+• Inform the employee of the issue and allow a response.
+
+Decision Review:
+• Assess findings and determine appropriate action.
+
+Termination Execution:
+• Issue formal dismissal notice with required documentation.
+
+Roles & Responsibilities for Each Step:
+• Incident Identification: Supervisors and HR
+• Investigation Process: HR and management
+• Notification Meeting: HR and supervisor
+• Decision Review: Management and HR
+• Termination Execution: HR
+
+Tools, Forms, or Checklists:
+• Incident report forms
+• Investigation logs
+• Employee response records
+• Decision documentation
+• Termination letters
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Employment Standards Act and internal policies during all dismissal proceedings.
+
+Reporting or Escalation:
+Report incidents to supervisors; escalate complex cases to HR or management within 48 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee dismissal processes, ensure legal compliance, and provide final approval.
+
+Supervisors:
+• Identify and report violations, participate in investigations.
+
+HR:
+• Conduct investigations, document proceedings, and execute terminations.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through review of dismissal records, employee feedback, and legal compliance audits.
+
+Consequences for Non-Compliance:
+• Corrective action for procedural errors, with potential legal review for unfair dismissals.
+
+Reporting Obligations:
+• All dismissal-related incidents must be reported to HR within 48 hours.`
       }
     ]
   }
