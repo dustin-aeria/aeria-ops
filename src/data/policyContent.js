@@ -5100,6 +5100,198 @@ Reporting Obligations:
 • All emergencies or non-compliance must be reported to supervisors immediately.`
       }
     ]
+  },
+
+  '1052': {
+    number: '1052',
+    title: 'HSE - Investigations Policy',
+    category: 'hse',
+    description: 'Establishes a structured process for investigating workplace incidents at Aeria Solutions Ltd. to determine causes and prevent recurrence.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: [
+      'BC OHS Regulation Section 3.4 - Investigation of Incidents',
+      'Workers Compensation Act (BC) Part 3 - Rights and Responsibilities',
+      'WorkSafeBC Guidelines on Incident Investigation'
+    ],
+    keywords: ['investigation', 'incident', 'root cause', 'corrective action', 'workplace safety'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to establish a structured process for investigating workplace incidents at Aeria Solutions Ltd. to determine causes and prevent recurrence. Its objectives include ensuring compliance with safety regulations, protecting personnel, and addressing the challenge of identifying root causes of incidents.
+
+Scope:
+This policy applies to all employees, contractors, and supervisors at Aeria Solutions Ltd., covering all work sites and incidents requiring investigation, including injuries, near misses, and property damage.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Incident: Any event resulting in injury, illness, near miss, or property damage.
+• Investigation: A systematic process to identify the cause and contributing factors of an incident.
+• Corrective Action: Measures implemented to prevent future incidents based on investigation findings.
+
+References:
+• BC Occupational Health and Safety Regulation (Section 3.4 - Investigation of Incidents).
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities.
+• Aeria Solutions Ltd. Health & Safety Policy.
+• WorkSafeBC Guidelines on Incident Investigation.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. is committed to conducting thorough and timely investigations of all workplace incidents to determine causes and implement corrective actions. We ensure compliance with legal requirements and foster a culture of safety through transparent and effective investigation processes.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Incident Notification: Report all incidents to supervisors immediately.
+• Initial Response: Secure the site and preserve evidence pending investigation.
+• Investigation Team: Assemble a team to analyze the incident, including witnesses and experts if needed.
+• Analysis Process: Identify causes and contributing factors through interviews and evidence review.
+• Report and Action: Document findings and implement corrective measures, with follow-up reviews.
+
+Roles & Responsibilities for Each Step:
+• Incident Notification: All employees and contractors.
+• Initial Response: Supervisors and safety officers.
+• Investigation Team: HSE Representatives, supervisors, and management.
+• Analysis Process: Investigation team.
+• Report and Action: HSE team and management.
+
+Tools, Forms, or Checklists:
+• Incident report forms
+• Investigation checklists
+• Witness statement templates
+• Evidence logs
+• Corrective action plans
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Section 3.4 and internal safety protocols during all investigation activities.
+
+Reporting or Escalation:
+Report incidents to supervisors immediately; escalate complex cases to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee investigations, allocate resources, and approve corrective actions.
+
+Supervisors:
+• Report incidents, secure sites, and assist in investigations.
+
+Staff:
+• Report incidents, provide statements, and comply with investigation requests.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly review of investigation reports, corrective action follow-ups, and incident trend analysis to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, retraining, or disciplinary action for failing to report or cooperate in investigations.
+
+Reporting Obligations:
+• All incidents must be reported to supervisors immediately, with investigation findings submitted to HSE Representatives within 7 days.`
+      }
+    ]
+  },
+
+  '1053': {
+    number: '1053',
+    title: 'HSE - Systems Overview & Audit Policy',
+    category: 'hse',
+    description: 'Establishes procedures for the systematic overhaul and audit of operational systems at Aeria Solutions Ltd. to ensure safety, efficiency, and compliance.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: [
+      'BC OHS Regulation Section 3.5 - General Hazard Identification and Assessment',
+      'Workers Compensation Act (BC) Part 3 - Rights and Responsibilities',
+      'WorkSafeBC Guidelines on Workplace Audits and System Upgrades'
+    ],
+    keywords: ['systems audit', 'overhaul', 'compliance', 'system assessment', 'operational efficiency'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to establish procedures for the systematic overhaul and audit of operational systems at Aeria Solutions Ltd. to ensure safety, efficiency, and compliance. Its objectives include identifying system deficiencies, implementing upgrades, and addressing the challenge of outdated or non-compliant processes.
+
+Scope:
+This policy applies to all employees, contractors, and supervisors at Aeria Solutions Ltd., covering all operational systems, equipment, and safety protocols across work sites.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Systems Overhaul: A comprehensive update or replacement of equipment, processes, or safety systems.
+• Audit: A formal evaluation to verify compliance with standards and identify improvement areas.
+• Non-Compliance: Failure to meet regulatory or internal safety requirements.
+
+References:
+• BC Occupational Health and Safety Regulation (Section 3.5 - General Hazard Identification and Assessment).
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities.
+• Aeria Solutions Ltd. Health & Safety Policy.
+• WorkSafeBC Guidelines on Workplace Audits and System Upgrades.`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. is committed to regularly overhauling and auditing operational systems to maintain safety, efficiency, and regulatory compliance. We ensure thorough assessments, timely upgrades, and documentation to address system risks and enhance workplace performance.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+• Audit Scheduling: Plan and assign audits based on system risk and regulatory requirements.
+• System Assessment: Conduct detailed inspections to evaluate current system conditions.
+• Overhaul Planning: Develop a plan for upgrading or replacing deficient systems.
+• Implementation Process: Execute overhauls with safety measures in place.
+• Post-Audit Review: Document findings, verify improvements, and update records.
+
+Roles & Responsibilities for Each Step:
+• Audit Scheduling: HSE Representatives and management.
+• System Assessment: Supervisors, safety officers, and technicians.
+• Overhaul Planning: HSE team and maintenance staff.
+• Implementation Process: Maintenance team and supervisors.
+• Post-Audit Review: HSE Representatives and management.
+
+Tools, Forms, or Checklists:
+• Audit schedules
+• Inspection checklists
+• Overhaul plans
+• Implementation logs
+• Post-audit reports
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Section 3.5 and manufacturer guidelines during all overhaul and audit activities.
+
+Reporting or Escalation:
+Report audit findings or issues to supervisors; escalate critical deficiencies to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee audits and overhauls, allocate resources, and ensure compliance.
+
+Supervisors:
+• Conduct assessments, oversee implementations, and report issues.
+
+Staff:
+• Assist in audits, follow safety protocols during overhauls, and report concerns.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through quarterly audit reviews, post-overhaul evaluations, and system performance checks to ensure adherence.
+
+Consequences for Non-Compliance:
+• Warnings, retraining, or disciplinary action for failing to conduct audits or implement overhauls.
+
+Reporting Obligations:
+• All audit findings or non-compliance must be reported to supervisors within 24 hours.`
+      }
+    ]
   }
 }
 
