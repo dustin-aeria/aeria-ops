@@ -1,13 +1,13 @@
 /**
  * ComplianceHub.jsx
- * Main dashboard for Compliance Matrix Engine
+ * Main dashboard for Compliance Assistant
  *
  * Features:
- * - View all compliance applications
- * - Quick stats by status
- * - Create new applications from templates
- * - Recent activity
- * - Template library access
+ * - Unified view of Template Applications and Q&A Projects
+ * - AI-powered Knowledge Base search and indexing
+ * - Create structured compliance applications from templates (SFOC, Prequalification)
+ * - Create free-form Q&A projects for any compliance questionnaire
+ * - Quick stats and filtering by type/status
  *
  * @location src/pages/ComplianceHub.jsx
  */
@@ -630,29 +630,70 @@ function NewQAProjectModal({ isOpen, onClose, onCreateProject }) {
 
 function EmptyState({ onCreateNew, onCreateQA, hasTemplates }) {
   return (
-    <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-      <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No compliance projects yet</h3>
-      <p className="text-gray-500 mb-6 max-w-md mx-auto">
-        Start a new compliance project. Use templates for structured applications, or Q&A projects for free-form compliance questions.
-      </p>
-      <div className="flex items-center justify-center gap-3">
-        {hasTemplates && (
-          <button
-            onClick={onCreateNew}
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            <FileCheck className="w-4 h-4" />
-            Use Template
-          </button>
-        )}
+    <div className="bg-white rounded-lg border border-gray-200 p-8">
+      <div className="text-center mb-8">
+        <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your First Compliance Project</h3>
+        <p className="text-gray-500 max-w-lg mx-auto">
+          Choose how you want to work on compliance. Both options include AI-powered assistance from your indexed policies and procedures.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        {/* Q&A Project Option */}
         <button
           onClick={onCreateQA}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 inline-flex items-center gap-2"
+          className="p-6 bg-purple-50 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-100 transition-all text-left group"
         >
-          <MessageSquare className="w-4 h-4" />
-          Q&A Project
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-purple-100 group-hover:bg-purple-200">
+              <MessageSquare className="w-5 h-5 text-purple-600" />
+            </div>
+            <h4 className="font-semibold text-gray-900">Q&A Project</h4>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Ask compliance questions and get AI-assisted answers from your knowledge base. Perfect for client prequalifications and custom questionnaires.
+          </p>
+          <span className="text-sm font-medium text-purple-600 group-hover:text-purple-700">
+            Get started →
+          </span>
         </button>
+
+        {/* Template Option */}
+        {hasTemplates ? (
+          <button
+            onClick={onCreateNew}
+            className="p-6 bg-blue-50 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-100 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200">
+                <FileCheck className="w-5 h-5 text-blue-600" />
+              </div>
+              <h4 className="font-semibold text-gray-900">From Template</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Use a pre-built compliance matrix (SFOC, COR, etc.) with structured requirements. Best for regulatory submissions.
+            </p>
+            <span className="text-sm font-medium text-blue-600 group-hover:text-blue-700">
+              Browse templates →
+            </span>
+          </button>
+        ) : (
+          <div className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl text-left">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-gray-100">
+                <FileCheck className="w-5 h-5 text-gray-400" />
+              </div>
+              <h4 className="font-semibold text-gray-500">From Template</h4>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">
+              Seed templates first to use pre-built compliance matrices for SFOC and other regulatory applications.
+            </p>
+            <span className="text-sm text-gray-400">
+              Click "Seed Templates" above
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -847,6 +888,58 @@ export default function ComplianceHub() {
           <button onClick={() => setError('')} className="ml-auto p-1 hover:bg-red-100 rounded">
             <XCircle className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Getting Started Banner - show when no templates and no projects */}
+      {templates.length === 0 && stats.all === 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-white rounded-lg shadow-sm">
+              <Sparkles className="w-6 h-6 text-amber-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 mb-1">Welcome to the Compliance Assistant</h3>
+              <p className="text-gray-600 text-sm mb-3">
+                Get started by seeding the template library, then index your policies to enable AI-powered assistance.
+              </p>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">1</span>
+                  <span className="text-gray-700">Seed Templates</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">2</span>
+                  <span className="text-gray-700">Index Policies</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold">3</span>
+                  <span className="text-gray-700">Create Projects</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Index Policies Prompt - show when templates exist but KB not indexed */}
+      {templates.length > 0 && !isIndexed && stats.all === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Database className="w-5 h-5 text-amber-600" />
+            <div className="flex-1">
+              <p className="text-amber-800 font-medium">Index your policies for AI-powered suggestions</p>
+              <p className="text-amber-700 text-sm">Click "AI Assistant" above and go to the Index tab to enable intelligent search.</p>
+            </div>
+            <button
+              onClick={() => { setShowKnowledgeBase(true); setKbTab('index'); }}
+              className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700"
+            >
+              Index Now
+            </button>
+          </div>
         </div>
       )}
 
