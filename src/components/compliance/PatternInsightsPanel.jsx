@@ -35,7 +35,7 @@ import {
   FileBox
 } from 'lucide-react'
 import { useRequirementAnalysis } from '../../hooks/useRegulatoryPatterns'
-import { REGULATORY_REFERENCES } from '../../lib/regulatoryPatterns'
+import { REGULATORY_REFERENCES, mapRequirementToPatterns } from '../../lib/regulatoryPatterns'
 
 // ============================================
 // CATEGORY ICONS & COLORS
@@ -454,9 +454,10 @@ export default function PatternInsightsPanel({ requirement, compact = false }) {
   )
 }
 
-// Also export a simpler inline version
+// Also export a simpler inline version (no hooks - safe for conditional rendering)
 export function PatternBadge({ requirement }) {
-  const analysis = useRequirementAnalysis(requirement)
+  // Use direct function call instead of hook to avoid conditional hook issues
+  const analysis = requirement ? mapRequirementToPatterns(requirement) : null
 
   if (!analysis?.primaryCategory) return null
 
