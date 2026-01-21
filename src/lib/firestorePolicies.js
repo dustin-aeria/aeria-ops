@@ -1874,6 +1874,160 @@ const SAMPLE_POLICIES = [
       ]
     },
     {
+      number: '1033',
+      title: 'Drug & Alcohol Policy',
+      category: 'hse',
+      description: 'Ensures a safe and productive workplace by preventing the use, possession, or distribution of drugs and alcohol that could impair performance or safety.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['drug', 'alcohol', 'substance', 'impairment', 'testing', 'workplace safety'],
+      relatedPolicies: ['1007'],
+      regulatoryRefs: ['BC OHS Regulation', 'Workers Compensation Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1034',
+      title: 'Refuse Unsafe Work Policy',
+      category: 'hse',
+      description: 'Empowers workers to refuse unsafe work without fear of reprisal, ensuring a safe workplace and compliance with legal rights.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['refuse', 'unsafe work', 'worker rights', 'safety', 'reprisal'],
+      relatedPolicies: ['1007'],
+      regulatoryRefs: ['BC OHS Regulation Section 3.12', 'Workers Compensation Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1035',
+      title: 'Harassment & Violence Policy',
+      category: 'hse',
+      description: 'Prevents and addresses harassment and violence in the workplace, ensuring a respectful and safe environment for all personnel.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['harassment', 'violence', 'bullying', 'workplace', 'respect', 'prevention'],
+      relatedPolicies: ['1007'],
+      regulatoryRefs: ['BC OHS Regulation Section 4.24-4.31', 'Workers Compensation Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1036',
+      title: 'Environmental Policy',
+      category: 'hse',
+      description: 'Integrates health, safety, and environmental principles to minimize environmental impact and ensure worker safety.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['environmental', 'sustainability', 'impact', 'protection', 'compliance'],
+      relatedPolicies: ['1032'],
+      regulatoryRefs: ['Environmental Management Act', 'BC OHS Regulation'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1037',
+      title: 'Security Policy',
+      category: 'hse',
+      description: 'Protects the physical and information assets from unauthorized access, theft, or damage.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['security', 'access control', 'assets', 'protection', 'theft prevention'],
+      relatedPolicies: ['1007'],
+      regulatoryRefs: ['BC OHS Regulation', 'Workers Compensation Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1038',
+      title: 'Waste Disposal Policy',
+      category: 'hse',
+      description: 'Manages waste disposal responsibly, minimizing environmental impact and ensuring compliance with regulations.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['waste', 'disposal', 'recycling', 'hazardous', 'environmental'],
+      relatedPolicies: ['1032', '1036'],
+      regulatoryRefs: ['Environmental Management Act', 'Hazardous Waste Regulation'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1039',
+      title: 'Fatigue Management Policy',
+      category: 'hse',
+      description: 'Prevents fatigue-related incidents by managing work hours and promoting well-being for all personnel.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['fatigue', 'work hours', 'rest', 'well-being', 'safety'],
+      relatedPolicies: ['1007'],
+      regulatoryRefs: ['BC OHS Regulation', 'Employment Standards Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
       number: '1040',
       title: 'Incident Investigation',
       category: 'hse',
@@ -1915,6 +2069,50 @@ const SAMPLE_POLICIES = [
         { id: '4', title: 'Implementation', content: '', order: 4 },
         { id: '5', title: 'Effectiveness Verification', content: '', order: 5 },
         { id: '6', title: 'Closure Criteria', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1042',
+      title: 'HSE - Grounds for Dismissal',
+      category: 'hse',
+      description: 'Outlines the grounds for dismissal at Aeria Solutions Ltd. to maintain a safe and productive workplace.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['dismissal', 'termination', 'discipline', 'misconduct', 'safety violations'],
+      relatedPolicies: ['1007', '1040'],
+      regulatoryRefs: ['BC OHS Regulation', 'Employment Standards Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1043',
+      title: 'HSE - Public & Visitors Policy',
+      category: 'hse',
+      description: 'Ensures the safety and security of the public and visitors at Aeria Solutions Ltd. sites while protecting company operations.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['public', 'visitors', 'site access', 'safety', 'security'],
+      relatedPolicies: ['1037'],
+      regulatoryRefs: ['BC OHS Regulation', 'Workers Compensation Act'],
+      sections: [
+        { id: '1', title: 'Purpose & Scope', content: '', order: 1 },
+        { id: '2', title: 'Definitions & References', content: '', order: 2 },
+        { id: '3', title: 'Policy Statement', content: '', order: 3 },
+        { id: '4', title: 'Procedures', content: '', order: 4 },
+        { id: '5', title: 'Roles & Responsibilities', content: '', order: 5 },
+        { id: '6', title: 'Monitoring, Compliance & Enforcement', content: '', order: 6 }
       ]
     },
     {
