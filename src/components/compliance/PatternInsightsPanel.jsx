@@ -478,3 +478,4 @@ export function PatternBadge({ requirement }) {
     </span>
   )
 }
+// Force rebuild 1769022739
