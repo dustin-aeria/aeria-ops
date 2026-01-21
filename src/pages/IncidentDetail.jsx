@@ -69,6 +69,7 @@ import {
   PERSONAL_FACTORS,
   JOB_SYSTEM_FACTORS
 } from '../lib/formDefinitions'
+import { logger } from '../lib/logger'
 
 // Collapsible section component
 function Section({ title, icon: Icon, children, defaultOpen = true, badge }) {
@@ -294,7 +295,7 @@ export default function IncidentDetail() {
         })
       }
     } catch (err) {
-      console.error('Error loading incident:', err)
+      logger.error('Error loading incident:', err)
       setError('Failed to load incident')
     } finally {
       setLoading(false)
@@ -312,7 +313,7 @@ export default function IncidentDetail() {
       })
       await loadIncident()
     } catch (err) {
-      console.error('Error updating status:', err)
+      logger.error('Error updating status:', err)
       alert('Failed to update status')
     } finally {
       setSaving(false)
@@ -324,7 +325,7 @@ export default function IncidentDetail() {
       await markNotificationComplete(id, notificationType, reference)
       await loadIncident()
     } catch (err) {
-      console.error('Error marking notification complete:', err)
+      logger.error('Error marking notification complete:', err)
       alert('Failed to update notification status')
     }
   }
@@ -357,7 +358,7 @@ export default function IncidentDetail() {
       await loadIncident()
       setShowInvestigationForm(false)
     } catch (err) {
-      console.error('Error saving investigation:', err)
+      logger.error('Error saving investigation:', err)
       alert('Failed to save investigation')
     } finally {
       setSaving(false)
@@ -372,7 +373,7 @@ export default function IncidentDetail() {
       await closeIncident(id, currentUserName, 'Incident closed')
       await loadIncident()
     } catch (err) {
-      console.error('Error closing incident:', err)
+      logger.error('Error closing incident:', err)
       alert('Failed to close incident')
     } finally {
       setSaving(false)
@@ -386,7 +387,7 @@ export default function IncidentDetail() {
       await deleteIncident(id)
       navigate('/incidents')
     } catch (err) {
-      console.error('Error deleting incident:', err)
+      logger.error('Error deleting incident:', err)
       alert('Failed to delete incident')
     }
   }

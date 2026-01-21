@@ -55,6 +55,7 @@ import {
   CAPA_TYPES,
   PRIORITY_LEVELS
 } from '../lib/firestoreSafety'
+import { logger } from '../lib/logger'
 
 // Collapsible section component
 function Section({ title, icon: Icon, children, defaultOpen = true, badge, status }) {
@@ -254,7 +255,7 @@ export default function CapaDetail() {
         }
       }
     } catch (err) {
-      console.error('Error loading CAPA:', err)
+      logger.error('Error loading CAPA:', err)
       setError('Failed to load CAPA')
     } finally {
       setLoading(false)
@@ -271,7 +272,7 @@ export default function CapaDetail() {
       })
       await loadCapa()
     } catch (err) {
-      console.error('Error updating status:', err)
+      logger.error('Error updating status:', err)
       alert('Failed to update status')
     } finally {
       setSaving(false)
@@ -290,7 +291,7 @@ export default function CapaDetail() {
       await loadCapa()
       setShowImplementationForm(false)
     } catch (err) {
-      console.error('Error completing CAPA:', err)
+      logger.error('Error completing CAPA:', err)
       alert('Failed to save implementation')
     } finally {
       setSaving(false)
@@ -314,7 +315,7 @@ export default function CapaDetail() {
       await loadCapa()
       setShowVerificationForm(false)
     } catch (err) {
-      console.error('Error verifying CAPA:', err)
+      logger.error('Error verifying CAPA:', err)
       alert('Failed to save verification')
     } finally {
       setSaving(false)
@@ -337,7 +338,7 @@ export default function CapaDetail() {
       await loadCapa()
       setShowRecurrenceForm(false)
     } catch (err) {
-      console.error('Error recording recurrence check:', err)
+      logger.error('Error recording recurrence check:', err)
       alert('Failed to save recurrence check')
     } finally {
       setSaving(false)
@@ -357,7 +358,7 @@ export default function CapaDetail() {
       await loadCapa()
       setShowCommentForm(false)
     } catch (err) {
-      console.error('Error adding comment:', err)
+      logger.error('Error adding comment:', err)
       alert('Failed to add comment')
     } finally {
       setSaving(false)
@@ -372,7 +373,7 @@ export default function CapaDetail() {
       await closeCapa(id, 'Current User', 'CAPA closed')
       await loadCapa()
     } catch (err) {
-      console.error('Error closing CAPA:', err)
+      logger.error('Error closing CAPA:', err)
       alert('Failed to close CAPA')
     } finally {
       setSaving(false)
@@ -386,7 +387,7 @@ export default function CapaDetail() {
       await deleteCapa(id)
       navigate('/capas')
     } catch (err) {
-      console.error('Error deleting CAPA:', err)
+      logger.error('Error deleting CAPA:', err)
       alert('Failed to delete CAPA')
     }
   }

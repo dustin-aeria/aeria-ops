@@ -31,6 +31,7 @@ import {
   CAPA_TYPES,
   PRIORITY_LEVELS
 } from '../lib/firestoreSafety'
+import { logger } from '../lib/logger'
 
 // Section component for form organization
 function FormSection({ title, description, children, icon: Icon }) {
@@ -136,11 +137,11 @@ export default function CapaNew() {
             rootCause: incident.investigation?.findings || '',
           }))
         } catch (err) {
-          console.error('Error loading linked incident:', err)
+          logger.error('Error loading linked incident:', err)
         }
       }
     } catch (err) {
-      console.error('Error loading data:', err)
+      logger.error('Error loading data:', err)
     } finally {
       setLoadingData(false)
     }
@@ -214,7 +215,7 @@ export default function CapaNew() {
         state: { message: 'CAPA created successfully' } 
       })
     } catch (err) {
-      console.error('Error creating CAPA:', err)
+      logger.error('Error creating CAPA:', err)
       alert('Failed to create CAPA. Please try again.')
     } finally {
       setSaving(false)

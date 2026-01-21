@@ -57,6 +57,7 @@ import {
 import { seedAllComplianceTemplates } from '../lib/seedComplianceTemplates'
 import { KnowledgeBasePanel, BatchIndexPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
+import { logger } from '../lib/logger'
 
 // ============================================
 // STATUS HELPERS
@@ -418,7 +419,7 @@ function NewApplicationModal({ isOpen, onClose, templates, onCreateApplication }
       setSelectedTemplate(null)
       setApplicationName('')
     } catch (error) {
-      console.error('Error creating application:', error)
+      logger.error('Error creating application:', error)
       alert('Failed to create application. Please try again.')
     } finally {
       setCreating(false)
@@ -535,7 +536,7 @@ function NewQAProjectModal({ isOpen, onClose, onCreateProject }) {
       setProjectName('')
       setProjectDescription('')
     } catch (error) {
-      console.error('Error creating Q&A project:', error)
+      logger.error('Error creating Q&A project:', error)
       alert('Failed to create project. Please try again.')
     } finally {
       setCreating(false)
@@ -739,7 +740,7 @@ export default function ComplianceHub() {
       setTemplates(templatesData)
       setQaProjects(qaData || [])
     } catch (err) {
-      console.error('Error loading compliance data:', err)
+      logger.error('Error loading compliance data:', err)
       setError('Failed to load compliance data. Please try again.')
     } finally {
       setLoading(false)
@@ -762,7 +763,7 @@ export default function ComplianceHub() {
         setError('Some templates failed to seed. Check console for details.')
       }
     } catch (err) {
-      console.error('Error seeding templates:', err)
+      logger.error('Error seeding templates:', err)
       setError('Failed to seed templates. Please try again.')
     } finally {
       setSeeding(false)
@@ -787,7 +788,7 @@ export default function ComplianceHub() {
       await deleteComplianceApplication(id)
       setApplications(prev => prev.filter(app => app.id !== id))
     } catch (err) {
-      console.error('Error deleting application:', err)
+      logger.error('Error deleting application:', err)
       setError('Failed to delete application.')
     }
   }
@@ -809,7 +810,7 @@ export default function ComplianceHub() {
       await deleteComplianceProject(id)
       setQaProjects(prev => prev.filter(p => p.id !== id))
     } catch (err) {
-      console.error('Error deleting Q&A project:', err)
+      logger.error('Error deleting Q&A project:', err)
       setError('Failed to delete project.')
     }
   }

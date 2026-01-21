@@ -38,6 +38,7 @@ import {
   CAPA_TYPES,
   PRIORITY_LEVELS
 } from '../lib/firestoreSafety'
+import { logger } from '../lib/logger'
 
 export default function Capas() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -68,7 +69,7 @@ export default function Capas() {
       const data = await getCapas()
       setCapas(data)
     } catch (err) {
-      console.error('Error loading CAPAs:', err)
+      logger.error('Error loading CAPAs:', err)
     } finally {
       setLoading(false)
     }
@@ -83,7 +84,7 @@ export default function Capas() {
       await deleteCapa(capaId)
       setCapas(prev => prev.filter(c => c.id !== capaId))
     } catch (err) {
-      console.error('Error deleting CAPA:', err)
+      logger.error('Error deleting CAPA:', err)
       alert('Failed to delete CAPA')
     }
     setMenuOpen(null)

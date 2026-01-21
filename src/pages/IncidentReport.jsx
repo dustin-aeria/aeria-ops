@@ -47,6 +47,7 @@ import {
   REGULATORY_TRIGGERS,
   determineRegulatoryNotifications
 } from '../lib/firestoreSafety'
+import { logger } from '../lib/logger'
 
 // Section component for form organization
 function FormSection({ title, description, children, icon: Icon }) {
@@ -228,7 +229,7 @@ export default function IncidentReport() {
         }
       }
     } catch (err) {
-      console.error('Error loading reference data:', err)
+      logger.error('Error loading reference data:', err)
     } finally {
       setLoadingData(false)
     }
@@ -388,7 +389,7 @@ export default function IncidentReport() {
         state: { message: 'Incident reported successfully' } 
       })
     } catch (err) {
-      console.error('Error creating incident:', err)
+      logger.error('Error creating incident:', err)
       alert('Failed to report incident. Please try again.')
     } finally {
       setSaving(false)

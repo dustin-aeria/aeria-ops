@@ -62,6 +62,7 @@ import { EnhancedAIPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 import { getProject } from '../lib/firestore'
 import { openPrintExport, downloadCsvExport, downloadTextExport } from '../lib/complianceExport'
+import { logger } from '../lib/logger'
 
 // ============================================
 // HELPER FUNCTIONS
@@ -209,7 +210,7 @@ function RequirementCard({ requirement, response, onUpdate, onFlag, onLinkDocume
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      console.error('Error saving response:', error)
+      logger.error('Error saving response:', error)
     } finally {
       setSaving(false)
     }
@@ -603,11 +604,11 @@ export default function ComplianceApplicationEditor() {
             const projectData = await getProject(appData.projectId)
             setLinkedProject(projectData)
           } catch (err) {
-            console.warn('Could not load linked project:', err)
+            logger.warn('Could not load linked project:', err)
           }
         }
       } catch (err) {
-        console.error('Error loading application:', err)
+        logger.error('Error loading application:', err)
         setError('Failed to load application. It may have been deleted.')
       } finally {
         setLoading(false)
@@ -636,7 +637,7 @@ export default function ComplianceApplicationEditor() {
         progress: result.progress
       }))
     } catch (err) {
-      console.error('Error updating response:', err)
+      logger.error('Error updating response:', err)
       throw err
     }
   }, [application, user])
@@ -652,7 +653,7 @@ export default function ComplianceApplicationEditor() {
         flagReason: flagged ? 'Flagged for review' : null
       })
     } catch (err) {
-      console.error('Error flagging requirement:', err)
+      logger.error('Error flagging requirement:', err)
     }
   }, [application, user, handleResponseUpdate])
 
@@ -664,7 +665,7 @@ export default function ComplianceApplicationEditor() {
       await updateApplicationStatus(application.id, newStatus, user.uid)
       setApplication(prev => ({ ...prev, status: newStatus }))
     } catch (err) {
-      console.error('Error updating status:', err)
+      logger.error('Error updating status:', err)
       alert(`Cannot change status: ${err.message}`)
     }
   }, [application, user])
@@ -717,7 +718,7 @@ export default function ComplianceApplicationEditor() {
         responseType: aiSuggestionRequirement.responseType
       })
     } catch (err) {
-      console.error('Error using suggested content:', err)
+      logger.error('Error using suggested content:', err)
     }
   }, [aiSuggestionRequirement, application, user, handleResponseUpdate])
 
@@ -743,7 +744,7 @@ export default function ComplianceApplicationEditor() {
         responseType: aiSuggestionRequirement.responseType
       })
     } catch (err) {
-      console.error('Error linking suggested document:', err)
+      logger.error('Error linking suggested document:', err)
     }
   }, [aiSuggestionRequirement, application, user, handleResponseUpdate])
 
@@ -759,7 +760,7 @@ export default function ComplianceApplicationEditor() {
         responseType: linkingRequirement.responseType
       })
     } catch (err) {
-      console.error('Error saving linked documents:', err)
+      logger.error('Error saving linked documents:', err)
     }
   }, [linkingRequirement, application, user, handleResponseUpdate])
 
