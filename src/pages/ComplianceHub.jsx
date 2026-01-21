@@ -39,13 +39,18 @@ import {
   Building2,
   Plane,
   Database,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  HelpCircle
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   getComplianceApplications,
   getComplianceTemplates,
   deleteComplianceApplication,
+  getComplianceProjects,
+  createComplianceProject,
+  deleteComplianceProject,
   APPLICATION_STATUSES,
   TEMPLATE_CATEGORIES
 } from '../lib/firestoreCompliance'
@@ -241,6 +246,137 @@ function ApplicationCard({ application, onDelete, viewMode }) {
   )
 }
 
+function QAProjectCard({ project, onDelete, viewMode }) {
+  const navigate = useNavigate()
+  const [showMenu, setShowMenu] = useState(false)
+
+  const handleClick = () => {
+    navigate(`/compliance/project/${project.id}`)
+  }
+
+  const handleDelete = (e) => {
+    e.stopPropagation()
+    setShowMenu(false)
+    if (window.confirm(`Delete "${project.name}"? This cannot be undone.`)) {
+      onDelete(project.id)
+    }
+  }
+
+  const questionCount = project.questions?.length || 0
+  const answeredCount = project.questions?.filter(q => q.status === 'answered').length || 0
+  const progress = questionCount > 0 ? Math.round((answeredCount / questionCount) * 100) : 0
+
+  if (viewMode === 'list') {
+    return (
+      <div
+        onClick={handleClick}
+        className="flex items-center gap-4 p-4 bg-white border border-purple-200 rounded-lg hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer"
+      >
+        {/* Icon */}
+        <div className="p-2 rounded-lg bg-purple-100">
+          <MessageSquare className="w-5 h-5 text-purple-600" />
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-gray-900 truncate">{project.name}</h3>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+              <HelpCircle className="w-3 h-3" />
+              Q&A Project
+            </span>
+          </div>
+          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <MessageSquare className="w-3.5 h-3.5" />
+              {questionCount} questions
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              Updated {formatRelativeDate(project.updatedAt)}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="w-32">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all ${progress === 100 ? 'bg-green-500' : 'bg-purple-500'}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 w-10 text-right">{progress}%</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowMenu(!showMenu)
+            }}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+              <button
+                onClick={handleDelete}
+                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+
+        <ChevronRight className="w-5 h-5 text-gray-400" />
+      </div>
+    )
+  }
+
+  // Grid view
+  return (
+    <div
+      onClick={handleClick}
+      className="p-4 bg-white border border-purple-200 rounded-lg hover:border-purple-300 hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="p-2 rounded-lg bg-purple-100">
+          <MessageSquare className="w-5 h-5 text-purple-600" />
+        </div>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+          Q&A
+        </span>
+      </div>
+
+      <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{project.name}</h3>
+      <p className="text-sm text-gray-500 mb-3">{questionCount} questions</p>
+
+      <div className="mt-auto">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all ${progress === 100 ? 'bg-green-500' : 'bg-purple-500'}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="text-xs text-gray-500 w-10 text-right">{progress}%</span>
+        </div>
+        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+          <span>Updated {formatRelativeDate(project.updatedAt)}</span>
+          <span>{answeredCount}/{questionCount}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function TemplateCard({ template, onSelect }) {
   const categoryConfig = TEMPLATE_CATEGORIES[template.category] || TEMPLATE_CATEGORIES.general
 
@@ -381,25 +517,143 @@ function NewApplicationModal({ isOpen, onClose, templates, onCreateApplication }
   )
 }
 
-function EmptyState({ onCreateNew, hasTemplates }) {
+function NewQAProjectModal({ isOpen, onClose, onCreateProject }) {
+  const [projectName, setProjectName] = useState('')
+  const [projectDescription, setProjectDescription] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const handleCreate = async () => {
+    if (!projectName.trim()) return
+
+    setCreating(true)
+    try {
+      await onCreateProject({
+        name: projectName.trim(),
+        description: projectDescription.trim()
+      })
+      onClose()
+      setProjectName('')
+      setProjectDescription('')
+    } catch (error) {
+      console.error('Error creating Q&A project:', error)
+      alert('Failed to create project. Please try again.')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100">
+              <MessageSquare className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">New Q&A Project</h2>
+              <p className="text-gray-500 text-sm mt-0.5">Ask compliance questions and get AI-assisted answers</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Project Name *
+            </label>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="e.g., Client ABC Prequalification Questions"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description (optional)
+            </label>
+            <textarea
+              value={projectDescription}
+              onChange={(e) => setProjectDescription(e.target.value)}
+              placeholder="What is this compliance project for?"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="font-medium text-purple-900 text-sm">How Q&A Projects Work</h4>
+            <ul className="mt-2 text-sm text-purple-700 space-y-1">
+              <li>• Add compliance questions one at a time</li>
+              <li>• AI assistant suggests answers from your knowledge base</li>
+              <li>• Reference policies, procedures, and project data</li>
+              <li>• Export completed Q&A for submissions</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!projectName.trim() || creating}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {creating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Create Project
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EmptyState({ onCreateNew, onCreateQA, hasTemplates }) {
   return (
     <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
       <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
       <h3 className="text-lg font-medium text-gray-900 mb-2">No compliance projects yet</h3>
       <p className="text-gray-500 mb-6 max-w-md mx-auto">
-        {hasTemplates
-          ? 'Start a new compliance project - use our templates for SFOC applications, client prequalifications, or general compliance questionnaires.'
-          : 'Seed compliance templates first, then create projects.'}
+        Start a new compliance project. Use templates for structured applications, or Q&A projects for free-form compliance questions.
       </p>
-      {hasTemplates && (
+      <div className="flex items-center justify-center gap-3">
+        {hasTemplates && (
+          <button
+            onClick={onCreateNew}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            <FileCheck className="w-4 h-4" />
+            Use Template
+          </button>
+        )}
         <button
-          onClick={onCreateNew}
-          className="btn-primary inline-flex items-center gap-2"
+          onClick={onCreateQA}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 inline-flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" />
-          New Compliance Project
+          <MessageSquare className="w-4 h-4" />
+          Q&A Project
         </button>
-      )}
+      </div>
     </div>
   )
 }
@@ -414,13 +668,16 @@ export default function ComplianceHub() {
 
   // State
   const [applications, setApplications] = useState([])
+  const [qaProjects, setQaProjects] = useState([])
   const [templates, setTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState(null)
+  const [typeFilter, setTypeFilter] = useState(null) // 'application', 'qa', or null for all
   const [viewMode, setViewMode] = useState('list')
   const [showNewModal, setShowNewModal] = useState(false)
+  const [showNewQAModal, setShowNewQAModal] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false)
   const [kbTab, setKbTab] = useState('search') // 'search' or 'index'
@@ -432,12 +689,14 @@ export default function ComplianceHub() {
   const loadData = async () => {
     try {
       setError('')
-      const [appsData, templatesData] = await Promise.all([
+      const [appsData, templatesData, qaData] = await Promise.all([
         getComplianceApplications(),
-        getComplianceTemplates()
+        getComplianceTemplates(),
+        getComplianceProjects(user?.operatorId || user?.uid)
       ])
       setApplications(appsData)
       setTemplates(templatesData)
+      setQaProjects(qaData || [])
     } catch (err) {
       console.error('Error loading compliance data:', err)
       setError('Failed to load compliance data. Please try again.')
@@ -492,37 +751,83 @@ export default function ComplianceHub() {
     }
   }
 
-  // Filter applications
-  const filteredApplications = useMemo(() => {
-    let result = [...applications]
+  // Create Q&A project
+  const handleCreateQAProject = async (data) => {
+    const project = await createComplianceProject({
+      ...data,
+      operatorId: user?.operatorId || user?.uid,
+      createdBy: user?.uid
+    })
+    await loadData()
+    navigate(`/compliance/project/${project.id}`)
+  }
 
-    if (statusFilter) {
-      result = result.filter(app => app.status === statusFilter)
+  // Delete Q&A project
+  const handleDeleteQAProject = async (id) => {
+    try {
+      await deleteComplianceProject(id)
+      setQaProjects(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      console.error('Error deleting Q&A project:', err)
+      setError('Failed to delete project.')
+    }
+  }
+
+  // Filter and combine all items
+  const filteredItems = useMemo(() => {
+    // Start with applications (add type marker)
+    let apps = applications.map(a => ({ ...a, _type: 'application' }))
+    let qas = qaProjects.map(p => ({ ...p, _type: 'qa' }))
+
+    // Apply type filter
+    if (typeFilter === 'application') {
+      qas = []
+    } else if (typeFilter === 'qa') {
+      apps = []
     }
 
+    // Apply status filter (only for applications)
+    if (statusFilter) {
+      apps = apps.filter(app => app.status === statusFilter)
+    }
+
+    // Combine
+    let result = [...apps, ...qas]
+
+    // Apply search
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      result = result.filter(app =>
-        app.name?.toLowerCase().includes(query) ||
-        app.templateName?.toLowerCase().includes(query) ||
-        app.projectName?.toLowerCase().includes(query)
+      result = result.filter(item =>
+        item.name?.toLowerCase().includes(query) ||
+        item.templateName?.toLowerCase().includes(query) ||
+        item.projectName?.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query)
       )
     }
 
+    // Sort by updatedAt
+    result.sort((a, b) => {
+      const aDate = a.updatedAt?.toDate?.() || new Date(a.updatedAt) || new Date(0)
+      const bDate = b.updatedAt?.toDate?.() || new Date(b.updatedAt) || new Date(0)
+      return bDate - aDate
+    })
+
     return result
-  }, [applications, statusFilter, searchQuery])
+  }, [applications, qaProjects, statusFilter, typeFilter, searchQuery])
 
   // Calculate stats
   const stats = useMemo(() => {
-    const all = applications.length
+    const allApps = applications.length
+    const allQA = qaProjects.length
+    const all = allApps + allQA
     const draft = applications.filter(a => a.status === 'draft').length
     const inProgress = applications.filter(a => a.status === 'in-progress').length
     const review = applications.filter(a => a.status === 'ready-for-review').length
     const submitted = applications.filter(a => a.status === 'submitted').length
     const approved = applications.filter(a => a.status === 'approved').length
 
-    return { all, draft, inProgress, review, submitted, approved }
-  }, [applications])
+    return { all, allApps, allQA, draft, inProgress, review, submitted, approved }
+  }, [applications, qaProjects])
 
   if (loading) {
     return (
@@ -602,75 +907,98 @@ export default function ComplianceHub() {
               className="btn-secondary flex items-center gap-2"
             >
               <BookOpen className="w-4 h-4" />
-              Template Library
+              Templates
             </Link>
 
-            {/* New Application Button */}
+            {/* New Q&A Project Button */}
+            <button
+              onClick={() => setShowNewQAModal(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Q&A Project
+            </button>
+
+            {/* New Template Application Button */}
             <button
               onClick={() => setShowNewModal(true)}
               disabled={templates.filter(t => t.status === 'active').length === 0}
               className="btn-primary flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              New Application
+              <FileCheck className="w-4 h-4" />
+              From Template
             </button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-6 mt-6 pt-6 border-t border-gray-200">
+        <div className="flex items-center gap-4 mt-6 pt-6 border-t border-gray-200 flex-wrap">
+          {/* Type filters */}
           <button
-            onClick={() => setStatusFilter(null)}
+            onClick={() => { setTypeFilter(null); setStatusFilter(null); }}
             className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              statusFilter === null ? 'bg-gray-100' : 'hover:bg-gray-50'
+              typeFilter === null && statusFilter === null ? 'bg-gray-100' : 'hover:bg-gray-50'
             }`}
           >
             <p className="text-2xl font-bold text-gray-900">{stats.all}</p>
-            <p className="text-xs text-gray-500">Total</p>
+            <p className="text-xs text-gray-500">All</p>
           </button>
           <button
-            onClick={() => setStatusFilter('draft')}
+            onClick={() => { setTypeFilter('application'); setStatusFilter(null); }}
             className={`text-center px-4 py-2 rounded-lg transition-colors ${
+              typeFilter === 'application' ? 'bg-blue-100' : 'hover:bg-gray-50'
+            }`}
+          >
+            <p className="text-2xl font-bold text-blue-600">{stats.allApps}</p>
+            <p className="text-xs text-gray-500">Templates</p>
+          </button>
+          <button
+            onClick={() => { setTypeFilter('qa'); setStatusFilter(null); }}
+            className={`text-center px-4 py-2 rounded-lg transition-colors ${
+              typeFilter === 'qa' ? 'bg-purple-100' : 'hover:bg-gray-50'
+            }`}
+          >
+            <p className="text-2xl font-bold text-purple-600">{stats.allQA}</p>
+            <p className="text-xs text-gray-500">Q&A</p>
+          </button>
+
+          <div className="w-px h-8 bg-gray-300 mx-2" />
+
+          {/* Status filters (for template apps) */}
+          <button
+            onClick={() => { setTypeFilter('application'); setStatusFilter('draft'); }}
+            className={`text-center px-3 py-2 rounded-lg transition-colors ${
               statusFilter === 'draft' ? 'bg-gray-100' : 'hover:bg-gray-50'
             }`}
           >
-            <p className="text-2xl font-bold text-gray-500">{stats.draft}</p>
+            <p className="text-lg font-bold text-gray-500">{stats.draft}</p>
             <p className="text-xs text-gray-500">Draft</p>
           </button>
           <button
-            onClick={() => setStatusFilter('in-progress')}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
+            onClick={() => { setTypeFilter('application'); setStatusFilter('in-progress'); }}
+            className={`text-center px-3 py-2 rounded-lg transition-colors ${
               statusFilter === 'in-progress' ? 'bg-blue-100' : 'hover:bg-gray-50'
             }`}
           >
-            <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
+            <p className="text-lg font-bold text-blue-600">{stats.inProgress}</p>
             <p className="text-xs text-gray-500">In Progress</p>
           </button>
           <button
-            onClick={() => setStatusFilter('ready-for-review')}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              statusFilter === 'ready-for-review' ? 'bg-amber-100' : 'hover:bg-gray-50'
+            onClick={() => { setTypeFilter('application'); setStatusFilter('submitted'); }}
+            className={`text-center px-3 py-2 rounded-lg transition-colors ${
+              statusFilter === 'submitted' ? 'bg-amber-100' : 'hover:bg-gray-50'
             }`}
           >
-            <p className="text-2xl font-bold text-amber-600">{stats.review}</p>
-            <p className="text-xs text-gray-500">Review</p>
-          </button>
-          <button
-            onClick={() => setStatusFilter('submitted')}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              statusFilter === 'submitted' ? 'bg-purple-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-2xl font-bold text-purple-600">{stats.submitted}</p>
+            <p className="text-lg font-bold text-amber-600">{stats.submitted}</p>
             <p className="text-xs text-gray-500">Submitted</p>
           </button>
           <button
-            onClick={() => setStatusFilter('approved')}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
+            onClick={() => { setTypeFilter('application'); setStatusFilter('approved'); }}
+            className={`text-center px-3 py-2 rounded-lg transition-colors ${
               statusFilter === 'approved' ? 'bg-green-100' : 'hover:bg-gray-50'
             }`}
           >
-            <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+            <p className="text-lg font-bold text-green-600">{stats.approved}</p>
             <p className="text-xs text-gray-500">Approved</p>
           </button>
         </div>
@@ -819,36 +1147,55 @@ export default function ComplianceHub() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Showing {filteredApplications.length} of {applications.length} applications
+          Showing {filteredItems.length} of {stats.all} projects
         </p>
       </div>
 
-      {/* Applications List/Grid */}
-      {filteredApplications.length === 0 ? (
+      {/* Projects List/Grid */}
+      {filteredItems.length === 0 ? (
         <EmptyState
           onCreateNew={() => setShowNewModal(true)}
+          onCreateQA={() => setShowNewQAModal(true)}
           hasTemplates={templates.filter(t => t.status === 'active').length > 0}
         />
       ) : viewMode === 'list' ? (
         <div className="space-y-2">
-          {filteredApplications.map(app => (
-            <ApplicationCard
-              key={app.id}
-              application={app}
-              viewMode="list"
-              onDelete={handleDeleteApplication}
-            />
+          {filteredItems.map(item => (
+            item._type === 'qa' ? (
+              <QAProjectCard
+                key={`qa-${item.id}`}
+                project={item}
+                viewMode="list"
+                onDelete={handleDeleteQAProject}
+              />
+            ) : (
+              <ApplicationCard
+                key={`app-${item.id}`}
+                application={item}
+                viewMode="list"
+                onDelete={handleDeleteApplication}
+              />
+            )
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredApplications.map(app => (
-            <ApplicationCard
-              key={app.id}
-              application={app}
-              viewMode="grid"
-              onDelete={handleDeleteApplication}
-            />
+          {filteredItems.map(item => (
+            item._type === 'qa' ? (
+              <QAProjectCard
+                key={`qa-${item.id}`}
+                project={item}
+                viewMode="grid"
+                onDelete={handleDeleteQAProject}
+              />
+            ) : (
+              <ApplicationCard
+                key={`app-${item.id}`}
+                application={item}
+                viewMode="grid"
+                onDelete={handleDeleteApplication}
+              />
+            )
           ))}
         </div>
       )}
@@ -877,6 +1224,13 @@ export default function ComplianceHub() {
         onClose={() => setShowNewModal(false)}
         templates={templates}
         onCreateApplication={handleCreateApplication}
+      />
+
+      {/* New Q&A Project Modal */}
+      <NewQAProjectModal
+        isOpen={showNewQAModal}
+        onClose={() => setShowNewQAModal(false)}
+        onCreateProject={handleCreateQAProject}
       />
     </div>
   )

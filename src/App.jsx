@@ -40,6 +40,7 @@ import CapaDetail from './pages/CapaDetail'
 // Compliance Module Pages
 import ComplianceHub from './pages/ComplianceHub'
 import ComplianceApplicationEditor from './pages/ComplianceApplicationEditor'
+import ComplianceProjectView from './pages/ComplianceProjectView'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -122,6 +123,7 @@ function App() {
           <Route path="compliance" element={<ComplianceHub />} />
           <Route path="compliance/templates" element={<ComplianceHub />} />
           <Route path="compliance/application/:id" element={<ComplianceApplicationEditor />} />
+          <Route path="compliance/project/:id" element={<ComplianceProjectView />} />
         </Route>
         
         {/* Catch all - redirect to dashboard */}
