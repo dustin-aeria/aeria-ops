@@ -58,7 +58,7 @@ import {
 } from '../lib/firestoreCompliance'
 import DocumentLinker from '../components/compliance/DocumentLinker'
 import { AutoPopulateButton, GapAnalysisPanel, ProjectLinkBanner, analyzeGaps } from '../components/compliance/SmartPopulate'
-import { DocumentSuggestionPanel } from '../components/compliance'
+import { EnhancedAIPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 import { getProject } from '../lib/firestore'
 import { openPrintExport, downloadCsvExport, downloadTextExport } from '../lib/complianceExport'
@@ -977,16 +977,24 @@ export default function ComplianceApplicationEditor() {
               </button>
             </div>
             {aiSuggestionRequirement ? (
-              <DocumentSuggestionPanel
+              <EnhancedAIPanel
                 requirement={aiSuggestionRequirement}
+                project={linkedProject}
+                allRequirements={template?.requirements || []}
+                responses={application?.responses || {}}
                 onUseContent={handleUseSuggestedContent}
                 onLinkDocument={handleLinkSuggestedDocument}
-                className="border-0 rounded-none"
+                onNavigateToRequirement={(reqId) => {
+                  setExpandedRequirement(reqId)
+                  const req = template?.requirements?.find(r => r.id === reqId)
+                  if (req) setActiveCategory(req.category)
+                  setShowAiSuggestions(false)
+                }}
               />
             ) : (
               <div className="p-4 text-center text-gray-500">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Click "AI Assist" on any requirement to get document suggestions</p>
+                <p className="text-sm">Click "AI Assist" on any requirement to get suggestions</p>
               </div>
             )}
           </div>

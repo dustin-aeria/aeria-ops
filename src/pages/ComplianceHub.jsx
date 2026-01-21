@@ -50,7 +50,7 @@ import {
   TEMPLATE_CATEGORIES
 } from '../lib/firestoreCompliance'
 import { seedAllComplianceTemplates } from '../lib/seedComplianceTemplates'
-import { KnowledgeBasePanel } from '../components/compliance'
+import { KnowledgeBasePanel, BatchIndexPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 
 // ============================================
@@ -423,6 +423,7 @@ export default function ComplianceHub() {
   const [showNewModal, setShowNewModal] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false)
+  const [kbTab, setKbTab] = useState('search') // 'search' or 'index'
 
   // Knowledge Base
   const { indexStatus, isIndexed, reindexPolicies, indexing } = useKnowledgeBase()
@@ -677,58 +678,86 @@ export default function ComplianceHub() {
 
       {/* Knowledge Base Panel */}
       {showKnowledgeBase && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Database className="w-5 h-5 text-aeria-navy" />
-                AI Compliance Assistant
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Search your indexed policies and documentation to find compliance evidence
-              </p>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  AI Compliance Assistant
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Search documentation and manage your knowledge base
+                </p>
+              </div>
+              <button
+                onClick={() => setShowKnowledgeBase(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              onClick={() => setShowKnowledgeBase(false)}
-              className="p-2 text-gray-400 hover:text-gray-600 rounded"
-            >
-              <XCircle className="w-5 h-5" />
-            </button>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mt-4">
+              <button
+                onClick={() => setKbTab('search')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  kbTab === 'search'
+                    ? 'bg-aeria-navy text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Search className="w-4 h-4 inline-block mr-1.5" />
+                Search
+              </button>
+              <button
+                onClick={() => setKbTab('index')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  kbTab === 'index'
+                    ? 'bg-aeria-navy text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Database className="w-4 h-4 inline-block mr-1.5" />
+                Index
+                {!isIndexed && (
+                  <span className="ml-1.5 w-2 h-2 inline-block rounded-full bg-amber-500" />
+                )}
+              </button>
+            </div>
           </div>
 
-          {!isIndexed && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-amber-800">Knowledge Base Not Indexed</p>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Index your policies to enable AI-powered compliance assistance.
-                    This will make your documentation searchable for smart suggestions.
-                  </p>
-                  <button
-                    onClick={() => reindexPolicies(true)}
-                    disabled={indexing}
-                    className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {indexing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Indexing Policies...
-                      </>
-                    ) : (
-                      <>
-                        <Database className="w-4 h-4" />
-                        Index Policies Now
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <KnowledgeBasePanel />
+          {/* Content */}
+          <div className="p-6">
+            {kbTab === 'search' ? (
+              <>
+                {!isIndexed && (
+                  <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-amber-800">Knowledge Base Not Indexed</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Index your policies to enable search.
+                        </p>
+                        <button
+                          onClick={() => setKbTab('index')}
+                          className="mt-2 text-sm text-amber-700 underline hover:no-underline"
+                        >
+                          Go to Index tab
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <KnowledgeBasePanel />
+              </>
+            ) : (
+              <BatchIndexPanel />
+            )}
+          </div>
         </div>
       )}
 
