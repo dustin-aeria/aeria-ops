@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { 
+import PropTypes from 'prop-types'
+import {
   HardHat, 
   Plus,
   Trash2,
@@ -378,4 +379,21 @@ export default function ProjectPPE({ project, onUpdate }) {
       )}
     </div>
   )
+}
+
+ProjectPPE.propTypes = {
+  project: PropTypes.shape({
+    ppe: PropTypes.shape({
+      selectedItems: PropTypes.arrayOf(PropTypes.string),
+      requiredItems: PropTypes.arrayOf(PropTypes.string),
+      customItems: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.string,
+        item: PropTypes.string,
+        specification: PropTypes.string,
+        isRequired: PropTypes.bool
+      })),
+      notes: PropTypes.string
+    })
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

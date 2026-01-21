@@ -1,11 +1,12 @@
-import { 
-  MapPin, 
-  Plane, 
-  Users, 
-  AlertTriangle, 
-  ShieldAlert, 
-  HardHat, 
-  Radio, 
+import PropTypes from 'prop-types'
+import {
+  MapPin,
+  Plane,
+  Users,
+  AlertTriangle,
+  ShieldAlert,
+  HardHat,
+  Radio,
   FileCheck,
   CheckCircle2,
   Circle,
@@ -184,4 +185,11 @@ export default function ProjectSections({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectSections.propTypes = {
+  project: PropTypes.shape({
+    sections: PropTypes.object
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

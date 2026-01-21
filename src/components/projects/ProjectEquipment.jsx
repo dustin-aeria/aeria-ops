@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import {
   Plane,
   Plus,
@@ -454,6 +455,18 @@ export default function ProjectEquipment({ project, onUpdate }) {
       />
     </div>
   )
+}
+
+ProjectEquipment.propTypes = {
+  project: PropTypes.shape({
+    name: PropTypes.string,
+    projectCode: PropTypes.string,
+    clientName: PropTypes.string,
+    equipment: PropTypes.shape({
+      aircraft: PropTypes.arrayOf(PropTypes.string)
+    })
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }
 
 // ============================================

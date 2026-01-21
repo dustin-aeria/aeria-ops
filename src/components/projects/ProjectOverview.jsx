@@ -15,6 +15,7 @@
  */
 
 import React, { useMemo } from 'react'
+import PropTypes from 'prop-types'
 import {
   MapPin,
   Plane,
@@ -909,4 +910,21 @@ export default function ProjectOverview({
       )}
     </div>
   )
+}
+
+ProjectOverview.propTypes = {
+  project: PropTypes.shape({
+    name: PropTypes.string,
+    status: PropTypes.string,
+    sites: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string,
+      name: PropTypes.string,
+      siteSurvey: PropTypes.object,
+      flightPlan: PropTypes.object,
+      mapData: PropTypes.object
+    }))
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onNavigateToSection: PropTypes.func,
+  onExport: PropTypes.func
 }

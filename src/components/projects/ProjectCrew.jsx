@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { getOperators } from '../../lib/firestore'
 import { 
   Plus, 
@@ -419,4 +420,16 @@ export default function ProjectCrew({ project, onUpdate }) {
       )}
     </div>
   )
+}
+
+ProjectCrew.propTypes = {
+  project: PropTypes.shape({
+    crew: PropTypes.arrayOf(PropTypes.shape({
+      operatorId: PropTypes.string,
+      operatorName: PropTypes.string,
+      role: PropTypes.string,
+      responsibilities: PropTypes.string
+    }))
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }
