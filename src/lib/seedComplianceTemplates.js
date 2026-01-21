@@ -2,13 +2,949 @@
  * seedComplianceTemplates.js
  * Seed script for compliance matrix templates
  *
- * Contains the Transport Canada SFOC BVLOS compliance matrix
- * Based on CAR 903.01(b) requirements
+ * Contains compliance templates for:
+ * - General Compliance Projects (any compliance questionnaire)
+ * - Client Prequalification questionnaires
+ * - Transport Canada SFOC matrices (BVLOS, 25kg+, 400ft+, Multi-RPA, Payload)
  *
  * @location src/lib/seedComplianceTemplates.js
  */
 
 import { seedComplianceTemplate } from './firestoreCompliance'
+
+// ============================================
+// GENERAL COMPLIANCE PROJECT TEMPLATE
+// Flexible template for any compliance questionnaire
+// ============================================
+
+export const GENERAL_COMPLIANCE_TEMPLATE = {
+  id: 'general-compliance',
+  name: 'General Compliance Project',
+  shortName: 'General Compliance',
+  description: 'Flexible compliance template for any regulatory questionnaire, client prequalification, audit, or compliance matrix. Add your own requirements or use the AI assistant to help structure your responses.',
+
+  // Metadata
+  category: 'general',
+  regulatoryBody: 'Various',
+  regulation: 'Custom',
+  version: '2024-01',
+  effectiveDate: '2024-01-15',
+
+  // Categories/Sections - Generic categories that apply to most compliance
+  categories: [
+    {
+      id: 'company',
+      name: 'Company Information',
+      description: 'Organization details, contacts, and corporate information',
+      order: 1
+    },
+    {
+      id: 'operations',
+      name: 'Operations',
+      description: 'Operational procedures, capabilities, and service descriptions',
+      order: 2
+    },
+    {
+      id: 'equipment',
+      name: 'Equipment & Systems',
+      description: 'Equipment specifications, maintenance, and technical capabilities',
+      order: 3
+    },
+    {
+      id: 'personnel',
+      name: 'Personnel & Training',
+      description: 'Staff qualifications, training programs, and certifications',
+      order: 4
+    },
+    {
+      id: 'safety',
+      name: 'Safety & Risk Management',
+      description: 'Safety procedures, risk assessment, and incident management',
+      order: 5
+    },
+    {
+      id: 'documentation',
+      name: 'Documentation & Records',
+      description: 'Policies, procedures, manuals, and record keeping',
+      order: 6
+    },
+    {
+      id: 'insurance',
+      name: 'Insurance & Legal',
+      description: 'Insurance coverage, certifications, and legal compliance',
+      order: 7
+    },
+    {
+      id: 'custom',
+      name: 'Additional Requirements',
+      description: 'Custom requirements specific to this compliance project',
+      order: 8
+    }
+  ],
+
+  // Starter requirements - minimal set to get started
+  requirements: [
+    {
+      id: 'gen-001',
+      category: 'company',
+      order: 1,
+      text: 'Provide company name, address, and primary contact information.',
+      shortText: 'Company Information',
+      regulatoryRef: '',
+      guidance: 'Include legal company name, mailing address, phone, email, and key contact person.',
+      responseType: 'text',
+      required: true,
+      helpText: 'Basic company identification information.'
+    },
+    {
+      id: 'gen-002',
+      category: 'company',
+      order: 2,
+      text: 'Describe your organization and its relevant experience.',
+      shortText: 'Organization Overview',
+      regulatoryRef: '',
+      guidance: 'Provide a brief description of your organization, history, and relevant experience for the work being proposed.',
+      responseType: 'text',
+      required: false,
+      helpText: 'Help the reviewer understand your organization\'s background and capabilities.'
+    },
+    {
+      id: 'gen-003',
+      category: 'operations',
+      order: 1,
+      text: 'Describe the services or operations you are proposing.',
+      shortText: 'Service Description',
+      regulatoryRef: '',
+      guidance: 'Detail the scope, nature, and extent of services or operations covered by this compliance application.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.overview.description'],
+      helpText: 'What work will you be performing?'
+    },
+    {
+      id: 'gen-004',
+      category: 'equipment',
+      order: 1,
+      text: 'List the primary equipment that will be used.',
+      shortText: 'Equipment List',
+      regulatoryRef: '',
+      guidance: 'Include make, model, specifications, and any relevant certifications or registrations.',
+      responseType: 'document-reference',
+      required: false,
+      autoPopulateFrom: ['project.flightPlan.aircraft'],
+      helpText: 'What equipment will you use to perform the work?'
+    },
+    {
+      id: 'gen-005',
+      category: 'personnel',
+      order: 1,
+      text: 'Describe the qualifications and certifications of key personnel.',
+      shortText: 'Personnel Qualifications',
+      regulatoryRef: '',
+      guidance: 'Include relevant certifications, training, and experience for personnel involved.',
+      responseType: 'document-reference',
+      required: false,
+      autoPopulateFrom: ['project.crew'],
+      helpText: 'Who will perform the work and what are their qualifications?'
+    },
+    {
+      id: 'gen-006',
+      category: 'safety',
+      order: 1,
+      text: 'Describe your safety management approach.',
+      shortText: 'Safety Management',
+      regulatoryRef: '',
+      guidance: 'Include safety policies, risk assessment processes, incident reporting, and continuous improvement.',
+      responseType: 'document-reference',
+      required: false,
+      suggestedPolicies: ['1007', '1040', '1041', '1045'],
+      helpText: 'How do you manage safety in your operations?'
+    },
+    {
+      id: 'gen-007',
+      category: 'insurance',
+      order: 1,
+      text: 'Provide evidence of liability insurance coverage.',
+      shortText: 'Insurance Coverage',
+      regulatoryRef: '',
+      guidance: 'Include certificate of insurance with coverage amounts and relevant endorsements.',
+      responseType: 'document-reference',
+      required: false,
+      helpText: 'What insurance coverage do you have?'
+    }
+  ],
+
+  // Export configuration
+  exportFormat: {
+    type: 'matrix',
+    columns: ['requirement', 'response', 'documentRef'],
+    includeGuidance: false
+  },
+
+  // Status
+  status: 'active',
+  isPublic: true
+}
+
+// ============================================
+// CLIENT PREQUALIFICATION TEMPLATE
+// For client vendor qualification questionnaires
+// ============================================
+
+export const CLIENT_PREQUALIFICATION_TEMPLATE = {
+  id: 'client-prequalification',
+  name: 'Client Prequalification Questionnaire',
+  shortName: 'Prequalification',
+  description: 'Standard prequalification questionnaire for client vendor qualification processes. Covers company information, capabilities, safety, and compliance.',
+
+  // Metadata
+  category: 'prequalification',
+  regulatoryBody: 'Client Requirements',
+  regulation: 'Vendor Qualification',
+  version: '2024-01',
+  effectiveDate: '2024-01-15',
+
+  // Categories
+  categories: [
+    {
+      id: 'company',
+      name: 'Company Profile',
+      description: 'Corporate information and structure',
+      order: 1
+    },
+    {
+      id: 'capabilities',
+      name: 'Capabilities & Experience',
+      description: 'Services, equipment, and relevant experience',
+      order: 2
+    },
+    {
+      id: 'hse',
+      name: 'Health, Safety & Environment',
+      description: 'HSE programs, statistics, and certifications',
+      order: 3
+    },
+    {
+      id: 'quality',
+      name: 'Quality Management',
+      description: 'Quality systems, certifications, and processes',
+      order: 4
+    },
+    {
+      id: 'insurance',
+      name: 'Insurance & Bonding',
+      description: 'Insurance coverage and financial security',
+      order: 5
+    },
+    {
+      id: 'references',
+      name: 'References & Past Performance',
+      description: 'Previous work and client references',
+      order: 6
+    }
+  ],
+
+  // Requirements
+  requirements: [
+    // Company Profile
+    {
+      id: 'prequal-001',
+      category: 'company',
+      order: 1,
+      text: 'Legal company name, address, phone, and primary contact.',
+      shortText: 'Company Details',
+      regulatoryRef: '',
+      guidance: 'Provide full legal name as registered, physical address, mailing address if different, and main point of contact.',
+      responseType: 'text',
+      required: true
+    },
+    {
+      id: 'prequal-002',
+      category: 'company',
+      order: 2,
+      text: 'Business registration number and date of incorporation.',
+      shortText: 'Business Registration',
+      regulatoryRef: '',
+      guidance: 'Include provincial/federal business number and when the company was established.',
+      responseType: 'text',
+      required: true
+    },
+    {
+      id: 'prequal-003',
+      category: 'company',
+      order: 3,
+      text: 'Ownership structure and key personnel.',
+      shortText: 'Ownership & Management',
+      regulatoryRef: '',
+      guidance: 'Describe ownership (private, public, subsidiary) and list key management personnel.',
+      responseType: 'text',
+      required: false
+    },
+    // Capabilities
+    {
+      id: 'prequal-004',
+      category: 'capabilities',
+      order: 1,
+      text: 'Describe your core services and capabilities.',
+      shortText: 'Service Capabilities',
+      regulatoryRef: '',
+      guidance: 'Detail the services you provide, geographic coverage, and any specializations.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.overview.description']
+    },
+    {
+      id: 'prequal-005',
+      category: 'capabilities',
+      order: 2,
+      text: 'List major equipment and resources.',
+      shortText: 'Equipment & Resources',
+      regulatoryRef: '',
+      guidance: 'Include key equipment owned/leased, fleet information, and technology systems.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.flightPlan.aircraft']
+    },
+    {
+      id: 'prequal-006',
+      category: 'capabilities',
+      order: 3,
+      text: 'Certifications, licenses, and regulatory approvals.',
+      shortText: 'Certifications & Approvals',
+      regulatoryRef: '',
+      guidance: 'List relevant certifications (ISO, industry-specific), licenses, and regulatory approvals.',
+      responseType: 'document-reference',
+      required: true
+    },
+    // HSE
+    {
+      id: 'prequal-007',
+      category: 'hse',
+      order: 1,
+      text: 'Describe your Health & Safety program.',
+      shortText: 'H&S Program',
+      regulatoryRef: '',
+      guidance: 'Include safety policies, training programs, hazard identification, and incident management.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1007', '1040', '1041', '1045']
+    },
+    {
+      id: 'prequal-008',
+      category: 'hse',
+      order: 2,
+      text: 'Provide safety statistics for the past 3 years (TRIR, LTIR, EMR).',
+      shortText: 'Safety Statistics',
+      regulatoryRef: '',
+      guidance: 'Include Total Recordable Incident Rate, Lost Time Incident Rate, and Experience Modification Rate if applicable.',
+      responseType: 'text',
+      required: true
+    },
+    {
+      id: 'prequal-009',
+      category: 'hse',
+      order: 3,
+      text: 'Describe any regulatory violations or incidents in the past 5 years.',
+      shortText: 'Incident History',
+      regulatoryRef: '',
+      guidance: 'Disclose any significant incidents, regulatory actions, or violations and corrective actions taken.',
+      responseType: 'text',
+      required: true
+    },
+    // Quality
+    {
+      id: 'prequal-010',
+      category: 'quality',
+      order: 1,
+      text: 'Describe your Quality Management System.',
+      shortText: 'Quality Management',
+      regulatoryRef: '',
+      guidance: 'Include quality policies, procedures, inspection processes, and any certifications (ISO 9001, etc.).',
+      responseType: 'document-reference',
+      required: false,
+      suggestedPolicies: ['1012', '1053']
+    },
+    // Insurance
+    {
+      id: 'prequal-011',
+      category: 'insurance',
+      order: 1,
+      text: 'Provide Certificate of Insurance with coverage details.',
+      shortText: 'Insurance Coverage',
+      regulatoryRef: '',
+      guidance: 'Include general liability, professional liability, auto, and any other relevant coverages with limits.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'prequal-012',
+      category: 'insurance',
+      order: 2,
+      text: 'Workers\' Compensation coverage and clearance.',
+      shortText: 'Workers Compensation',
+      regulatoryRef: '',
+      guidance: 'Provide WCB/WSIB clearance certificate showing good standing.',
+      responseType: 'document-reference',
+      required: true
+    },
+    // References
+    {
+      id: 'prequal-013',
+      category: 'references',
+      order: 1,
+      text: 'Provide 3 relevant project references.',
+      shortText: 'Project References',
+      regulatoryRef: '',
+      guidance: 'Include client name, project description, dates, and contact information for reference verification.',
+      responseType: 'text',
+      required: true
+    }
+  ],
+
+  // Export configuration
+  exportFormat: {
+    type: 'matrix',
+    columns: ['requirement', 'response', 'documentRef'],
+    includeGuidance: false
+  },
+
+  status: 'active',
+  isPublic: true
+}
+
+// ============================================
+// SFOC 25KG+ TEMPLATE
+// CAR 903.01(a) - RPA more than 25 kg
+// ============================================
+
+export const SFOC_25KG_TEMPLATE = {
+  id: 'sfoc-25kg-903-01a',
+  name: 'SFOC - RPA Over 25kg',
+  shortName: '25kg+ SFOC',
+  description: 'Compliance checklist for CAR 903.01(a) - RPAS operations with aircraft over 25kg MTOW. Covers airworthiness, enhanced safety, and operational requirements for heavy lift operations.',
+
+  category: 'sfoc',
+  regulatoryBody: 'Transport Canada',
+  regulation: 'CAR 903.01(a)',
+  version: '2024-01',
+  effectiveDate: '2024-01-15',
+
+  categories: [
+    {
+      id: 'operations',
+      name: 'Operations & Risk Assessment',
+      description: 'Operational planning, SORA, and risk management for heavy lift operations',
+      order: 1
+    },
+    {
+      id: 'airworthiness',
+      name: 'Aircraft & Airworthiness',
+      description: 'Aircraft specifications, design assurance, and airworthiness considerations',
+      order: 2
+    },
+    {
+      id: 'crew',
+      name: 'Crew & Organization',
+      description: 'Personnel qualifications and organizational requirements',
+      order: 3
+    }
+  ],
+
+  requirements: [
+    {
+      id: '25kg-001',
+      category: 'operations',
+      order: 1,
+      text: 'Describe the purpose and scope of operations requiring an RPA over 25kg.',
+      shortText: 'Purpose of Operations',
+      regulatoryRef: 'CAR 903.02(d)',
+      guidance: 'Explain why a heavy lift RPA is required and the operational objectives.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.overview.description', 'project.sora.conops'],
+      suggestedPolicies: ['1001', '1005']
+    },
+    {
+      id: '25kg-002',
+      category: 'operations',
+      order: 2,
+      text: 'Provide SORA assessment including impact energy analysis for aircraft over 25kg.',
+      shortText: 'SORA & Impact Analysis',
+      regulatoryRef: 'AC 903-001',
+      guidance: 'SORA must include detailed impact energy calculations. Higher kinetic energy typically increases GRC.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.sora.sailLevel', 'project.sora.grc', 'project.sora.arc']
+    },
+    {
+      id: '25kg-003',
+      category: 'operations',
+      order: 3,
+      text: 'Describe operational area and any population density considerations.',
+      shortText: 'Operational Area',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Operations with heavy RPA may have additional restrictions over populated areas.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.siteSurvey.location']
+    },
+    {
+      id: '25kg-004',
+      category: 'operations',
+      order: 4,
+      text: 'Describe emergency procedures specific to heavy lift operations.',
+      shortText: 'Emergency Procedures',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include procedures for controlled descent, emergency landing, and notification protocols.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1006', '1007']
+    },
+    {
+      id: '25kg-005',
+      category: 'airworthiness',
+      order: 1,
+      text: 'Provide complete aircraft specifications including MTOW, dimensions, and performance data.',
+      shortText: 'Aircraft Specifications',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include detailed specifications from manufacturer and any modifications.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.flightPlan.aircraft']
+    },
+    {
+      id: '25kg-006',
+      category: 'airworthiness',
+      order: 2,
+      text: 'Describe any design assurance or type certificate for the aircraft.',
+      shortText: 'Design Assurance',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Higher SAIL levels require design assurance. Include any type certificates, COAs, or manufacturer declarations.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: '25kg-007',
+      category: 'airworthiness',
+      order: 3,
+      text: 'Describe the maintenance program for the heavy RPA.',
+      shortText: 'Maintenance Program',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include inspection intervals, service requirements, and record keeping.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1009']
+    },
+    {
+      id: '25kg-008',
+      category: 'airworthiness',
+      order: 4,
+      text: 'Describe any parachute recovery system or flight termination system.',
+      shortText: 'Recovery/Termination System',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Heavy RPA may require ballistic parachute or FTS. Describe system and activation procedures.',
+      responseType: 'document-reference',
+      required: false
+    },
+    {
+      id: '25kg-009',
+      category: 'crew',
+      order: 1,
+      text: 'Pilot qualifications and type-specific training for heavy RPA.',
+      shortText: 'Pilot Qualifications',
+      regulatoryRef: 'CAR 901.54',
+      guidance: 'Include certifications and any type-specific training for the aircraft.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1010', '1011'],
+      autoPopulateFrom: ['project.crew']
+    },
+    {
+      id: '25kg-010',
+      category: 'crew',
+      order: 2,
+      text: 'Provide Operations Manual or relevant excerpts.',
+      shortText: 'Operations Manual',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include sections specific to heavy lift operations.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1001', '1012']
+    },
+    {
+      id: '25kg-011',
+      category: 'crew',
+      order: 3,
+      text: 'Evidence of liability insurance appropriate for heavy RPA operations.',
+      shortText: 'Insurance Coverage',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Coverage should reflect increased risk of heavier aircraft.',
+      responseType: 'document-reference',
+      required: true
+    }
+  ],
+
+  exportFormat: {
+    type: 'matrix',
+    columns: ['requirement', 'response', 'documentRef'],
+    includeGuidance: false,
+    tcFormNumber: '26-0835'
+  },
+
+  relatedTemplates: ['sfoc-bvlos-903-01b'],
+  status: 'active',
+  isPublic: true
+}
+
+// ============================================
+// SFOC 400FT+ TEMPLATE
+// CAR 903.01(d) - RPA above 400 ft AGL
+// ============================================
+
+export const SFOC_400FT_TEMPLATE = {
+  id: 'sfoc-400ft-903-01d',
+  name: 'SFOC - Operations Above 400ft AGL',
+  shortName: '400ft+ SFOC',
+  description: 'Compliance checklist for CAR 903.01(d) - RPAS operations above 400 feet AGL. Covers airspace coordination, traffic deconfliction, and enhanced situational awareness.',
+
+  category: 'sfoc',
+  regulatoryBody: 'Transport Canada',
+  regulation: 'CAR 903.01(d)',
+  version: '2024-01',
+  effectiveDate: '2024-01-15',
+
+  categories: [
+    {
+      id: 'operations',
+      name: 'Operations & Airspace',
+      description: 'Operational planning, altitude requirements, and airspace considerations',
+      order: 1
+    },
+    {
+      id: 'equipment',
+      name: 'Equipment & Systems',
+      description: 'Aircraft capabilities and tracking systems for high altitude operations',
+      order: 2
+    },
+    {
+      id: 'crew',
+      name: 'Crew & Coordination',
+      description: 'Personnel and ATC coordination requirements',
+      order: 3
+    }
+  ],
+
+  requirements: [
+    {
+      id: '400ft-001',
+      category: 'operations',
+      order: 1,
+      text: 'Describe the purpose of operations requiring flight above 400ft AGL.',
+      shortText: 'Purpose of Operations',
+      regulatoryRef: 'CAR 903.02(d)',
+      guidance: 'Explain why high altitude operations are necessary for the mission objectives.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.overview.description']
+    },
+    {
+      id: '400ft-002',
+      category: 'operations',
+      order: 2,
+      text: 'Specify the maximum altitude AGL and describe flight profiles.',
+      shortText: 'Maximum Altitude & Profile',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include maximum altitude, typical operating altitudes, and any altitude transitions.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.flightPlan.maxAltitudeAGL']
+    },
+    {
+      id: '400ft-003',
+      category: 'operations',
+      order: 3,
+      text: 'Describe the operational area and airspace classification.',
+      shortText: 'Airspace & Area',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include airspace class, nearby aerodromes, and any airspace restrictions.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.siteSurvey.airspace']
+    },
+    {
+      id: '400ft-004',
+      category: 'operations',
+      order: 4,
+      text: 'Provide SORA assessment with air risk considerations for high altitude operations.',
+      shortText: 'SORA Assessment',
+      regulatoryRef: 'AC 903-001',
+      guidance: 'Higher altitude typically increases Air Risk Class. Document mitigations.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.sora.arc', 'project.sora.sailLevel']
+    },
+    {
+      id: '400ft-005',
+      category: 'operations',
+      order: 5,
+      text: 'Describe methods for detecting and avoiding other aircraft at higher altitudes.',
+      shortText: 'Traffic Detection',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include ADS-B, visual observers, radar, or other DAA methods.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1015', '1017']
+    },
+    {
+      id: '400ft-006',
+      category: 'operations',
+      order: 6,
+      text: 'Describe NAV CANADA coordination and NOTAM procedures.',
+      shortText: 'ATC Coordination',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include pre-flight notification, real-time coordination, and NOTAM issuance.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1003', '1004']
+    },
+    {
+      id: '400ft-007',
+      category: 'equipment',
+      order: 1,
+      text: 'Describe aircraft capabilities for high altitude operations.',
+      shortText: 'Aircraft Capabilities',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include performance at altitude, C2 link range, and any altitude-related limitations.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.flightPlan.aircraft']
+    },
+    {
+      id: '400ft-008',
+      category: 'equipment',
+      order: 2,
+      text: 'Describe any tracking or surveillance equipment (ADS-B, transponder, etc.).',
+      shortText: 'Tracking Equipment',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Higher altitude operations may require electronic conspicuity equipment.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: '400ft-009',
+      category: 'crew',
+      order: 1,
+      text: 'Pilot qualifications and training for high altitude operations.',
+      shortText: 'Pilot Qualifications',
+      regulatoryRef: 'CAR 901.54',
+      guidance: 'Include certifications and any airspace-specific training.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.crew']
+    },
+    {
+      id: '400ft-010',
+      category: 'crew',
+      order: 2,
+      text: 'Describe crew communication procedures, especially for traffic advisories.',
+      shortText: 'Communication Procedures',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include radio monitoring, traffic advisory relay, and emergency communications.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1013', '1021']
+    }
+  ],
+
+  exportFormat: {
+    type: 'matrix',
+    columns: ['requirement', 'response', 'documentRef'],
+    includeGuidance: false,
+    tcFormNumber: '26-0835'
+  },
+
+  relatedTemplates: ['sfoc-bvlos-903-01b'],
+  status: 'active',
+  isPublic: true
+}
+
+// ============================================
+// SFOC MULTI-RPA TEMPLATE
+// CAR 903.01(e) - More than 5 RPAs from one control station
+// ============================================
+
+export const SFOC_MULTI_RPA_TEMPLATE = {
+  id: 'sfoc-multi-rpa-903-01e',
+  name: 'SFOC - Multi-RPA Operations',
+  shortName: 'Multi-RPA SFOC',
+  description: 'Compliance checklist for CAR 903.01(e) - Operating more than 5 RPAs from one control station. Covers swarm/fleet management, command architecture, and enhanced safety measures.',
+
+  category: 'sfoc',
+  regulatoryBody: 'Transport Canada',
+  regulation: 'CAR 903.01(e)',
+  version: '2024-01',
+  effectiveDate: '2024-01-15',
+
+  categories: [
+    {
+      id: 'operations',
+      name: 'Multi-RPA Operations',
+      description: 'Fleet operations, coordination, and command structure',
+      order: 1
+    },
+    {
+      id: 'equipment',
+      name: 'Systems & Architecture',
+      description: 'Control systems, automation, and technical capabilities',
+      order: 2
+    },
+    {
+      id: 'crew',
+      name: 'Crew & Management',
+      description: 'Personnel, training, and organizational requirements',
+      order: 3
+    }
+  ],
+
+  requirements: [
+    {
+      id: 'multi-001',
+      category: 'operations',
+      order: 1,
+      text: 'Describe the purpose and scope of multi-RPA operations.',
+      shortText: 'Purpose of Operations',
+      regulatoryRef: 'CAR 903.02(d)',
+      guidance: 'Explain why multiple simultaneous RPAs are required and operational objectives.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.overview.description']
+    },
+    {
+      id: 'multi-002',
+      category: 'operations',
+      order: 2,
+      text: 'Describe the number of RPAs and their roles in the operation.',
+      shortText: 'Fleet Configuration',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include number of aircraft, their individual roles, and any lead/follower hierarchy.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-003',
+      category: 'operations',
+      order: 3,
+      text: 'Describe the coordination method between multiple RPAs (autonomous, manual, hybrid).',
+      shortText: 'Coordination Method',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Explain how RPAs are coordinated - pre-programmed, real-time control, or autonomous swarm behavior.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-004',
+      category: 'operations',
+      order: 4,
+      text: 'Provide SORA assessment for multi-RPA operations.',
+      shortText: 'SORA Assessment',
+      regulatoryRef: 'AC 903-001',
+      guidance: 'SORA should address increased complexity and any aggregated risk from multiple aircraft.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.sora.sailLevel']
+    },
+    {
+      id: 'multi-005',
+      category: 'operations',
+      order: 5,
+      text: 'Describe collision avoidance measures between RPAs in the fleet.',
+      shortText: 'Internal Collision Avoidance',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include separation standards, automated deconfliction, and manual override procedures.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-006',
+      category: 'operations',
+      order: 6,
+      text: 'Describe emergency procedures for multi-RPA scenarios.',
+      shortText: 'Emergency Procedures',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include loss of one RPA, mass recall, and cascading failure scenarios.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1006', '1007']
+    },
+    {
+      id: 'multi-007',
+      category: 'equipment',
+      order: 1,
+      text: 'Describe the Ground Control Station architecture for multi-RPA control.',
+      shortText: 'GCS Architecture',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include hardware, software, displays, and how multiple aircraft are monitored/controlled.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-008',
+      category: 'equipment',
+      order: 2,
+      text: 'Describe the C2 link architecture for multiple simultaneous RPAs.',
+      shortText: 'C2 Link Architecture',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include frequencies, bandwidth allocation, and interference management.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-009',
+      category: 'equipment',
+      order: 3,
+      text: 'Describe any automation or AI systems used for fleet management.',
+      shortText: 'Automation Systems',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include level of automation, human oversight, and manual override capabilities.',
+      responseType: 'document-reference',
+      required: true
+    },
+    {
+      id: 'multi-010',
+      category: 'crew',
+      order: 1,
+      text: 'Describe crew structure and roles for multi-RPA operations.',
+      shortText: 'Crew Structure',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include pilot-to-aircraft ratio, supervisor roles, and crew coordination.',
+      responseType: 'document-reference',
+      required: true,
+      autoPopulateFrom: ['project.crew']
+    },
+    {
+      id: 'multi-011',
+      category: 'crew',
+      order: 2,
+      text: 'Describe training specific to multi-RPA operations.',
+      shortText: 'Multi-RPA Training',
+      regulatoryRef: 'CAR 903.02',
+      guidance: 'Include workload management, system training, and emergency scenarios.',
+      responseType: 'document-reference',
+      required: true,
+      suggestedPolicies: ['1010', '1011']
+    }
+  ],
+
+  exportFormat: {
+    type: 'matrix',
+    columns: ['requirement', 'response', 'documentRef'],
+    includeGuidance: false,
+    tcFormNumber: '26-0835'
+  },
+
+  status: 'active',
+  isPublic: true
+}
 
 // ============================================
 // SFOC BVLOS COMPLIANCE MATRIX TEMPLATE
@@ -586,8 +1522,14 @@ export async function seedAllComplianceTemplates(userId = null) {
     errors: []
   }
 
+  // All available templates - General templates first, then SFOC-specific
   const templates = [
-    SFOC_BVLOS_TEMPLATE
+    GENERAL_COMPLIANCE_TEMPLATE,
+    CLIENT_PREQUALIFICATION_TEMPLATE,
+    SFOC_BVLOS_TEMPLATE,
+    SFOC_25KG_TEMPLATE,
+    SFOC_400FT_TEMPLATE,
+    SFOC_MULTI_RPA_TEMPLATE
   ]
 
   for (const template of templates) {
@@ -622,7 +1564,15 @@ export async function seedSFOCBVLOSTemplate(userId = null) {
 }
 
 export default {
+  // General Templates
+  GENERAL_COMPLIANCE_TEMPLATE,
+  CLIENT_PREQUALIFICATION_TEMPLATE,
+  // SFOC Templates
   SFOC_BVLOS_TEMPLATE,
+  SFOC_25KG_TEMPLATE,
+  SFOC_400FT_TEMPLATE,
+  SFOC_MULTI_RPA_TEMPLATE,
+  // Seed Functions
   seedAllComplianceTemplates,
   seedSFOCBVLOSTemplate
 }

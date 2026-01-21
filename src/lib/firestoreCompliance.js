@@ -68,10 +68,18 @@ export const TEMPLATE_CATEGORIES = {
   general: {
     id: 'general',
     name: 'General Compliance',
-    description: 'Other regulatory compliance checklists',
+    description: 'Flexible compliance questionnaires for any purpose',
     regulatoryBody: 'Various',
     icon: 'ClipboardCheck',
     color: 'gray'
+  },
+  prequalification: {
+    id: 'prequalification',
+    name: 'Client Prequalification',
+    description: 'Vendor qualification and client questionnaires',
+    regulatoryBody: 'Client Requirements',
+    icon: 'UserCheck',
+    color: 'purple'
   }
 }
 

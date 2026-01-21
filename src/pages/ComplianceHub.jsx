@@ -295,8 +295,8 @@ function NewApplicationModal({ isOpen, onClose, templates, onCreateApplication }
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">New Compliance Application</h2>
-          <p className="text-gray-500 mt-1">Select a template and provide a name for your application</p>
+          <h2 className="text-xl font-semibold text-gray-900">New Compliance Project</h2>
+          <p className="text-gray-500 mt-1">Select a template for regulatory submissions, client prequalifications, or general compliance questionnaires</p>
         </div>
 
         <div className="p-6 flex-1 overflow-y-auto space-y-6">
@@ -385,11 +385,11 @@ function EmptyState({ onCreateNew, hasTemplates }) {
   return (
     <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
       <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No compliance applications yet</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No compliance projects yet</h3>
       <p className="text-gray-500 mb-6 max-w-md mx-auto">
         {hasTemplates
-          ? 'Start a new compliance application to begin filling out regulatory requirements.'
-          : 'Seed compliance templates first, then create applications.'}
+          ? 'Start a new compliance project - use our templates for SFOC applications, client prequalifications, or general compliance questionnaires.'
+          : 'Seed compliance templates first, then create projects.'}
       </p>
       {hasTemplates && (
         <button
@@ -397,7 +397,7 @@ function EmptyState({ onCreateNew, hasTemplates }) {
           className="btn-primary inline-flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          New Application
+          New Compliance Project
         </button>
       )}
     </div>
@@ -551,10 +551,10 @@ export default function ComplianceHub() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <ClipboardCheck className="w-7 h-7 text-aeria-navy" />
-              Compliance Hub
+              Compliance Assistant
             </h1>
             <p className="text-gray-500 mt-1">
-              Manage regulatory compliance applications and submissions
+              Manage compliance applications, client prequalifications, regulatory submissions, and audits
             </p>
           </div>
 
@@ -688,7 +688,7 @@ export default function ComplianceHub() {
                   AI Compliance Assistant
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Search documentation and manage your knowledge base
+                  Search policies, procedures, and project data to help complete any compliance questionnaire
                 </p>
               </div>
               <button
