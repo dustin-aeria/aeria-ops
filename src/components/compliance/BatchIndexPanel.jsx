@@ -165,7 +165,7 @@ function IndexProgress({ current, total, source }) {
 // MAIN COMPONENT
 // ============================================
 
-export default function BatchIndexPanel() {
+export default function BatchIndexPanel({ compact = false }) {
   const { user } = useAuth()
   const { indexStatus, refreshStatus } = useKnowledgeBase()
 
@@ -319,6 +319,90 @@ export default function BatchIndexPanel() {
 
   // Get indexed counts from status
   const indexedCounts = indexStatus?.bySourceType || {}
+
+  // Compact mode for sidebar panels
+  if (compact) {
+    return (
+      <div className="space-y-4">
+        {/* Quick Index Button */}
+        <button
+          onClick={handleFullReindex}
+          disabled={!!indexing}
+          className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {indexing === 'all' ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Indexing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4" />
+              Index All Policies
+            </>
+          )}
+        </button>
+
+        {/* Error */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Success */}
+        {results && !error && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+            {results.message || 'Indexing complete'}
+          </div>
+        )}
+
+        {/* Progress */}
+        {indexing && progress.total > 0 && (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <span>Indexing...</span>
+              <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-600 transition-all"
+                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Source List */}
+        <div className="space-y-2">
+          {Object.entries(SOURCES).map(([id, source]) => {
+            const Icon = source.icon
+            const count = counts[id] || 0
+            const indexed = indexedCounts[id] || 0
+            return (
+              <div
+                key={id}
+                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 text-${source.color}-600`} />
+                  <span className="text-sm text-gray-700">{source.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">
+                    {indexed}/{count}
+                  </span>
+                  {indexed > 0 && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
