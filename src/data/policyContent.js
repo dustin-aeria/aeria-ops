@@ -4175,6 +4175,337 @@ Reporting Obligations:
 • All dismissal-related incidents must be reported to HR within 48 hours.`
       }
     ]
+  },
+
+  '1043': {
+    number: '1043',
+    title: 'HSE - Public & Visitors Policy',
+    category: 'hse',
+    description: 'Ensures the safety and security of the public and visitors at Aeria Solutions Ltd. sites while protecting company operations.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act (BC) Part 3'],
+    keywords: ['visitors', 'public', 'access control', 'safety', 'security', 'sign-in'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to ensure the safety and security of the public and visitors at Aeria Solutions Ltd. sites while protecting company operations. Its objectives include managing access, ensuring compliance with safety standards, and addressing risks posed by external individuals.
+
+Scope:
+This policy applies to all members of the public and visitors at Aeria Solutions Ltd. work sites, covering all operational areas and company premises.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Visitor: Any individual not employed by Aeria Solutions Ltd. entering company premises, including clients, contractors' guests, or delivery personnel.
+• Public: Individuals accessing company property for non-business purposes (e.g., community members near sites).
+• Access Control: Procedures to restrict entry to authorized individuals only.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Aeria Solutions Ltd. Health & Safety Policy
+• Aeria Solutions Ltd. Security Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. requires all visitors and members of the public to adhere to safety and security protocols when on company premises. We are committed to providing a safe environment, managing access effectively, and complying with all relevant regulations.
+
+Public & Visitors Rules:
+• Sign-In Requirement: All visitors must register upon arrival and wear a visitor badge.
+• Safety Compliance: Follow all safety rules, including wearing required PPE in designated areas.
+• Restricted Access: Enter only authorized zones, accompanied by an employee if needed.
+• No Interference: Avoid disrupting operations or handling equipment.
+• Emergency Procedures: Follow site evacuation and emergency protocols if announced.
+• Prohibited Items: No weapons, alcohol, or unauthorized substances allowed.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Entry Registration:
+• Require all visitors to sign in and provide identification at designated points.
+
+Safety Briefing:
+• Provide a brief orientation on site safety rules and hazards.
+
+Access Restriction:
+• Limit visitors to authorized areas with an escort if necessary.
+
+Monitoring Process:
+• Supervise visitor activities and ensure compliance with rules.
+
+Departure Check:
+• Verify all visitors sign out upon leaving the premises.
+
+Roles & Responsibilities for Each Step:
+• Pre-Entry Registration: Reception staff or site supervisors
+• Safety Briefing: Supervisors or designated safety officers
+• Access Restriction: Security personnel and escorts
+• Monitoring Process: Supervisors and security team
+• Departure Check: Reception staff or supervisors
+
+Tools, Forms, or Checklists:
+• Visitor logbook
+• Safety briefing checklist
+• Access permits
+• Monitoring logs
+• Sign-out sheets
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 4 and internal security protocols during visitor management.
+
+Reporting or Escalation:
+Report safety or security concerns to supervisors; escalate incidents to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee policy implementation, provide resources, and ensure compliance.
+
+Supervisors:
+• Manage visitor registration, conduct briefings, and monitor adherence.
+
+Staff:
+• Assist in escorting visitors and report violations or hazards.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily visitor log reviews, site inspections, and incident reports to ensure adherence.
+
+Consequences for Non-Compliance:
+• Removal from premises, temporary bans, or legal action for serious breaches.
+
+Reporting Obligations:
+• All incidents involving visitors must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1044': {
+    number: '1044',
+    title: 'HSE - Contractors Policy',
+    category: 'hse',
+    description: 'Regulates the engagement and conduct of contractors at Aeria Solutions Ltd. to ensure safety, compliance, and alignment with company standards.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Occupational Health and Safety Regulation (Part 4)', 'Workers Compensation Act (BC) Part 3'],
+    keywords: ['contractors', 'pre-qualification', 'safety', 'compliance', 'external workers', 'supervision'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This policy exists to regulate the engagement and conduct of contractors at Aeria Solutions Ltd. to ensure safety, compliance, and alignment with company standards. Its objectives include minimizing risks, ensuring accountability, and addressing the challenges of integrating external workers into operations.
+
+Scope:
+This policy applies to all contractors working for or on behalf of Aeria Solutions Ltd., covering all work sites, projects, and activities performed under contract.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Contractor: An individual or entity hired to perform specific tasks or services for Aeria Solutions Ltd.
+• Pre-Qualification: The process of assessing a contractor's safety and compliance credentials.
+• Incident: Any event involving injury, damage, or violation of safety protocols.
+
+References:
+• BC Occupational Health and Safety Regulation (Part 4 - General Conditions)
+• Workers Compensation Act (British Columbia), Part 3 - Rights and Responsibilities
+• Aeria Solutions Ltd. Health & Safety Policy
+• Aeria Solutions Ltd. Public and Visitors Policy`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. requires all contractors to adhere to company safety, security, and operational standards. We are committed to pre-qualifying contractors, monitoring their performance, and ensuring compliance with all applicable laws and policies.
+
+Contractor Rules:
+• Safety Compliance: Adhere to all safety rules and wear required PPE.
+• Access Limitation: Work only in authorized areas with proper supervision.
+• Equipment Use: Use company equipment only with permission and training.
+• Incident Reporting: Report all accidents or hazards immediately.
+• Substance Prohibition: No drugs or alcohol on site.
+• Documentation: Provide required certifications and insurance upon request.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Pre-Qualification Process:
+• Evaluate contractors' safety records, insurance, and qualifications before engagement.
+
+Orientation Training:
+• Conduct site-specific safety and policy training for all contractors.
+
+Work Supervision:
+• Assign Aeria Solutions Ltd. personnel to oversee contractor activities.
+
+Incident Reporting:
+• Require contractors to report all incidents immediately.
+
+Performance Review:
+• Assess contractor compliance and performance post-project.
+
+Roles & Responsibilities for Each Step:
+• Pre-Qualification Process: Procurement team and HSE Representatives
+• Orientation Training: Training coordinators and supervisors
+• Work Supervision: Supervisors and site managers
+• Incident Reporting: Contractors and supervising staff
+• Performance Review: HSE team and management
+
+Tools, Forms, or Checklists:
+• Contractor pre-qualification forms
+• Training attendance logs
+• Supervision checklists
+• Incident report templates
+• Performance evaluation records
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC OHS Regulation Part 4 and internal policies during contractor engagement and oversight.
+
+Reporting or Escalation:
+Report incidents or concerns to supervisors; escalate unresolved issues to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Approve contractor selection, ensure policy compliance, and provide oversight resources.
+
+Supervisors:
+• Monitor contractor work, enforce rules, and report issues.
+
+Contractors:
+• Follow company policies, attend training, and report incidents promptly.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through daily contractor activity logs, incident reviews, and post-project evaluations.
+
+Consequences for Non-Compliance:
+• Warnings, contract suspension, or termination for violations, with legal action for serious breaches.
+
+Reporting Obligations:
+• All contractor-related incidents must be reported to supervisors within 24 hours.`
+      }
+    ]
+  },
+
+  '1045': {
+    number: '1045',
+    title: 'HSE - Employer Duties',
+    category: 'hse',
+    description: 'Outlines the duties of Aeria Solutions Ltd. as an employer to ensure a safe, compliant, and supportive workplace.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    regulatoryRefs: ['BC Workers Compensation Act (Part 3)', 'BC OHS Regulation (Part 3)'],
+    keywords: ['employer duties', 'safety', 'compliance', 'hazard', 'training', 'worker support'],
+    sections: [
+      {
+        title: 'Purpose & Scope',
+        content: `Purpose:
+This document outlines the duties of Aeria Solutions Ltd. as an employer to ensure a safe, compliant, and supportive workplace. Its objectives include meeting legal obligations, protecting employee well-being, and addressing workplace hazards effectively.
+
+Scope:
+This policy applies to Aeria Solutions Ltd. management and supervisory staff, covering all work sites, employees, contractors, and operational activities.`
+      },
+      {
+        title: 'Definitions & References',
+        content: `Definitions:
+• Employer Duties: Legal and ethical responsibilities to ensure employee safety, health, and fair treatment.
+• Hazard: Any condition or activity with potential to cause injury or illness.
+• Compliance: Adherence to occupational health and safety regulations and company policies.
+
+References:
+• BC Workers Compensation Act (Part 3 - Rights and Responsibilities)
+• BC Occupational Health and Safety Regulation (Part 3 - General Duties of Employers)
+• Aeria Solutions Ltd. Health & Safety Policy
+• WorkSafeBC Guidelines on Employer Responsibilities`
+      },
+      {
+        title: 'Policy Statement',
+        content: `Aeria Solutions Ltd. is committed to fulfilling its duties as an employer by providing a safe working environment, complying with all legal requirements, and supporting employee health and safety through proactive measures and resource allocation.
+
+Employer Duties:
+• Safety Provision: Ensure a workplace free from recognized hazards.
+• Training and Instruction: Educate employees on safe work practices and emergency procedures.
+• Equipment Supply: Provide and maintain safe tools, machinery, and PPE.
+• Health Monitoring: Address workplace health risks, including fatigue and substance use.
+• Incident Response: Investigate and mitigate incidents to prevent recurrence.
+• Policy Compliance: Adhere to all applicable health, safety, and employment laws.
+• Worker Support: Offer resources for reporting concerns and resolving issues without retaliation.`
+      },
+      {
+        title: 'Procedures',
+        content: `Step-by-Step Actions:
+
+Risk Assessment:
+• Conduct regular hazard identification and risk assessments.
+
+Safety Training:
+• Provide initial and ongoing safety training for all employees.
+
+Resource Provision:
+• Supply necessary PPE, equipment, and safety tools.
+
+Policy Enforcement:
+• Monitor and enforce compliance with safety and company policies.
+
+Incident Investigation:
+• Investigate all workplace incidents and implement corrective actions.
+
+Roles & Responsibilities for Each Step:
+• Risk Assessment: HSE Representatives and management
+• Safety Training: Training coordinators and HSE Management
+• Resource Provision: Procurement team and management
+• Policy Enforcement: Supervisors and management
+• Incident Investigation: HSE team and management
+
+Tools, Forms, or Checklists:
+• Hazard assessment forms (e.g., FLRA/FLHA)
+• Training logs
+• Equipment inventory lists
+• Compliance audit checklists
+• Incident report forms
+
+Safety/Compliance/Quality Requirements:
+Adherence to BC Workers Compensation Act Part 3 and OHS Regulation Part 3 during all employer duties.
+
+Reporting or Escalation:
+Report hazards or incidents to supervisors; escalate unresolved issues to HSE Representatives within 24 hours.`
+      },
+      {
+        title: 'Roles & Responsibilities',
+        content: `Management:
+• Oversee policy implementation, allocate resources, and ensure legal compliance.
+
+Supervisors:
+• Monitor workplace safety, enforce rules, and report issues to management.
+
+HSE Team:
+• Conduct assessments, provide training, and investigate incidents.`
+      },
+      {
+        title: 'Monitoring, Compliance & Enforcement',
+        content: `How Compliance Will Be Monitored:
+• Through monthly safety audits, training records, and incident reviews to ensure adherence.
+
+Consequences for Non-Compliance:
+• Corrective action plans, retraining, or legal review for failure to meet duties.
+
+Reporting Obligations:
+• All safety or compliance issues must be reported to HSE Representatives within 24 hours.`
+      }
+    ]
   }
 }
 
