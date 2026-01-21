@@ -1232,9 +1232,9 @@ function PolicyCard({ policy, view, onClick }) {
   const statusInfo = getStatusInfo(policy)
 
   const handleClick = (e) => {
-    e.preventDefault()
-    console.log('PolicyCard clicked:', policy?.id)
-    onClick?.()
+    e.stopPropagation()
+    alert('Clicked: ' + (policy?.title || 'unknown'))
+    if (onClick) onClick()
   }
 
   const categoryColors = {
