@@ -1098,6 +1098,190 @@ export const POLICIES = [
       'Access and Confidentiality',
       'Disposal Procedures'
     ]
+  },
+  {
+    id: 'pol-1046',
+    number: '1046',
+    title: 'Joint Health and Safety Committee Requirements',
+    category: 'hse',
+    description: 'Compliance with regulatory requirements for joint health and safety committees (JHSCs) and health and safety representatives (HSRs), ensuring worker involvement in safety decisions.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['JHSC', 'HSR', 'committee', 'worker representation', 'safety committee', 'consultation'],
+    relatedPolicies: ['1022', '1042'],
+    regulatoryRefs: ['OH&S Act', 'OHS Code Part 13', 'COR Requirements'],
+    sections: [
+      'Committee Establishment',
+      'Member Selection',
+      'Training Requirements',
+      'Meeting Schedule',
+      'Issue Resolution',
+      'Documentation and Reporting'
+    ]
+  },
+  {
+    id: 'pol-1047',
+    number: '1047',
+    title: 'Hazard Assessment Policy',
+    category: 'hse',
+    description: 'Procedures for identifying and controlling workplace hazards through systematic assessment, promoting a proactive safety culture and addressing risks before incidents occur.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['hazard', 'assessment', 'HIRA', 'risk identification', 'workplace safety', 'FLRA', 'FLHA'],
+    relatedPolicies: ['1023', '1048'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.5', 'COR Requirements'],
+    sections: [
+      'Initial Assessment',
+      'Routine Monitoring',
+      'Risk Evaluation',
+      'Control Implementation',
+      'Documentation Requirements',
+      'Review and Updates'
+    ]
+  },
+  {
+    id: 'pol-1048',
+    number: '1048',
+    title: 'Hazard Control Policy',
+    category: 'hse',
+    description: 'Procedures for controlling identified hazards using the hierarchy of controls to minimize risks and ensure a safe workplace environment.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['hazard control', 'hierarchy of controls', 'elimination', 'substitution', 'engineering controls', 'residual risk'],
+    relatedPolicies: ['1023', '1047'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.6', 'COR Requirements'],
+    sections: [
+      'Hazard Identification',
+      'Control Selection',
+      'Implementation Process',
+      'Monitoring Effectiveness',
+      'Adjustment and Review',
+      'Documentation'
+    ]
+  },
+  {
+    id: 'pol-1049',
+    number: '1049',
+    title: 'Workplace Inspection Policy',
+    category: 'hse',
+    description: 'Systematic inspection process to identify and address workplace hazards, ensuring safety and compliance through regular oversight and corrective actions.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['inspection', 'workplace', 'safety check', 'corrective action', 'compliance', 'monitoring'],
+    relatedPolicies: ['1023', '1047', '1050'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.5', 'COR Requirements'],
+    sections: [
+      'Inspection Scheduling',
+      'Conducting Inspections',
+      'Hazard Reporting',
+      'Corrective Actions',
+      'Record Keeping',
+      'Follow-up Procedures'
+    ]
+  },
+  {
+    id: 'pol-1050',
+    number: '1050',
+    title: 'Preventative Maintenance Policy',
+    category: 'hse',
+    description: 'Preventative maintenance program to ensure equipment reliability, safety, and operational efficiency through scheduled maintenance activities and documentation.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['preventative maintenance', 'equipment', 'reliability', 'downtime', 'maintenance schedule', 'inspection'],
+    relatedPolicies: ['1009', '1049'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 4.4', 'Manufacturer Guidelines'],
+    sections: [
+      'Maintenance Scheduling',
+      'Inspection Routines',
+      'Maintenance Execution',
+      'Documentation Process',
+      'Review and Adjustment',
+      'Equipment Records'
+    ]
+  },
+  {
+    id: 'pol-1051',
+    number: '1051',
+    title: 'HSE Emergency Response Policy',
+    category: 'hse',
+    description: 'Emergency response plan to protect personnel and property during crises, including procedures for fires, spills, medical incidents, and evacuation.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['emergency response', 'evacuation', 'crisis', 'first aid', 'emergency plan', 'drill'],
+    relatedPolicies: ['1006', '1026', '1027'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.16', 'Fire Code'],
+    sections: [
+      'Emergency Planning',
+      'Training and Drills',
+      'Alarm Activation',
+      'Evacuation Procedures',
+      'Post-Event Review',
+      'Emergency Contacts'
+    ]
+  },
+  {
+    id: 'pol-1052',
+    number: '1052',
+    title: 'HSE Investigations Policy',
+    category: 'hse',
+    description: 'Structured process for investigating workplace incidents to determine causes and prevent recurrence, including injuries, near misses, and property damage.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['investigation', 'incident', 'root cause', 'near miss', 'corrective action', 'analysis'],
+    relatedPolicies: ['1007', '1040', '1041'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.4', 'COR Requirements'],
+    sections: [
+      'Incident Notification',
+      'Initial Response',
+      'Investigation Team',
+      'Analysis Process',
+      'Report and Action',
+      'Lessons Learned'
+    ]
+  },
+  {
+    id: 'pol-1053',
+    number: '1053',
+    title: 'HSE Systems Overview and Audit Policy',
+    category: 'hse',
+    description: 'Procedures for systematic overhaul and audit of operational systems to ensure safety, efficiency, and compliance with regulatory requirements.',
+    version: '1.0',
+    effectiveDate: '2025-09-18',
+    reviewDate: '2026-02-01',
+    owner: 'HSE Manager',
+    status: 'active',
+    keywords: ['audit', 'systems', 'overhaul', 'compliance', 'evaluation', 'improvement'],
+    relatedPolicies: ['1022', '1045'],
+    regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.5', 'COR Requirements', 'ISO 45001'],
+    sections: [
+      'Audit Scheduling',
+      'System Assessment',
+      'Overhaul Planning',
+      'Implementation Process',
+      'Post-Audit Review',
+      'Continuous Improvement'
+    ]
   }
 ]
 
