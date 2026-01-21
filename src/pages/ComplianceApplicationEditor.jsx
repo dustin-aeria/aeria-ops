@@ -56,6 +56,7 @@ import {
   APPLICATION_STATUSES,
   runGapAnalysis
 } from '../lib/firestoreCompliance'
+import DocumentLinker from '../components/compliance/DocumentLinker'
 
 // ============================================
 // HELPER FUNCTIONS
@@ -173,7 +174,7 @@ function CategorySidebar({ categories, requirements, responses, activeCategory, 
   )
 }
 
-function RequirementCard({ requirement, response, onUpdate, onFlag, isExpanded, onToggleExpand }) {
+function RequirementCard({ requirement, response, onUpdate, onFlag, onLinkDocuments, isExpanded, onToggleExpand }) {
   const [localResponse, setLocalResponse] = useState(response?.response || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -326,7 +327,10 @@ function RequirementCard({ requirement, response, onUpdate, onFlag, isExpanded, 
               ) : (
                 <p className="text-sm text-gray-500 italic">No documents linked yet</p>
               )}
-              <button className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <button
+                onClick={() => onLinkDocuments(requirement)}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
                 <Plus className="w-4 h-4" />
                 Link Document
               </button>
@@ -493,6 +497,7 @@ export default function ComplianceApplicationEditor() {
   const [expandedRequirement, setExpandedRequirement] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState(null)
+  const [linkingRequirement, setLinkingRequirement] = useState(null) // For DocumentLinker modal
 
   // Load application and template
   useEffect(() => {
@@ -582,6 +587,27 @@ export default function ComplianceApplicationEditor() {
     // TODO: Implement export functionality
     alert('Export functionality coming in Phase 5')
   }, [])
+
+  // Handle document linking
+  const handleLinkDocuments = useCallback((requirement) => {
+    setLinkingRequirement(requirement)
+  }, [])
+
+  // Save linked documents
+  const handleSaveLinkedDocuments = useCallback(async (documentRefs) => {
+    if (!linkingRequirement || !application || !user) return
+
+    try {
+      const currentResponse = application.responses[linkingRequirement.id] || {}
+      await handleResponseUpdate(linkingRequirement.id, {
+        ...currentResponse,
+        documentRefs,
+        responseType: linkingRequirement.responseType
+      })
+    } catch (err) {
+      console.error('Error saving linked documents:', err)
+    }
+  }, [linkingRequirement, application, user, handleResponseUpdate])
 
   // Filter requirements
   const filteredRequirements = useMemo(() => {
@@ -721,6 +747,7 @@ export default function ComplianceApplicationEditor() {
                   response={application.responses[requirement.id]}
                   onUpdate={handleResponseUpdate}
                   onFlag={handleFlag}
+                  onLinkDocuments={handleLinkDocuments}
                   isExpanded={expandedRequirement === requirement.id}
                   onToggleExpand={() => setExpandedRequirement(
                     expandedRequirement === requirement.id ? null : requirement.id
@@ -731,6 +758,16 @@ export default function ComplianceApplicationEditor() {
           </div>
         </div>
       </div>
+
+      {/* Document Linker Modal */}
+      <DocumentLinker
+        isOpen={!!linkingRequirement}
+        onClose={() => setLinkingRequirement(null)}
+        currentDocRefs={linkingRequirement ? application?.responses[linkingRequirement.id]?.documentRefs : []}
+        suggestedPolicies={linkingRequirement?.suggestedPolicies || []}
+        suggestedDocTypes={linkingRequirement?.suggestedDocTypes || []}
+        onSave={handleSaveLinkedDocuments}
+      />
     </div>
   )
 }
