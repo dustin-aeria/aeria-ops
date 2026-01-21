@@ -795,6 +795,29 @@ export default function ComplianceApplicationEditor() {
     return result
   }, [template, activeCategory, searchQuery, filterStatus, application])
 
+  // Calculate gap count - must be before early returns to maintain hook order
+  const gapAnalysisData = useMemo(() => {
+    if (!template || !application) return { total: 0, gaps: { missingRequired: [], incompleteResponses: [], missingDocuments: [], flagged: [] } }
+    const gaps = analyzeGaps(template, application.responses || {})
+    return {
+      gaps,
+      total: gaps.missingRequired.length + gaps.incompleteResponses.length +
+             gaps.missingDocuments.length + gaps.flagged.length
+    }
+  }, [template, application])
+
+  // Navigate to requirement from gap analysis - must be before early returns
+  const handleNavigateToRequirement = useCallback((requirementId) => {
+    if (!template?.requirements) return
+    // Find the category for this requirement
+    const requirement = template.requirements.find(r => r.id === requirementId)
+    if (requirement) {
+      setActiveCategory(requirement.category)
+      setExpandedRequirement(requirementId)
+      setShowGapAnalysis(false)
+    }
+  }, [template])
+
   // Loading state
   if (loading) {
     return (
@@ -819,28 +842,6 @@ export default function ComplianceApplicationEditor() {
   }
 
   const activeTemplateCategory = template.categories?.find(c => c.id === activeCategory)
-
-  // Calculate gap count
-  const gapAnalysisData = useMemo(() => {
-    if (!template || !application) return { total: 0 }
-    const gaps = analyzeGaps(template, application.responses || {})
-    return {
-      gaps,
-      total: gaps.missingRequired.length + gaps.incompleteResponses.length +
-             gaps.missingDocuments.length + gaps.flagged.length
-    }
-  }, [template, application])
-
-  // Navigate to requirement from gap analysis
-  const handleNavigateToRequirement = useCallback((requirementId) => {
-    // Find the category for this requirement
-    const requirement = template.requirements.find(r => r.id === requirementId)
-    if (requirement) {
-      setActiveCategory(requirement.category)
-      setExpandedRequirement(requirementId)
-      setShowGapAnalysis(false)
-    }
-  }, [template])
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 lg:-m-8">
