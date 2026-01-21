@@ -1130,22 +1130,37 @@ const CATEGORIES = {
 // ============================================
 
 export const getStatusInfo = (policy) => {
-  const today = new Date()
-  const reviewDate = new Date(policy.reviewDate)
-  const daysUntilReview = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24))
-  
+  if (!policy) {
+    return { status: 'active', label: 'Active', color: 'green', icon: CheckCircle2 }
+  }
+
   if (policy.status === 'draft') {
     return { status: 'draft', label: 'Draft', color: 'gray', icon: FileText }
   }
-  
-  if (daysUntilReview < 0) {
-    return { status: 'overdue', label: 'Review Overdue', color: 'red', icon: AlertCircle }
+
+  if (policy.status === 'retired') {
+    return { status: 'retired', label: 'Retired', color: 'gray', icon: FileText }
   }
-  
-  if (daysUntilReview <= 30) {
-    return { status: 'due', label: 'Review Due', color: 'amber', icon: Clock }
+
+  // Handle review date check safely
+  try {
+    if (policy.reviewDate) {
+      const today = new Date()
+      const reviewDate = new Date(policy.reviewDate)
+      const daysUntilReview = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24))
+
+      if (daysUntilReview < 0) {
+        return { status: 'overdue', label: 'Review Overdue', color: 'red', icon: AlertCircle }
+      }
+
+      if (daysUntilReview <= 30) {
+        return { status: 'due', label: 'Review Due', color: 'amber', icon: Clock }
+      }
+    }
+  } catch {
+    // If date parsing fails, just return active
   }
-  
+
   return { status: 'active', label: 'Active', color: 'green', icon: CheckCircle2 }
 }
 
@@ -1213,70 +1228,78 @@ function PolicyStatusBadge({ policy }) {
 }
 
 function PolicyCard({ policy, view, onClick }) {
-  const category = CATEGORIES[policy.category] || CATEGORIES.rpas
+  const category = CATEGORIES[policy?.category] || CATEGORIES.rpas
   const statusInfo = getStatusInfo(policy)
-  
+
   const categoryColors = {
     blue: 'bg-blue-100 text-blue-700 border-blue-200',
     purple: 'bg-purple-100 text-purple-700 border-purple-200',
     green: 'bg-green-100 text-green-700 border-green-200'
   }
-  
+
+  const colorClass = categoryColors[category?.color] || categoryColors.blue
+
   if (view === 'list') {
     return (
-      <button
+      <div
         onClick={onClick}
-        className="w-full p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all text-left flex items-center gap-4"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+        className="w-full p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all text-left flex items-center gap-4 cursor-pointer"
       >
         <div className="w-16 text-center flex-shrink-0">
-          <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold ${categoryColors[category.color]}`}>
-            {policy.number}
+          <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold ${colorClass}`}>
+            {policy?.number || '-'}
           </span>
         </div>
-        
+
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate">{policy.title}</h3>
-          <p className="text-sm text-gray-500 truncate mt-0.5">{policy.description}</p>
+          <h3 className="font-medium text-gray-900 truncate">{policy?.title || 'Untitled'}</h3>
+          <p className="text-sm text-gray-500 truncate mt-0.5">{policy?.description || ''}</p>
         </div>
-        
+
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${categoryColors[category.color]}`}>
-            {category.name}
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+            {category?.name || 'Policy'}
           </span>
           <PolicyStatusBadge policy={policy} />
           <ChevronRight className="w-5 h-5 text-gray-400" />
         </div>
-      </button>
+      </div>
     )
   }
-  
+
   // Grid view
   return (
-    <button
+    <div
       onClick={onClick}
-      className="p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left h-full flex flex-col"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+      className="p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left h-full flex flex-col cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3">
-        <span className={`px-3 py-1 rounded-lg text-sm font-bold ${categoryColors[category.color]}`}>
-          {policy.number}
+        <span className={`px-3 py-1 rounded-lg text-sm font-bold ${colorClass}`}>
+          {policy?.number || '-'}
         </span>
         <PolicyStatusBadge policy={policy} />
       </div>
-      
-      <h3 className="font-medium text-gray-900 mb-2">{policy.title}</h3>
-      <p className="text-sm text-gray-500 flex-1 line-clamp-2">{policy.description}</p>
-      
+
+      <h3 className="font-medium text-gray-900 mb-2">{policy?.title || 'Untitled'}</h3>
+      <p className="text-sm text-gray-500 flex-1 line-clamp-2">{policy?.description || ''}</p>
+
       <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
-          v{policy.version}
+          v{policy?.version || '1.0'}
         </span>
         <span className="flex items-center gap-1">
           <User className="w-3 h-3" />
-          {policy.owner}
+          {policy?.owner || 'Unassigned'}
         </span>
       </div>
-    </button>
+    </div>
   )
 }
 
