@@ -234,7 +234,7 @@ function QuestionModal({
   }, [question, isOpen])
 
   // Analyze question and get suggestions
-  const analyzequestion = useCallback(async () => {
+  const analyzeQuestion = useCallback(async () => {
     if (!formData.question.trim() || !user) return
 
     setLoadingSuggestions(true)
@@ -276,11 +276,11 @@ function QuestionModal({
     if (!formData.question.trim()) return
 
     const timer = setTimeout(() => {
-      analyzequestion()
+      analyzeQuestion()
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [formData.question, analyzequestion])
+  }, [formData.question, analyzeQuestion])
 
   const handleSave = async () => {
     if (!formData.question.trim()) return
@@ -305,8 +305,6 @@ function QuestionModal({
       answer: prev.answer ? `${prev.answer}\n\n${text}` : text
     }))
   }
-
-  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto">
@@ -751,17 +749,20 @@ export default function ComplianceProjectEditor({ projectId, linkedProject = nul
       </div>
 
       {/* Question Modal */}
-      <QuestionModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false)
-          setEditingQuestion(null)
-        }}
-        onSave={handleSaveQuestion}
-        question={editingQuestion}
-        project={project}
-        linkedProject={linkedProject}
-      />
+      {modalOpen && (
+        <QuestionModal
+          key={editingQuestion?.id || 'new'}
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false)
+            setEditingQuestion(null)
+          }}
+          onSave={handleSaveQuestion}
+          question={editingQuestion}
+          project={project}
+          linkedProject={linkedProject}
+        />
+      )}
     </div>
   )
 }
