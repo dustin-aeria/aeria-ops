@@ -58,6 +58,8 @@ import {
 } from '../lib/firestoreCompliance'
 import DocumentLinker from '../components/compliance/DocumentLinker'
 import { AutoPopulateButton, GapAnalysisPanel, ProjectLinkBanner, analyzeGaps } from '../components/compliance/SmartPopulate'
+import { DocumentSuggestionPanel } from '../components/compliance'
+import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 import { getProject } from '../lib/firestore'
 import { openPrintExport, downloadCsvExport, downloadTextExport } from '../lib/complianceExport'
 
@@ -177,7 +179,7 @@ function CategorySidebar({ categories, requirements, responses, activeCategory, 
   )
 }
 
-function RequirementCard({ requirement, response, onUpdate, onFlag, onLinkDocuments, isExpanded, onToggleExpand }) {
+function RequirementCard({ requirement, response, onUpdate, onFlag, onLinkDocuments, onAiAssist, isExpanded, onToggleExpand }) {
   const [localResponse, setLocalResponse] = useState(response?.response || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -386,7 +388,10 @@ function RequirementCard({ requirement, response, onUpdate, onFlag, onLinkDocume
                 <Flag className="w-4 h-4" />
                 {response?.flagged ? 'Flagged' : 'Flag for Review'}
               </button>
-              <button className="text-sm text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <button
+                onClick={() => onAiAssist?.(requirement)}
+                className="text-sm text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+              >
                 <Sparkles className="w-4 h-4" />
                 AI Assist
               </button>
@@ -565,6 +570,11 @@ export default function ComplianceApplicationEditor() {
   const [linkingRequirement, setLinkingRequirement] = useState(null) // For DocumentLinker modal
   const [showGapAnalysis, setShowGapAnalysis] = useState(false)
   const [linkedProject, setLinkedProject] = useState(null)
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false)
+  const [aiSuggestionRequirement, setAiSuggestionRequirement] = useState(null)
+
+  // Knowledge Base hook
+  const { isIndexed, indexStatus } = useKnowledgeBase()
 
   // Load application and template
   useEffect(() => {
@@ -682,6 +692,60 @@ export default function ComplianceApplicationEditor() {
   const handleLinkDocuments = useCallback((requirement) => {
     setLinkingRequirement(requirement)
   }, [])
+
+  // Handle AI Assist
+  const handleAiAssist = useCallback((requirement) => {
+    setAiSuggestionRequirement(requirement)
+    setShowAiSuggestions(true)
+  }, [])
+
+  // Handle using suggested content
+  const handleUseSuggestedContent = useCallback(async (content) => {
+    if (!aiSuggestionRequirement || !application || !user) return
+
+    try {
+      const currentResponse = application.responses[aiSuggestionRequirement.id] || {}
+      const existingResponse = currentResponse.response || ''
+      const newResponse = existingResponse
+        ? `${existingResponse}\n\n${content}`
+        : content
+
+      await handleResponseUpdate(aiSuggestionRequirement.id, {
+        ...currentResponse,
+        response: newResponse,
+        aiAssisted: true,
+        responseType: aiSuggestionRequirement.responseType
+      })
+    } catch (err) {
+      console.error('Error using suggested content:', err)
+    }
+  }, [aiSuggestionRequirement, application, user, handleResponseUpdate])
+
+  // Handle linking document from suggestion
+  const handleLinkSuggestedDocument = useCallback(async (suggestion) => {
+    if (!aiSuggestionRequirement || !application || !user) return
+
+    try {
+      const currentResponse = application.responses[aiSuggestionRequirement.id] || {}
+      const existingRefs = currentResponse.documentRefs || []
+
+      const newDocRef = {
+        sourceType: suggestion.sourceType,
+        sourceId: suggestion.sourceId,
+        title: suggestion.sourceTitle,
+        section: suggestion.sectionTitle,
+        policyNumber: suggestion.sourceNumber
+      }
+
+      await handleResponseUpdate(aiSuggestionRequirement.id, {
+        ...currentResponse,
+        documentRefs: [...existingRefs, newDocRef],
+        responseType: aiSuggestionRequirement.responseType
+      })
+    } catch (err) {
+      console.error('Error linking suggested document:', err)
+    }
+  }, [aiSuggestionRequirement, application, user, handleResponseUpdate])
 
   // Save linked documents
   const handleSaveLinkedDocuments = useCallback(async (documentRefs) => {
@@ -883,6 +947,7 @@ export default function ComplianceApplicationEditor() {
                   onUpdate={handleResponseUpdate}
                   onFlag={handleFlag}
                   onLinkDocuments={handleLinkDocuments}
+                  onAiAssist={handleAiAssist}
                   isExpanded={expandedRequirement === requirement.id}
                   onToggleExpand={() => setExpandedRequirement(
                     expandedRequirement === requirement.id ? null : requirement.id
@@ -892,6 +957,40 @@ export default function ComplianceApplicationEditor() {
             )}
           </div>
         </div>
+
+        {/* AI Suggestions Sidebar */}
+        {showAiSuggestions && (
+          <div className="w-80 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                AI Suggestions
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAiSuggestions(false)
+                  setAiSuggestionRequirement(null)
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {aiSuggestionRequirement ? (
+              <DocumentSuggestionPanel
+                requirement={aiSuggestionRequirement}
+                onUseContent={handleUseSuggestedContent}
+                onLinkDocument={handleLinkSuggestedDocument}
+                className="border-0 rounded-none"
+              />
+            ) : (
+              <div className="p-4 text-center text-gray-500">
+                <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Click "AI Assist" on any requirement to get document suggestions</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Document Linker Modal */}

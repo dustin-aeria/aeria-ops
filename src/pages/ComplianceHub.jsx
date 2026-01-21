@@ -37,7 +37,9 @@ import {
   MoreVertical,
   Calendar,
   Building2,
-  Plane
+  Plane,
+  Database,
+  Sparkles
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -48,6 +50,8 @@ import {
   TEMPLATE_CATEGORIES
 } from '../lib/firestoreCompliance'
 import { seedAllComplianceTemplates } from '../lib/seedComplianceTemplates'
+import { KnowledgeBasePanel } from '../components/compliance'
+import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 
 // ============================================
 // STATUS HELPERS
@@ -418,6 +422,10 @@ export default function ComplianceHub() {
   const [viewMode, setViewMode] = useState('list')
   const [showNewModal, setShowNewModal] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false)
+
+  // Knowledge Base
+  const { indexStatus, isIndexed, reindexPolicies, indexing } = useKnowledgeBase()
 
   // Load data
   const loadData = async () => {
@@ -571,6 +579,22 @@ export default function ComplianceHub() {
               </button>
             )}
 
+            {/* Knowledge Base Button */}
+            <button
+              onClick={() => setShowKnowledgeBase(!showKnowledgeBase)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                showKnowledgeBase
+                  ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                  : 'btn-secondary'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              AI Assistant
+              {isIndexed && (
+                <span className="w-2 h-2 rounded-full bg-green-500" title="Knowledge Base indexed" />
+              )}
+            </button>
+
             {/* Template Library Link */}
             <Link
               to="/compliance/templates"
@@ -650,6 +674,63 @@ export default function ComplianceHub() {
           </button>
         </div>
       </div>
+
+      {/* Knowledge Base Panel */}
+      {showKnowledgeBase && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Database className="w-5 h-5 text-aeria-navy" />
+                AI Compliance Assistant
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Search your indexed policies and documentation to find compliance evidence
+              </p>
+            </div>
+            <button
+              onClick={() => setShowKnowledgeBase(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+
+          {!isIndexed && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-amber-800">Knowledge Base Not Indexed</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Index your policies to enable AI-powered compliance assistance.
+                    This will make your documentation searchable for smart suggestions.
+                  </p>
+                  <button
+                    onClick={() => reindexPolicies(true)}
+                    disabled={indexing}
+                    className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {indexing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Indexing Policies...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="w-4 h-4" />
+                        Index Policies Now
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <KnowledgeBasePanel />
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
