@@ -11,7 +11,7 @@
  * @location src/components/compliance/PatternInsightsPanel.jsx
  */
 
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import {
   Lightbulb,
   BookOpen,
@@ -34,8 +34,7 @@ import {
   Lock,
   FileBox
 } from 'lucide-react'
-import { useRequirementAnalysis } from '../../hooks/useRegulatoryPatterns'
-import { REGULATORY_REFERENCES, mapRequirementToPatterns } from '../../lib/regulatoryPatterns'
+import { REGULATORY_REFERENCES, mapRequirementToPatterns, findMatchingQuestionPattern } from '../../lib/regulatoryPatterns'
 
 // ============================================
 // CATEGORY ICONS & COLORS
@@ -278,7 +277,15 @@ function KeywordCloud({ keywords }) {
 // ============================================
 
 export default function PatternInsightsPanel({ requirement, compact = false }) {
-  const analysis = useRequirementAnalysis(requirement)
+  // Use direct function call instead of hook to avoid conditional rendering issues
+  const analysis = requirement ? (() => {
+    const patterns = mapRequirementToPatterns(requirement)
+    const questionMatch = findMatchingQuestionPattern(requirement.text || requirement.shortText || '')
+    if (questionMatch) {
+      patterns.questionPattern = questionMatch
+    }
+    return patterns
+  })() : null
 
   if (!requirement) {
     return (
