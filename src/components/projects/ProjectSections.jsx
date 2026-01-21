@@ -140,8 +140,8 @@ export default function ProjectSections({ project, onUpdate }) {
                 {/* Toggle */}
                 <div className="flex-shrink-0">
                   {section.alwaysOn ? (
-                    <div className="w-10 h-6 flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <div className="w-10 h-6 flex items-center justify-center" aria-label={`${section.label} is required`}>
+                      <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />
                     </div>
                   ) : (
                     <button
@@ -149,11 +149,15 @@ export default function ProjectSections({ project, onUpdate }) {
                       className={`relative w-10 h-6 rounded-full transition-colors ${
                         isEnabled ? 'bg-aeria-navy' : 'bg-gray-300'
                       }`}
+                      role="switch"
+                      aria-checked={isEnabled}
+                      aria-label={`Toggle ${section.label} section`}
                     >
                       <span
                         className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
                           isEnabled ? 'translate-x-4' : 'translate-x-0'
                         }`}
+                        aria-hidden="true"
                       />
                     </button>
                   )}

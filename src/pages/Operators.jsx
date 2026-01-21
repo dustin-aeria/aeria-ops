@@ -138,16 +138,20 @@ export default function Operators() {
       {/* Filters and search */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+          <label htmlFor="operator-search" className="sr-only">Search operators</label>
           <input
-            type="text"
+            id="operator-search"
+            type="search"
             placeholder="Search operators..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input pl-9"
           />
         </div>
+        <label htmlFor="operator-status-filter" className="sr-only">Filter by status</label>
         <select
+          id="operator-status-filter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="input w-full sm:w-40"

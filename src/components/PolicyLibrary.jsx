@@ -2226,6 +2226,7 @@ export default function PolicyLibrary() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aeria-navy focus:border-transparent"
+              aria-label="Search policies by number, title, or keyword"
             />
             {searchQuery && (
               <button
