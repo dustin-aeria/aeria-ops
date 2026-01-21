@@ -47,6 +47,7 @@ import {
   sailColors
 } from '../lib/soraConfig'
 import { getStatusInfo } from '../components/PolicyLibrary'
+import { logger } from '../lib/logger'
 
 // ============================================
 // SAIL CALCULATION HELPER
@@ -196,7 +197,8 @@ export default function Dashboard() {
       // Store operators with expiring certs for alerts
       setExpiringOperators(operatorsWithExpiring)
 
-    } catch {
+    } catch (err) {
+      logger.error('Dashboard data load failed:', err)
       setLoadError('Failed to load dashboard data. Please refresh the page.')
     } finally {
       setLoading(false)

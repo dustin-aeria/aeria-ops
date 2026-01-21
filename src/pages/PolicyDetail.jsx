@@ -175,7 +175,7 @@ export default function PolicyDetail() {
       const ack = await checkAcknowledgmentStatus(policy.id, policy.version, user.uid)
       setUserAcknowledgment(ack)
     } catch {
-      // Not acknowledged
+      // Intentionally silent - user hasn't acknowledged this policy version yet, which is valid state
     }
   }
 
@@ -185,7 +185,7 @@ export default function PolicyDetail() {
       const validAcks = acks.filter(a => a.isValid && a.policyVersion === policy.version)
       setAcknowledgmentCount(validAcks.length)
     } catch {
-      // Ignore
+      // Intentionally silent - acknowledgment count is optional display data
     }
   }
 

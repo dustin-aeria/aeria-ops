@@ -102,7 +102,7 @@ export default function PolicyModal({ isOpen, onClose, policy, onSaved }) {
       const policies = await getPolicies()
       setAllPolicies(policies)
     } catch {
-      // Policies will be empty - that's okay for new installations
+      // Intentionally silent - policies will be empty for new installations, related policy dropdown shows none
     }
   }
 
@@ -118,7 +118,7 @@ export default function PolicyModal({ isOpen, onClose, policy, onSaved }) {
       const nextNumber = await getNextPolicyNumber(formData.category)
       setFormData(prev => ({ ...prev, number: nextNumber }))
     } catch {
-      // Keep existing number if generation fails
+      // Intentionally silent - keep existing number if auto-generation fails, user can manually enter
     }
   }
 

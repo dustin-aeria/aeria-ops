@@ -622,7 +622,7 @@ export default function PolicyEditor({ isOpen, onClose, policy, onSaved }) {
       const data = await getCategories()
       setCategories(data)
     } catch {
-      // Use defaults
+      // Intentionally silent - use DEFAULT_CATEGORIES if custom categories fail to load
     }
   }
 
@@ -631,7 +631,7 @@ export default function PolicyEditor({ isOpen, onClose, policy, onSaved }) {
       const data = await getPolicies()
       setAllPolicies(data)
     } catch {
-      // Ignore
+      // Intentionally silent - policy list is optional for related policy suggestions
     }
   }
 
@@ -718,7 +718,7 @@ export default function PolicyEditor({ isOpen, onClose, policy, onSaved }) {
       const num = await getNextPolicyNumber(formData.category)
       setFormData(prev => ({ ...prev, number: num }))
     } catch {
-      // Keep existing
+      // Intentionally silent - keep existing policy number if auto-generation fails
     }
   }
 

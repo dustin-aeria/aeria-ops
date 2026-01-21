@@ -45,7 +45,7 @@ export default function NewProjectModal({ isOpen, onClose }) {
       const data = await getClients()
       setClients(data)
     } catch {
-      // Client loading failed - empty dropdown will be shown
+      // Intentionally silent - if clients fail to load, user can still create project without selecting client
     } finally {
       setLoadingClients(false)
     }

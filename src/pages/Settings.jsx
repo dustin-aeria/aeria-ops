@@ -16,6 +16,7 @@ import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 
 import { auth } from '../lib/firebase'
 import BrandingSettings from '../components/BrandingSettings'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
+import { logger } from '../lib/logger'
 
 export default function Settings() {
   const { userProfile, user } = useAuth()
@@ -93,7 +94,7 @@ export default function Settings() {
         setCompanyData(prev => ({ ...prev, ...snapshot.data() }))
       }
     } catch {
-      // Company settings may not exist yet - use defaults
+      // Intentionally silent - company settings may not exist yet, use defaults
     }
   }
 
@@ -112,7 +113,7 @@ export default function Settings() {
         setNotificationData(prev => ({ ...prev, ...snapshot.data().notifications }))
       }
     } catch {
-      // Notification prefs may not exist yet - use defaults
+      // Intentionally silent - notification prefs may not exist yet, use defaults
     }
   }
 
@@ -151,7 +152,8 @@ export default function Settings() {
       await updateOperator(userProfile.id, profileData)
       setProfileSaved(true)
       setTimeout(() => setProfileSaved(false), 3000)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to save profile:', err)
       alert('Failed to save profile. Please try again.')
     } finally {
       setProfileSaving(false)
@@ -166,7 +168,8 @@ export default function Settings() {
       await setDoc(docRef, companyData, { merge: true })
       setCompanySaved(true)
       setTimeout(() => setCompanySaved(false), 3000)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to save company settings:', err)
       alert('Failed to save company settings. Please try again.')
     } finally {
       setCompanySaving(false)
@@ -181,7 +184,8 @@ export default function Settings() {
       await setDoc(docRef, { notifications: notificationData }, { merge: true })
       setNotificationSaved(true)
       setTimeout(() => setNotificationSaved(false), 3000)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to save notification preferences:', err)
       alert('Failed to save notification preferences. Please try again.')
     } finally {
       setNotificationSaving(false)

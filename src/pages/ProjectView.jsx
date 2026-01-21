@@ -64,6 +64,7 @@ import ProjectTailgate from '../components/projects/ProjectTailgate'
 import ProjectForms from '../components/projects/ProjectForms'
 import ProjectExport from '../components/projects/ProjectExport'
 import ProjectNeedsAnalysis from '../components/projects/ProjectNeedsAnalysis'
+import { logger } from '../lib/logger'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: FolderKanban },
@@ -151,8 +152,9 @@ export default function ProjectView() {
           const clients = await getClients()
           const client = clients.find(c => c.id === project.clientId)
           setClientData(client || null)
-        } catch {
-          // Client data failed to load - continue without logo
+        } catch (err) {
+          // Intentionally silent - client logo is optional display data
+          logger.debug('Client data load failed (non-critical):', err)
           setClientData(null)
         }
       } else {
@@ -192,7 +194,8 @@ export default function ProjectView() {
       data = migrateProjectToDecoupledStructure(data)
       setProject(data)
       setLastSaved(new Date())
-    } catch {
+    } catch (err) {
+      logger.error('Failed to load project:', err)
       setError('Project not found or failed to load')
     } finally {
       setLoading(false)
@@ -217,14 +220,15 @@ export default function ProjectView() {
       }, 2000)
       
       return true
-    } catch {
+    } catch (err) {
+      logger.error('Failed to save project:', err)
       setSaveStatus(SAVE_STATUS.ERROR)
-      
+
       // Reset to pending after showing error
       setTimeout(() => {
         setSaveStatus(SAVE_STATUS.PENDING)
       }, 3000)
-      
+
       return false
     }
   }
@@ -284,7 +288,8 @@ export default function ProjectView() {
     try {
       await deleteProject(projectId)
       navigate('/projects')
-    } catch {
+    } catch (err) {
+      logger.error('Failed to delete project:', err)
       alert('Failed to delete project. Please try again.')
     }
   }

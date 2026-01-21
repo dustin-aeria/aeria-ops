@@ -27,6 +27,7 @@ import {
 import { getProjects, deleteProject, getClients } from '../lib/firestore'
 import NewProjectModal from '../components/NewProjectModal'
 import { format } from 'date-fns'
+import { logger } from '../lib/logger'
 
 const statusColors = {
   draft: 'bg-gray-100 text-gray-700',
@@ -70,7 +71,8 @@ export default function Projects() {
       ])
       setProjects(projectsData)
       setClients(clientsData)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to load projects:', err)
       setLoadError('Failed to load projects. Please try again.')
     } finally {
       setLoading(false)
@@ -82,8 +84,9 @@ export default function Projects() {
     try {
       const data = await getProjects()
       setProjects(data)
-    } catch {
-      // Project loading failed - empty state will be shown
+    } catch (err) {
+      // Intentionally silent for retry - empty state will be shown with error banner above
+      logger.debug('Project reload failed (user already notified):', err)
     } finally {
       setLoading(false)
     }
@@ -103,7 +106,8 @@ export default function Projects() {
     try {
       await deleteProject(projectId)
       setProjects(prev => prev.filter(p => p.id !== projectId))
-    } catch {
+    } catch (err) {
+      logger.error('Failed to delete project:', err)
       alert('Failed to delete project. Please try again.')
     }
     setMenuOpen(null)

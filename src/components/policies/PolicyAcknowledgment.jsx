@@ -166,7 +166,7 @@ export default function PolicyAcknowledgment({ policy, isOpen, onClose, onAcknow
       const existing = await checkAcknowledgmentStatus(policy.id, policy.version, user.uid)
       setAlreadyAcknowledged(existing)
     } catch {
-      // No existing acknowledgment
+      // Intentionally silent - no existing acknowledgment means user can proceed to acknowledge
     } finally {
       setChecking(false)
     }
