@@ -49,7 +49,7 @@ import {
   Settings
 } from 'lucide-react'
 import PolicyEditor from './policies/PolicyEditor'
-import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies, updatePoliciesWithContent } from '../lib/firestorePolicies'
+import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies, seedMissingPolicies, updatePoliciesWithContent } from '../lib/firestorePolicies'
 import { usePolicyPermissions, usePendingAcknowledgments } from '../hooks/usePolicyPermissions'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -1705,6 +1705,33 @@ export default function PolicyLibrary() {
     }
   }
 
+  // Handle seed missing policies (add new ones without clearing existing)
+  const handleSeedMissingPolicies = async () => {
+    if (!user) return
+
+    setSeeding(true)
+    setError('')
+
+    try {
+      const result = await seedMissingPolicies(user.uid)
+      if (result.success) {
+        await loadPolicies()
+        if (result.added > 0) {
+          alert(`Successfully added ${result.added} new policies. ${result.skipped} policies already existed.`)
+        } else {
+          alert('All policies are already in the database. No new policies to add.')
+        }
+      } else {
+        setError(result.error || 'Failed to add missing policies')
+      }
+    } catch (err) {
+      setError('Failed to add missing policies. Please try again.')
+      console.error('Error seeding missing policies:', err)
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   // Handle populate policy content from extracted PDFs
   const handlePopulateContent = async () => {
     if (!user) return
@@ -1846,6 +1873,28 @@ export default function PolicyLibrary() {
               >
                 <Bell className="w-4 h-4" />
                 <span className="font-medium">{pendingCount} Pending</span>
+              </button>
+            )}
+
+            {/* Add Missing Policies Button - adds new policies without clearing existing */}
+            {policies.length > 0 && (
+              <button
+                onClick={handleSeedMissingPolicies}
+                disabled={seeding}
+                className="btn-secondary flex items-center gap-2"
+                title="Add new policies that don't exist yet"
+              >
+                {seeding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Add Missing Policies
+                  </>
+                )}
               </button>
             )}
 

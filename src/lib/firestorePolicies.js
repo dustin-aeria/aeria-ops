@@ -1966,6 +1966,183 @@ export async function seedSamplePolicies(userId) {
         { id: '5', title: 'Access and Confidentiality', content: '', order: 5 },
         { id: '6', title: 'Disposal Procedures', content: '', order: 6 }
       ]
+    },
+    // HSE Policies 1046-1053 (Additional)
+    {
+      number: '1046',
+      title: 'Joint Health and Safety Committee Requirements',
+      category: 'hse',
+      description: 'Compliance with regulatory requirements for joint health and safety committees (JHSCs) and health and safety representatives (HSRs), ensuring worker involvement in safety decisions.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['JHSC', 'HSR', 'committee', 'worker representation', 'safety committee', 'consultation'],
+      relatedPolicies: ['1022', '1042'],
+      regulatoryRefs: ['OH&S Act', 'OHS Code Part 13', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Committee Establishment', content: '', order: 1 },
+        { id: '2', title: 'Member Selection', content: '', order: 2 },
+        { id: '3', title: 'Training Requirements', content: '', order: 3 },
+        { id: '4', title: 'Meeting Schedule', content: '', order: 4 },
+        { id: '5', title: 'Issue Resolution', content: '', order: 5 },
+        { id: '6', title: 'Documentation and Reporting', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1047',
+      title: 'Hazard Assessment Policy',
+      category: 'hse',
+      description: 'Procedures for identifying and controlling workplace hazards through systematic assessment, promoting a proactive safety culture and addressing risks before incidents occur.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['hazard', 'assessment', 'HIRA', 'risk identification', 'workplace safety', 'FLRA', 'FLHA'],
+      relatedPolicies: ['1023', '1048'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.5', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Initial Assessment', content: '', order: 1 },
+        { id: '2', title: 'Routine Monitoring', content: '', order: 2 },
+        { id: '3', title: 'Risk Evaluation', content: '', order: 3 },
+        { id: '4', title: 'Control Implementation', content: '', order: 4 },
+        { id: '5', title: 'Documentation Requirements', content: '', order: 5 },
+        { id: '6', title: 'Review and Updates', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1048',
+      title: 'Hazard Control Policy',
+      category: 'hse',
+      description: 'Procedures for controlling identified hazards using the hierarchy of controls to minimize risks and ensure a safe workplace environment.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['hazard control', 'hierarchy of controls', 'elimination', 'substitution', 'engineering controls', 'residual risk'],
+      relatedPolicies: ['1023', '1047'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.6', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Hazard Identification', content: '', order: 1 },
+        { id: '2', title: 'Control Selection', content: '', order: 2 },
+        { id: '3', title: 'Implementation Process', content: '', order: 3 },
+        { id: '4', title: 'Monitoring Effectiveness', content: '', order: 4 },
+        { id: '5', title: 'Adjustment and Review', content: '', order: 5 },
+        { id: '6', title: 'Documentation', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1049',
+      title: 'Workplace Inspection Policy',
+      category: 'hse',
+      description: 'Systematic inspection process to identify and address workplace hazards, ensuring safety and compliance through regular oversight and corrective actions.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['inspection', 'workplace', 'safety check', 'corrective action', 'compliance', 'monitoring'],
+      relatedPolicies: ['1023', '1047', '1050'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation Section 3.5', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Inspection Scheduling', content: '', order: 1 },
+        { id: '2', title: 'Conducting Inspections', content: '', order: 2 },
+        { id: '3', title: 'Hazard Reporting', content: '', order: 3 },
+        { id: '4', title: 'Corrective Actions', content: '', order: 4 },
+        { id: '5', title: 'Record Keeping', content: '', order: 5 },
+        { id: '6', title: 'Follow-up Procedures', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1050',
+      title: 'Preventative Maintenance Policy',
+      category: 'hse',
+      description: 'Systematic approach to equipment maintenance ensuring reliability, safety, and compliance through scheduled inspections and proactive repairs.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['maintenance', 'preventative', 'equipment', 'reliability', 'inspection', 'schedule'],
+      relatedPolicies: ['1009', '1049'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Maintenance Planning', content: '', order: 1 },
+        { id: '2', title: 'Scheduling Requirements', content: '', order: 2 },
+        { id: '3', title: 'Inspection Protocols', content: '', order: 3 },
+        { id: '4', title: 'Documentation Standards', content: '', order: 4 },
+        { id: '5', title: 'Equipment Tracking', content: '', order: 5 },
+        { id: '6', title: 'Compliance Verification', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1051',
+      title: 'HSE Emergency Response Policy',
+      category: 'hse',
+      description: 'Comprehensive emergency response procedures ensuring worker safety and effective incident management through preparation, communication, and coordinated response.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['emergency', 'response', 'evacuation', 'drill', 'crisis', 'first aid'],
+      relatedPolicies: ['1006', '1026', '1027'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation', 'Fire Code', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Emergency Planning', content: '', order: 1 },
+        { id: '2', title: 'Response Procedures', content: '', order: 2 },
+        { id: '3', title: 'Communication Protocols', content: '', order: 3 },
+        { id: '4', title: 'Training and Drills', content: '', order: 4 },
+        { id: '5', title: 'Equipment Requirements', content: '', order: 5 },
+        { id: '6', title: 'Post-Emergency Review', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1052',
+      title: 'HSE Investigations Policy',
+      category: 'hse',
+      description: 'Procedures for investigating workplace incidents, near-misses, and hazards to identify root causes and implement effective corrective actions.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['investigation', 'incident', 'root cause', 'corrective action', 'near miss', 'analysis'],
+      relatedPolicies: ['1007', '1040', '1041'],
+      regulatoryRefs: ['OH&S Act', 'OHS Regulation', 'COR Requirements'],
+      sections: [
+        { id: '1', title: 'Investigation Triggers', content: '', order: 1 },
+        { id: '2', title: 'Investigation Process', content: '', order: 2 },
+        { id: '3', title: 'Root Cause Analysis', content: '', order: 3 },
+        { id: '4', title: 'Corrective Actions', content: '', order: 4 },
+        { id: '5', title: 'Reporting Requirements', content: '', order: 5 },
+        { id: '6', title: 'Follow-up and Closure', content: '', order: 6 }
+      ]
+    },
+    {
+      number: '1053',
+      title: 'HSE Systems Overview and Audit Policy',
+      category: 'hse',
+      description: 'Framework for HSE management system auditing, ensuring continuous improvement and compliance through systematic evaluation and verification.',
+      version: '1.0',
+      effectiveDate: '2025-09-18',
+      reviewDate: '2026-02-01',
+      owner: 'HSE Manager',
+      status: 'active',
+      keywords: ['audit', 'HSE system', 'compliance', 'evaluation', 'continuous improvement', 'verification'],
+      relatedPolicies: ['1022', '1041', '1045'],
+      regulatoryRefs: ['OH&S Act', 'COR Requirements', 'ISO 45001'],
+      sections: [
+        { id: '1', title: 'HSE System Overview', content: '', order: 1 },
+        { id: '2', title: 'Audit Planning', content: '', order: 2 },
+        { id: '3', title: 'Audit Execution', content: '', order: 3 },
+        { id: '4', title: 'Findings and Reporting', content: '', order: 4 },
+        { id: '5', title: 'Corrective Action Tracking', content: '', order: 5 },
+        { id: '6', title: 'Management Review', content: '', order: 6 }
+      ]
     }
   ]
 
@@ -2014,5 +2191,72 @@ export async function seedSamplePolicies(userId) {
   } catch (error) {
     console.error('Error seeding policies:', error)
     return { success: false, count: 0, error: error.message }
+  }
+}
+
+/**
+ * Seed only missing policies (policies that don't exist in Firestore)
+ * @param {string} userId - User ID performing the seed
+ * @returns {Promise<{success: boolean, added: number, skipped: number, error?: string}>}
+ */
+export async function seedMissingPolicies(userId) {
+  try {
+    // Get all existing policy numbers
+    const existingSnapshot = await getDocs(policiesRef)
+    const existingNumbers = new Set(
+      existingSnapshot.docs.map(doc => doc.data().number)
+    )
+
+    // Filter to only policies that don't exist
+    const missingPolicies = SAMPLE_POLICIES.filter(
+      policy => !existingNumbers.has(policy.number)
+    )
+
+    if (missingPolicies.length === 0) {
+      return { success: true, added: 0, skipped: SAMPLE_POLICIES.length }
+    }
+
+    const batch = writeBatch(db)
+    const now = serverTimestamp()
+
+    missingPolicies.forEach((policy) => {
+      const docRef = doc(policiesRef)
+      batch.set(docRef, {
+        ...policy,
+        type: 'default',
+        isTemplate: false,
+        isLatest: true,
+        content: '',
+        attachments: [],
+        permissions: {
+          viewRoles: [],
+          editRoles: ['admin', 'manager'],
+          approveRoles: ['admin']
+        },
+        acknowledgmentSettings: {
+          required: false,
+          requiredRoles: [],
+          deadline: null,
+          reacknowledgmentPeriod: null,
+          signatureRequired: false,
+          signatureType: 'checkbox'
+        },
+        createdAt: now,
+        createdBy: userId,
+        updatedAt: now,
+        updatedBy: userId
+      })
+    })
+
+    await batch.commit()
+
+    return {
+      success: true,
+      added: missingPolicies.length,
+      skipped: SAMPLE_POLICIES.length - missingPolicies.length
+    }
+  } catch (error) {
+    console.error('Error seeding missing policies:', error)
+    return { success: false, added: 0, skipped: 0, error: error.message }
   }
 }
