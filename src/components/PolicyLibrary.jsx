@@ -1231,6 +1231,12 @@ function PolicyCard({ policy, view, onClick }) {
   const category = CATEGORIES[policy?.category] || CATEGORIES.rpas
   const statusInfo = getStatusInfo(policy)
 
+  const handleClick = (e) => {
+    e.preventDefault()
+    console.log('PolicyCard clicked:', policy?.id)
+    onClick?.()
+  }
+
   const categoryColors = {
     blue: 'bg-blue-100 text-blue-700 border-blue-200',
     purple: 'bg-purple-100 text-purple-700 border-purple-200',
@@ -1242,10 +1248,10 @@ function PolicyCard({ policy, view, onClick }) {
   if (view === 'list') {
     return (
       <div
-        onClick={onClick}
+        onClick={handleClick}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+        onKeyDown={(e) => e.key === 'Enter' && handleClick(e)}
         className="w-full p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all text-left flex items-center gap-4 cursor-pointer"
       >
         <div className="w-16 text-center flex-shrink-0">
@@ -1273,10 +1279,10 @@ function PolicyCard({ policy, view, onClick }) {
   // Grid view
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+      onKeyDown={(e) => e.key === 'Enter' && handleClick(e)}
       className="p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left h-full flex flex-col cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3">
@@ -1479,7 +1485,12 @@ export default function PolicyLibrary() {
 
   // Handle policy click - navigate to detail page
   const handlePolicyClick = (policy) => {
-    navigate(`/policies/${policy.id}`)
+    console.log('Policy clicked:', policy?.id, policy?.title)
+    if (policy?.id) {
+      navigate(`/policies/${policy.id}`)
+    } else {
+      console.error('Policy missing ID:', policy)
+    }
   }
 
   // Handle policy saved (create/update)
