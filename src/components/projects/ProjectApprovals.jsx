@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { 
+import PropTypes from 'prop-types'
+import {
   FileCheck,
   UserCheck,
   Clock,
@@ -631,4 +632,12 @@ export default function ProjectApprovals({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectApprovals.propTypes = {
+  project: PropTypes.shape({
+    approvals: PropTypes.object,
+    crew: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

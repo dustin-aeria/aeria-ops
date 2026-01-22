@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { getOperators, getAircraft, getClients } from '../../lib/firestore'
 import { useBranding } from '../BrandingSettings'
 import * as formDefs from '../../lib/formDefinitions'
@@ -2238,4 +2239,13 @@ export default function ProjectForms({ project, onUpdate }) {
       )}
     </div>
   )
+}
+
+ProjectForms.propTypes = {
+  project: PropTypes.shape({
+    forms: PropTypes.array,
+    crew: PropTypes.array,
+    aircraft: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

@@ -7,6 +7,7 @@
 // ============================================
 
 import { useState, useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
 import {
   MapPin, X, Loader2, Search, Target, Route, CheckCircle2
 } from 'lucide-react'
@@ -994,6 +995,30 @@ export function MapEditorModal({
       </div>
     </div>
   )
+}
+
+MapPreview.propTypes = {
+  siteLocation: PropTypes.object,
+  boundary: PropTypes.array,
+  launchPoint: PropTypes.object,
+  recoveryPoint: PropTypes.object,
+  musterPoints: PropTypes.array,
+  evacuationRoutes: PropTypes.array,
+  height: PropTypes.number,
+  onOpenEditor: PropTypes.func
+}
+
+MapEditorModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  siteLocation: PropTypes.object,
+  boundary: PropTypes.array,
+  launchPoint: PropTypes.object,
+  recoveryPoint: PropTypes.object,
+  musterPoints: PropTypes.array,
+  evacuationRoutes: PropTypes.array,
+  mode: PropTypes.oneOf(['site', 'flight', 'emergency'])
 }
 
 export default { MapPreview, MapEditorModal }

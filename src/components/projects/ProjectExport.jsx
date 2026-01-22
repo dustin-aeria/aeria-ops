@@ -5,7 +5,8 @@
 // ============================================
 
 import { useState, useMemo } from 'react'
-import { 
+import PropTypes from 'prop-types'
+import {
   Download,
   FileText,
   FileCheck,
@@ -1020,4 +1021,9 @@ export default function ProjectExport({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectExport.propTypes = {
+  project: PropTypes.object.isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

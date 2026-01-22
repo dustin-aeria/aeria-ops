@@ -25,6 +25,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import {
   Shield,
   MapPin,
@@ -1672,4 +1673,14 @@ export default function ProjectSORA({ project, onUpdate, onNavigateToSection }) 
       />
     </div>
   )
+}
+
+ProjectSORA.propTypes = {
+  project: PropTypes.shape({
+    sora: PropTypes.object,
+    sites: PropTypes.array,
+    aircraft: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onNavigateToSection: PropTypes.func
 }

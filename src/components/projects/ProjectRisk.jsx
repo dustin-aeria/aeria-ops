@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { 
-  AlertTriangle, 
+import PropTypes from 'prop-types'
+import {
+  AlertTriangle,
   Plus,
   Trash2,
   Shield,
@@ -1595,4 +1596,12 @@ export default function ProjectRisk({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectRisk.propTypes = {
+  project: PropTypes.shape({
+    riskAssessment: PropTypes.object,
+    sites: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

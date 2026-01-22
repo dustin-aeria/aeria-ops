@@ -16,6 +16,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import {
   Plane,
   MapPin,
@@ -1444,4 +1445,14 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
       />
     </div>
   )
+}
+
+ProjectFlightPlan.propTypes = {
+  project: PropTypes.shape({
+    flightPlan: PropTypes.object,
+    sites: PropTypes.array,
+    aircraft: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onNavigateToSection: PropTypes.func
 }

@@ -16,6 +16,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react'
+import PropTypes from 'prop-types'
 import {
   Target,
   MapPin,
@@ -1927,11 +1928,19 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
       {/* Help Text */}
       {!completeness.isComplete && (
         <InfoBanner type="info">
-          Complete all six analysis sections to generate your regulatory pathway, crew requirements, 
-          aircraft specifications, and equipment checklist. This analysis helps ensure you have the 
+          Complete all six analysis sections to generate your regulatory pathway, crew requirements,
+          aircraft specifications, and equipment checklist. This analysis helps ensure you have the
           right resources and documentation before beginning detailed flight planning.
         </InfoBanner>
       )}
     </div>
   )
+}
+
+ProjectNeedsAnalysis.propTypes = {
+  project: PropTypes.shape({
+    needsAnalysis: PropTypes.object
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onNavigate: PropTypes.func
 }

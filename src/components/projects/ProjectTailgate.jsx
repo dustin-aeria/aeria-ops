@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { 
+import PropTypes from 'prop-types'
+import {
   FileText,
   RefreshCw,
   Copy,
@@ -971,4 +972,13 @@ export default function ProjectTailgate({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectTailgate.propTypes = {
+  project: PropTypes.shape({
+    tailgate: PropTypes.object,
+    crew: PropTypes.array,
+    sites: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import {
   ShieldAlert,
   MapPin,
@@ -1123,4 +1124,12 @@ export default function ProjectEmergency({ project, onUpdate }) {
       </CollapsibleSection>
     </div>
   )
+}
+
+ProjectEmergency.propTypes = {
+  project: PropTypes.shape({
+    emergencyPlan: PropTypes.object,
+    sites: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

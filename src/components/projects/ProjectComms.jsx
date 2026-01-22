@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { 
-  Radio, 
+import PropTypes from 'prop-types'
+import {
+  Radio,
   Plus,
   Trash2,
   Phone,
@@ -570,4 +571,11 @@ export default function ProjectComms({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectComms.propTypes = {
+  project: PropTypes.shape({
+    communications: PropTypes.object
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

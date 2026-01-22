@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import {
   MapPin,
   Plus,
@@ -1210,4 +1211,12 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectSiteSurvey.propTypes = {
+  project: PropTypes.shape({
+    siteSurvey: PropTypes.object,
+    sites: PropTypes.array
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

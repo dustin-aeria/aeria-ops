@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { 
-  AlertTriangle, 
+import PropTypes from 'prop-types'
+import {
+  AlertTriangle,
   Plus,
   Trash2,
   Shield,
@@ -739,4 +740,11 @@ export default function ProjectHSERisk({ project, onUpdate }) {
       </div>
     </div>
   )
+}
+
+ProjectHSERisk.propTypes = {
+  project: PropTypes.shape({
+    hseRisk: PropTypes.object
+  }).isRequired,
+  onUpdate: PropTypes.func.isRequired
 }

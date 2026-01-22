@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import {
   BarChart3,
   TrendingUp,
@@ -427,4 +428,9 @@ export default function FormAnalytics({ forms = [], formTemplates = {} }) {
       )}
     </div>
   )
+}
+
+FormAnalytics.propTypes = {
+  forms: PropTypes.array,
+  formTemplates: PropTypes.object
 }
