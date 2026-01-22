@@ -27,10 +27,10 @@ import {
 } from 'lucide-react'
 
 // Import metrics functions from various modules
-import { calculateCORMetrics as calculateJHSCMetrics } from '../lib/firestoreJHSC'
+import { calculateJHSCMetrics } from '../lib/firestoreJHSC'
 import { getTrainingSummary, getCORTrainingMetrics } from '../lib/firestoreTraining'
 import { calculateCORInspectionMetrics, getInspectionSummary } from '../lib/firestoreInspections'
-import { getCORReadinessScore, getAuditSummary, getCertificates } from '../lib/firestoreCORAudit'
+import { calculateCORReadiness, getAuditCycleStatus, getCertificates, getAudits } from '../lib/firestoreCORAudit'
 
 // COR Elements mapping
 const COR_ELEMENTS = [
@@ -84,25 +84,30 @@ export default function CORDashboard() {
         calculateJHSCMetrics(operatorId).catch(() => null),
         getCORTrainingMetrics(operatorId).catch(() => null),
         calculateCORInspectionMetrics(operatorId).catch(() => null),
-        getCORReadinessScore(operatorId).catch(() => ({ score: 0, breakdown: {} })),
+        calculateCORReadiness(operatorId).catch(() => ({ score: 0, elementScores: {} })),
         getCertificates(operatorId).catch(() => []),
-        getAuditSummary(operatorId).catch(() => null),
+        getAudits(operatorId, { status: 'scheduled' }).catch(() => []),
         getTrainingSummary(operatorId).catch(() => null),
         getInspectionSummary(operatorId).catch(() => null)
       ])
 
-      // Calculate element scores
+      // Calculate element scores from various sources
       const scores = {
-        1: corReadiness?.breakdown?.element1 || 0, // Management Leadership
-        2: corReadiness?.breakdown?.element2 || 0, // Safe Work Procedures
+        1: corReadiness?.elementScores?.element1 || 0, // Management Leadership
+        2: corReadiness?.elementScores?.element2 || 0, // Safe Work Procedures
         3: trainingMetrics?.totalScore || 0, // Training
-        4: corReadiness?.breakdown?.element4 || 0, // Hazard ID
+        4: corReadiness?.elementScores?.element4 || 0, // Hazard ID
         5: inspectionMetrics?.totalScore || 0, // Inspections
-        6: corReadiness?.breakdown?.element6 || 0, // Accident Investigation
-        7: corReadiness?.breakdown?.element7 || 0, // Program Admin
+        6: corReadiness?.elementScores?.element6 || 0, // Accident Investigation
+        7: corReadiness?.elementScores?.element7 || 0, // Program Admin
         8: jhscMetrics?.totalScore || 0 // JHSC
       }
       setElementScores(scores)
+
+      // Build audit summary from scheduled audits
+      const scheduledAudits = audits || []
+      const nextScheduled = scheduledAudits.length > 0 ? scheduledAudits[0] : null
+      setAuditSummary({ nextScheduled, totalScheduled: scheduledAudits.length })
 
       // Calculate overall readiness
       const elementValues = Object.values(scores)
@@ -129,7 +134,6 @@ export default function CORDashboard() {
 
       setRecommendations(allRecs.slice(0, 10)) // Top 10 recommendations
       setCertificates(certs)
-      setAuditSummary(audits)
       setTrainingSummary(training)
       setInspectionSummary(inspections)
     } catch (err) {
