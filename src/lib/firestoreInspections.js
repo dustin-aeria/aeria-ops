@@ -112,11 +112,13 @@ export const getInspectionTemplates = async (operatorId) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionTemplatesRef,
-      where('operatorId', '==', operatorId),
-      orderBy('name')
+      where('operatorId', '==', operatorId)
     )
     const snapshot = await getDocs(q)
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Sort client-side to avoid needing composite index
+    templates.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    return templates
   }, 'Failed to fetch inspection templates')
 }
 
@@ -227,14 +229,20 @@ const generateInspectionNumber = async (operatorId) => {
  */
 export const getInspections = async (operatorId, filters = {}) => {
   return withErrorHandling(async () => {
-    let q = query(
+    const q = query(
       inspectionsRef,
-      where('operatorId', '==', operatorId),
-      orderBy('scheduledDate', 'desc')
+      where('operatorId', '==', operatorId)
     )
 
     const snapshot = await getDocs(q)
     let inspections = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+    // Sort client-side to avoid needing composite index
+    inspections.sort((a, b) => {
+      const dateA = a.scheduledDate?.toDate?.() || new Date(a.scheduledDate || 0)
+      const dateB = b.scheduledDate?.toDate?.() || new Date(b.scheduledDate || 0)
+      return dateB - dateA
+    })
 
     // Apply client-side filters
     if (filters.status) {
@@ -276,17 +284,23 @@ export const getUpcomingInspections = async (operatorId, days = 7) => {
     const q = query(
       inspectionsRef,
       where('operatorId', '==', operatorId),
-      where('status', '==', 'scheduled'),
-      orderBy('scheduledDate')
+      where('status', '==', 'scheduled')
     )
 
     const snapshot = await getDocs(q)
-    return snapshot.docs
+    const results = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(i => {
         const date = i.scheduledDate?.toDate?.() || new Date(i.scheduledDate)
         return date >= now && date <= futureDate
       })
+    // Sort client-side
+    results.sort((a, b) => {
+      const dateA = a.scheduledDate?.toDate?.() || new Date(a.scheduledDate || 0)
+      const dateB = b.scheduledDate?.toDate?.() || new Date(b.scheduledDate || 0)
+      return dateA - dateB
+    })
+    return results
   }, 'Failed to fetch upcoming inspections')
 }
 
@@ -300,17 +314,23 @@ export const getOverdueInspections = async (operatorId) => {
     const q = query(
       inspectionsRef,
       where('operatorId', '==', operatorId),
-      where('status', '==', 'scheduled'),
-      orderBy('scheduledDate')
+      where('status', '==', 'scheduled')
     )
 
     const snapshot = await getDocs(q)
-    return snapshot.docs
+    const results = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(i => {
         const date = i.scheduledDate?.toDate?.() || new Date(i.scheduledDate)
         return date < now
       })
+    // Sort client-side
+    results.sort((a, b) => {
+      const dateA = a.scheduledDate?.toDate?.() || new Date(a.scheduledDate || 0)
+      const dateB = b.scheduledDate?.toDate?.() || new Date(b.scheduledDate || 0)
+      return dateA - dateB
+    })
+    return results
   }, 'Failed to fetch overdue inspections')
 }
 
@@ -492,14 +512,20 @@ const generateFindingNumber = async (operatorId, inspectionNumber) => {
  */
 export const getFindings = async (operatorId, filters = {}) => {
   return withErrorHandling(async () => {
-    let q = query(
+    const q = query(
       inspectionFindingsRef,
-      where('operatorId', '==', operatorId),
-      orderBy('createdAt', 'desc')
+      where('operatorId', '==', operatorId)
     )
 
     const snapshot = await getDocs(q)
     let findings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+    // Sort client-side to avoid needing composite index
+    findings.sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0)
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0)
+      return dateB - dateA
+    })
 
     // Apply client-side filters
     if (filters.status) {
@@ -535,11 +561,17 @@ export const getOpenFindings = async (operatorId) => {
     const q = query(
       inspectionFindingsRef,
       where('operatorId', '==', operatorId),
-      where('status', 'in', ['open', 'in_progress']),
-      orderBy('createdAt', 'desc')
+      where('status', 'in', ['open', 'in_progress'])
     )
     const snapshot = await getDocs(q)
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const findings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Sort client-side to avoid needing composite index
+    findings.sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0)
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0)
+      return dateB - dateA
+    })
+    return findings
   }, 'Failed to fetch open findings')
 }
 
@@ -550,11 +582,17 @@ export const getFindingsByInspection = async (inspectionId) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionFindingsRef,
-      where('inspectionId', '==', inspectionId),
-      orderBy('createdAt')
+      where('inspectionId', '==', inspectionId)
     )
     const snapshot = await getDocs(q)
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const findings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Sort client-side
+    findings.sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0)
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0)
+      return dateA - dateB
+    })
+    return findings
   }, 'Failed to fetch findings for inspection')
 }
 
@@ -699,8 +737,7 @@ export const getInspectionScheduleCompliance = async (operatorId, templateId, lo
       inspectionsRef,
       where('operatorId', '==', operatorId),
       where('templateId', '==', templateId),
-      where('status', '==', 'completed'),
-      orderBy('completedDate', 'desc')
+      where('status', '==', 'completed')
     )
 
     const snapshot = await getDocs(q)
@@ -710,6 +747,12 @@ export const getInspectionScheduleCompliance = async (operatorId, templateId, lo
         const date = i.completedDate?.toDate?.() || new Date(i.completedDate)
         return date >= lookbackDate
       })
+    // Sort client-side
+    completedInspections.sort((a, b) => {
+      const dateA = a.completedDate?.toDate?.() || new Date(a.completedDate || 0)
+      const dateB = b.completedDate?.toDate?.() || new Date(b.completedDate || 0)
+      return dateB - dateA
+    })
 
     // Calculate expected number of inspections
     const expectedCount = Math.floor(lookbackDays / frequency.days)
