@@ -25,7 +25,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
-  { name: 'Policies', href: '/policies', icon: BookOpen },
+  { name: 'Policies & Procedures', href: '/policies', icon: BookOpen },
 ]
 
 const safetyNavigation = [
