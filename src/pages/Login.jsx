@@ -144,7 +144,6 @@ export default function Login() {
                 required
                 autoComplete="email"
                 autoFocus
-                aria-describedby="email-hint"
               />
             </div>
 
@@ -172,7 +171,6 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  aria-describedby="password-hint"
                 />
                 <button
                   type="button"

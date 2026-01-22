@@ -72,8 +72,7 @@ function QuestionCard({
   isExpanded,
   onToggle,
   onEdit,
-  onDelete,
-  onUseAnswer
+  onDelete
 }) {
   const [copied, setCopied] = useState(false)
 
