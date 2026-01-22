@@ -49,6 +49,11 @@ const Capas = lazy(() => import('./pages/Capas'))
 const CapaNew = lazy(() => import('./pages/CapaNew'))
 const CapaDetail = lazy(() => import('./pages/CapaDetail'))
 const FormalHazardLibrary = lazy(() => import('./pages/FormalHazardLibrary'))
+const JHSC = lazy(() => import('./pages/JHSC'))
+const Training = lazy(() => import('./pages/Training'))
+const CORAuditManagement = lazy(() => import('./pages/CORAuditManagement'))
+const Inspections = lazy(() => import('./pages/Inspections'))
+const CORDashboard = lazy(() => import('./pages/CORDashboard'))
 
 // Compliance Module Pages - lazy-loaded
 const ComplianceHub = lazy(() => import('./pages/ComplianceHub'))
@@ -143,6 +148,11 @@ function App() {
           <Route path="capas/:id" element={<Suspense fallback={<PageLoader />}><CapaDetail /></Suspense>} />
           <Route path="capas/:id/edit" element={<Suspense fallback={<PageLoader />}><CapaNew /></Suspense>} />
           <Route path="hazards" element={<Suspense fallback={<PageLoader />}><FormalHazardLibrary /></Suspense>} />
+          <Route path="jhsc" element={<Suspense fallback={<PageLoader />}><JHSC /></Suspense>} />
+          <Route path="training" element={<Suspense fallback={<PageLoader />}><Training /></Suspense>} />
+          <Route path="cor-audit" element={<Suspense fallback={<PageLoader />}><CORAuditManagement /></Suspense>} />
+          <Route path="inspections" element={<Suspense fallback={<PageLoader />}><Inspections /></Suspense>} />
+          <Route path="cor-dashboard" element={<Suspense fallback={<PageLoader />}><CORDashboard /></Suspense>} />
 
           {/* Compliance Module Routes - lazy-loaded */}
           <Route path="compliance" element={<Suspense fallback={<PageLoader />}><ComplianceHub /></Suspense>} />

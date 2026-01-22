@@ -19,7 +19,11 @@ import {
   Target,
   BookOpen,
   ClipboardCheck,
-  FileCheck
+  FileCheck,
+  UserCheck,
+  GraduationCap,
+  Award,
+  ListChecks
 } from 'lucide-react'
 
 const navigation = [
@@ -31,9 +35,14 @@ const navigation = [
 
 const safetyNavigation = [
   { name: 'Safety Dashboard', href: '/safety', icon: Shield },
+  { name: 'COR Program', href: '/cor-dashboard', icon: Award },
   { name: 'Hazard Library', href: '/hazards', icon: FileCheck },
   { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
   { name: 'CAPAs', href: '/capas', icon: Target },
+  { name: 'JHSC', href: '/jhsc', icon: UserCheck },
+  { name: 'Training', href: '/training', icon: GraduationCap },
+  { name: 'Inspections', href: '/inspections', icon: ListChecks },
+  { name: 'COR Audit', href: '/cor-audit', icon: ClipboardCheck },
 ]
 
 const complianceNavigation = [
