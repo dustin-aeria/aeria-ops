@@ -34,6 +34,8 @@ import FHACard from '../components/fha/FHACard'
 import FHAFilters from '../components/fha/FHAFilters'
 import { RiskMatrixDisplay, RiskSummaryStats } from '../components/fha/FHARiskMatrix'
 import FHAEditorModal from '../components/fha/FHAEditorModal'
+import FHAUploadModal from '../components/fha/FHAUploadModal'
+import FHADetailModal from '../components/fha/FHADetailModal'
 import {
   getFormalHazards,
   getUserFormalHazards,
@@ -191,8 +193,6 @@ export default function FormalHazardLibrary() {
 
   const handleView = (fha) => {
     setViewingFHA(fha)
-    // For now, just open edit modal in view mode
-    setEditingFHA(fha)
   }
 
   const handleEdit = (fha) => {
@@ -494,21 +494,26 @@ export default function FormalHazardLibrary() {
         }}
       />
 
-      {/* Upload Modal Placeholder - to be implemented in Batch 4 */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-            <h2 className="text-xl font-semibold mb-4">Upload FHA</h2>
-            <p className="text-gray-500 mb-4">FHA Upload will be implemented in Batch 4</p>
-            <button
-              onClick={() => setShowUploadModal(false)}
-              className="px-4 py-2 bg-gray-100 rounded-lg"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* FHA Upload Modal */}
+      <FHAUploadModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={(uploadedFHAs) => {
+          setFhas(prev => [...uploadedFHAs, ...prev])
+          loadFHAs() // Refresh to get updated stats
+        }}
+      />
+
+      {/* FHA Detail Modal - View */}
+      <FHADetailModal
+        isOpen={!!viewingFHA}
+        onClose={() => setViewingFHA(null)}
+        fha={viewingFHA}
+        onEdit={(fha) => {
+          setViewingFHA(null)
+          setEditingFHA(fha)
+        }}
+      />
     </div>
   )
 }
