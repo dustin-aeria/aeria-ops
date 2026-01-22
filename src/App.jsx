@@ -48,6 +48,7 @@ const IncidentDetail = lazy(() => import('./pages/IncidentDetail'))
 const Capas = lazy(() => import('./pages/Capas'))
 const CapaNew = lazy(() => import('./pages/CapaNew'))
 const CapaDetail = lazy(() => import('./pages/CapaDetail'))
+const FormalHazardLibrary = lazy(() => import('./pages/FormalHazardLibrary'))
 
 // Compliance Module Pages - lazy-loaded
 const ComplianceHub = lazy(() => import('./pages/ComplianceHub'))
@@ -141,6 +142,7 @@ function App() {
           <Route path="capas/new" element={<Suspense fallback={<PageLoader />}><CapaNew /></Suspense>} />
           <Route path="capas/:id" element={<Suspense fallback={<PageLoader />}><CapaDetail /></Suspense>} />
           <Route path="capas/:id/edit" element={<Suspense fallback={<PageLoader />}><CapaNew /></Suspense>} />
+          <Route path="hazards" element={<Suspense fallback={<PageLoader />}><FormalHazardLibrary /></Suspense>} />
 
           {/* Compliance Module Routes - lazy-loaded */}
           <Route path="compliance" element={<Suspense fallback={<PageLoader />}><ComplianceHub /></Suspense>} />

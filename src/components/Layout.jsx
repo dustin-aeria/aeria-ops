@@ -31,6 +31,7 @@ const navigation = [
 
 const safetyNavigation = [
   { name: 'Safety Dashboard', href: '/safety', icon: Shield },
+  { name: 'Hazard Library', href: '/hazards', icon: FileCheck },
   { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
   { name: 'CAPAs', href: '/capas', icon: Target },
 ]
