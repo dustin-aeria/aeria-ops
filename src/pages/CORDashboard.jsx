@@ -45,8 +45,8 @@ const COR_ELEMENTS = [
 ]
 
 export default function CORDashboard() {
-  const { userProfile } = useAuth()
-  const operatorId = userProfile?.operatorId
+  const { user, userProfile } = useAuth()
+  const operatorId = userProfile?.operatorId || user?.uid
 
   // Data state
   const [loading, setLoading] = useState(true)
@@ -62,6 +62,8 @@ export default function CORDashboard() {
   useEffect(() => {
     if (operatorId) {
       loadDashboardData()
+    } else {
+      setLoading(false)
     }
   }, [operatorId])
 
@@ -170,6 +172,18 @@ export default function CORDashboard() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <RefreshCw className="w-8 h-8 text-aeria-blue animate-spin" />
+      </div>
+    )
+  }
+
+  if (!operatorId) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center text-gray-500">
+          <Award className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p>No operator profile found.</p>
+          <p className="text-sm mt-2">Please contact your administrator.</p>
+        </div>
       </div>
     )
   }

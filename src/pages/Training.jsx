@@ -66,7 +66,10 @@ export default function Training() {
 
   // Load data
   const loadData = useCallback(async () => {
-    if (!operatorId) return
+    if (!operatorId) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     try {
@@ -163,6 +166,18 @@ export default function Training() {
     return (
       <div className="flex items-center justify-center h-64">
         <RefreshCw className="w-8 h-8 animate-spin text-aeria-blue" />
+      </div>
+    )
+  }
+
+  if (!operatorId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-gray-500">
+          <GraduationCap className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p>No operator profile found.</p>
+          <p className="text-sm mt-2">Please contact your administrator.</p>
+        </div>
       </div>
     )
   }
