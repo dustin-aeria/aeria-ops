@@ -39,6 +39,7 @@ import {
 } from '../lib/firestore'
 import EquipmentModal from '../components/EquipmentModal'
 import EquipmentSpecSheet, { generateEquipmentSpecPDF } from '../components/EquipmentSpecSheet'
+import EquipmentImport from '../components/EquipmentImport'
 import { useBranding } from '../components/BrandingSettings'
 import { logger } from '../lib/logger'
 
@@ -96,6 +97,7 @@ export default function Equipment() {
   const [editingEquipment, setEditingEquipment] = useState(null)
   const [menuOpen, setMenuOpen] = useState(null)
   const [selectedSpec, setSelectedSpec] = useState(null)
+  const [showImport, setShowImport] = useState(false)
 
   const { branding } = useBranding()
 
@@ -193,13 +195,22 @@ export default function Equipment() {
           <h1 className="text-2xl font-bold text-gray-900">Equipment Library</h1>
           <p className="text-gray-600 mt-1">Manage all operational equipment and inventory</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary inline-flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Equipment
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="btn-secondary inline-flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Import
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Equipment
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -562,6 +573,13 @@ export default function Equipment() {
         isOpen={!!selectedSpec}
         onClose={() => setSelectedSpec(null)}
         branding={branding}
+      />
+
+      {/* Equipment Import Modal */}
+      <EquipmentImport
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        onImportComplete={loadEquipment}
       />
     </div>
   )
