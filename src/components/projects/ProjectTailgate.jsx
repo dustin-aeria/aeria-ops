@@ -655,11 +655,12 @@ export default function ProjectTailgate({ project, onUpdate }) {
           <div className="mt-4 space-y-4">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="label flex items-center gap-2">
-                  <Thermometer className="w-4 h-4" />
+                <label htmlFor="weather-temperature" className="label flex items-center gap-2">
+                  <Thermometer className="w-4 h-4" aria-hidden="true" />
                   Temperature
                 </label>
                 <input
+                  id="weather-temperature"
                   type="text"
                   value={currentDay.weatherData?.temperature || ''}
                   onChange={(e) => updateWeatherData('temperature', e.target.value)}
@@ -668,11 +669,12 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label flex items-center gap-2">
-                  <Wind className="w-4 h-4" />
+                <label htmlFor="weather-wind-speed" className="label flex items-center gap-2">
+                  <Wind className="w-4 h-4" aria-hidden="true" />
                   Wind Speed
                 </label>
                 <input
+                  id="weather-wind-speed"
                   type="text"
                   value={currentDay.weatherData?.windSpeed || ''}
                   onChange={(e) => updateWeatherData('windSpeed', e.target.value)}
@@ -681,8 +683,9 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Wind Direction</label>
+                <label htmlFor="weather-wind-direction" className="label">Wind Direction</label>
                 <input
+                  id="weather-wind-direction"
                   type="text"
                   value={currentDay.weatherData?.windDirection || ''}
                   onChange={(e) => updateWeatherData('windDirection', e.target.value)}
@@ -691,11 +694,12 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
+                <label htmlFor="weather-visibility" className="label flex items-center gap-2">
+                  <Eye className="w-4 h-4" aria-hidden="true" />
                   Visibility
                 </label>
                 <input
+                  id="weather-visibility"
                   type="text"
                   value={currentDay.weatherData?.visibility || ''}
                   onChange={(e) => updateWeatherData('visibility', e.target.value)}
@@ -704,8 +708,9 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Ceiling</label>
+                <label htmlFor="weather-ceiling" className="label">Ceiling</label>
                 <input
+                  id="weather-ceiling"
                   type="text"
                   value={currentDay.weatherData?.ceiling || ''}
                   onChange={(e) => updateWeatherData('ceiling', e.target.value)}
@@ -714,8 +719,9 @@ export default function ProjectTailgate({ project, onUpdate }) {
                 />
               </div>
               <div>
-                <label className="label">Conditions</label>
+                <label htmlFor="weather-conditions" className="label">Conditions</label>
                 <input
+                  id="weather-conditions"
                   type="text"
                   value={currentDay.weatherData?.conditions || ''}
                   onChange={(e) => updateWeatherData('conditions', e.target.value)}
@@ -725,8 +731,9 @@ export default function ProjectTailgate({ project, onUpdate }) {
               </div>
             </div>
             <div>
-              <label className="label">Weather Notes / METAR</label>
+              <label htmlFor="weather-notes" className="label">Weather Notes / METAR</label>
               <textarea
+                id="weather-notes"
                 value={currentDay.weatherBriefing || ''}
                 onChange={(e) => updateCurrentDay({ weatherBriefing: e.target.value })}
                 className="input min-h-[60px]"

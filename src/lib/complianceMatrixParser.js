@@ -376,8 +376,9 @@ function parseGenericText(lines) {
   const requirements = []
 
   // Split on sentences that look like requirements
+  // Using replace + split instead of lookbehind for browser compatibility
   const text = lines.join(' ')
-  const sentences = text.split(/(?<=[.?])\s+/)
+  const sentences = text.replace(/([.?])\s+/g, '$1\n').split('\n').filter(s => s.trim())
 
   for (const sentence of sentences) {
     if (sentence.length > 30 && looksLikeRequirement(sentence)) {

@@ -911,7 +911,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
                   onChange={(e) => mapControls.setShowAllSites(e.target.checked)}
                   className="w-4 h-4 text-aeria-navy rounded focus:ring-aeria-navy"
                 />
-                <Eye className="w-4 h-4 text-gray-500" />
+                <Eye className="w-4 h-4 text-gray-500" aria-hidden="true" />
                 <span className="text-sm text-gray-700">All Sites</span>
               </label>
             )}
