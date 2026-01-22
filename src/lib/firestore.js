@@ -825,6 +825,241 @@ export async function deleteAircraft(id) {
 }
 
 // ============================================
+// EQUIPMENT
+// ============================================
+
+const equipmentRef = collection(db, 'equipment')
+
+/**
+ * Equipment categories with their specific fields
+ */
+export const EQUIPMENT_CATEGORIES = {
+  positioning: {
+    label: 'Positioning',
+    description: 'RTK base stations, GNSS receivers',
+    fields: ['accuracy', 'frequencyBands', 'rtkCapable', 'constellations']
+  },
+  ground_control: {
+    label: 'Ground Control',
+    description: 'GCPs, calibration targets',
+    fields: ['targetType', 'targetSize', 'material', 'pattern']
+  },
+  payloads: {
+    label: 'Payloads',
+    description: 'Cameras, LiDAR, multispectral sensors',
+    fields: ['sensorType', 'resolution', 'weight', 'compatibleAircraft', 'fov']
+  },
+  safety: {
+    label: 'Safety',
+    description: 'Fire extinguishers, first aid kits, PPE, signage',
+    fields: ['expiryDate', 'certificationRequired', 'certificationDate', 'capacity']
+  },
+  vehicles: {
+    label: 'Vehicles',
+    description: 'Trucks, trailers, ATVs',
+    fields: ['vin', 'licensePlate', 'capacity', 'fuelType', 'insuranceExpiry']
+  },
+  power: {
+    label: 'Power',
+    description: 'Generators, battery chargers, power stations',
+    fields: ['outputWattage', 'batteryCapacity', 'inputVoltage', 'outputVoltage', 'portTypes']
+  },
+  communication: {
+    label: 'Communication',
+    description: 'Radios, satellite communicators',
+    fields: ['frequencyRange', 'channels', 'range', 'encryption', 'batteryLife']
+  },
+  support: {
+    label: 'Support',
+    description: 'Tripods, cases, tools, cables',
+    fields: ['dimensions', 'weight', 'compatibility', 'material']
+  }
+}
+
+/**
+ * Equipment status options
+ */
+export const EQUIPMENT_STATUS = {
+  available: { label: 'Available', color: 'bg-green-100 text-green-700' },
+  assigned: { label: 'Assigned', color: 'bg-blue-100 text-blue-700' },
+  maintenance: { label: 'In Maintenance', color: 'bg-amber-100 text-amber-700' },
+  retired: { label: 'Retired', color: 'bg-gray-100 text-gray-500' }
+}
+
+/**
+ * Get all equipment with optional filters
+ * @param {Object} filters - Optional filters (category, status, search)
+ * @returns {Promise<Array>}
+ */
+export async function getEquipment(filters = {}) {
+  let q = query(equipmentRef, orderBy('name', 'asc'))
+
+  if (filters.category) {
+    q = query(equipmentRef, where('category', '==', filters.category), orderBy('name', 'asc'))
+  }
+
+  if (filters.status) {
+    q = query(equipmentRef, where('status', '==', filters.status), orderBy('name', 'asc'))
+  }
+
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
+ * Get a single equipment item by ID
+ * @param {string} id - Equipment ID
+ * @returns {Promise<Object>}
+ */
+export async function getEquipmentById(id) {
+  const docRef = doc(db, 'equipment', id)
+  const snapshot = await getDoc(docRef)
+
+  if (!snapshot.exists()) {
+    throw new Error('Equipment not found')
+  }
+
+  return { id: snapshot.id, ...snapshot.data() }
+}
+
+/**
+ * Create new equipment
+ * @param {Object} data - Equipment data
+ * @returns {Promise<Object>}
+ */
+export async function createEquipment(data) {
+  const equipment = {
+    name: data.name || '',
+    category: data.category || 'support',
+    subcategory: data.subcategory || '',
+    manufacturer: data.manufacturer || '',
+    model: data.model || '',
+    serialNumber: data.serialNumber || '',
+    purchaseDate: data.purchaseDate || null,
+    purchasePrice: data.purchasePrice || null,
+    status: data.status || 'available',
+    condition: data.condition || '',
+    notes: data.notes || '',
+    imageUrl: data.imageUrl || null,
+
+    // Maintenance tracking
+    maintenanceInterval: data.maintenanceInterval || null, // days
+    lastServiceDate: data.lastServiceDate || null,
+    nextServiceDate: data.nextServiceDate || null,
+
+    // Category-specific custom fields
+    customFields: data.customFields || {},
+
+    // Tracking
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }
+
+  const docRef = await addDoc(equipmentRef, equipment)
+  return { id: docRef.id, ...equipment }
+}
+
+/**
+ * Update existing equipment
+ * @param {string} id - Equipment ID
+ * @param {Object} data - Updated equipment data
+ */
+export async function updateEquipment(id, data) {
+  const docRef = doc(db, 'equipment', id)
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: serverTimestamp()
+  })
+}
+
+/**
+ * Delete equipment
+ * @param {string} id - Equipment ID
+ */
+export async function deleteEquipment(id) {
+  const docRef = doc(db, 'equipment', id)
+  await deleteDoc(docRef)
+}
+
+/**
+ * Get equipment assigned to a project
+ * @param {string} projectId - Project ID
+ * @returns {Promise<Array>}
+ */
+export async function getProjectEquipmentAssignments(projectId) {
+  const assignmentsRef = collection(db, 'projects', projectId, 'assignedEquipment')
+  const q = query(assignmentsRef, orderBy('assignedAt', 'desc'))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
+ * Assign equipment to a project
+ * @param {string} projectId - Project ID
+ * @param {string} equipmentId - Equipment ID
+ * @param {string} assignedBy - User ID who made the assignment
+ * @param {string} notes - Optional notes
+ * @returns {Promise<Object>}
+ */
+export async function assignEquipmentToProject(projectId, equipmentId, assignedBy, notes = '') {
+  const assignmentsRef = collection(db, 'projects', projectId, 'assignedEquipment')
+
+  const assignment = {
+    equipmentId,
+    assignedAt: serverTimestamp(),
+    assignedBy,
+    returnedAt: null,
+    notes
+  }
+
+  const docRef = await addDoc(assignmentsRef, assignment)
+
+  // Update equipment status to assigned
+  await updateEquipment(equipmentId, { status: 'assigned' })
+
+  return { id: docRef.id, ...assignment }
+}
+
+/**
+ * Remove equipment assignment from project
+ * @param {string} projectId - Project ID
+ * @param {string} assignmentId - Assignment document ID
+ * @param {string} equipmentId - Equipment ID to update status
+ */
+export async function removeEquipmentFromProject(projectId, assignmentId, equipmentId) {
+  const assignmentRef = doc(db, 'projects', projectId, 'assignedEquipment', assignmentId)
+
+  // Mark as returned instead of deleting (for history)
+  await updateDoc(assignmentRef, {
+    returnedAt: serverTimestamp()
+  })
+
+  // Update equipment status back to available
+  await updateEquipment(equipmentId, { status: 'available' })
+}
+
+/**
+ * Get equipment due for maintenance
+ * @param {number} daysAhead - Number of days to look ahead (default 30)
+ * @returns {Promise<Array>}
+ */
+export async function getEquipmentDueForMaintenance(daysAhead = 30) {
+  const futureDate = new Date()
+  futureDate.setDate(futureDate.getDate() + daysAhead)
+  const futureDateStr = futureDate.toISOString().split('T')[0]
+
+  const q = query(
+    equipmentRef,
+    where('nextServiceDate', '<=', futureDateStr),
+    where('status', '!=', 'retired'),
+    orderBy('nextServiceDate', 'asc')
+  )
+
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+// ============================================
 // FORMS
 // ============================================
 

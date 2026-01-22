@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Users,
   Plane,
+  Package,
   Building2,
   Settings,
   LogOut,
@@ -41,6 +42,7 @@ const complianceNavigation = [
 const libraries = [
   { name: 'Operators', href: '/operators', icon: Users },
   { name: 'Fleet', href: '/aircraft', icon: Plane },
+  { name: 'Equipment', href: '/equipment', icon: Package },
   { name: 'Clients', href: '/clients', icon: Building2 },
 ]
 

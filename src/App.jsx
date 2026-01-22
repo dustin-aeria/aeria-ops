@@ -31,6 +31,7 @@ import ProjectView from './pages/ProjectView'
 const Forms = lazy(() => import('./pages/Forms'))
 const Operators = lazy(() => import('./pages/Operators'))
 const Aircraft = lazy(() => import('./pages/Aircraft'))
+const Equipment = lazy(() => import('./pages/Equipment'))
 const Clients = lazy(() => import('./pages/Clients'))
 const Settings = lazy(() => import('./pages/Settings'))
 const PolicyProcedureLibrary = lazy(() => import('./pages/PolicyProcedureLibrary'))
@@ -126,6 +127,7 @@ function App() {
           <Route path="admin/master-policies" element={<Suspense fallback={<PageLoader />}><MasterPolicyAdmin /></Suspense>} />
           <Route path="operators" element={<Suspense fallback={<PageLoader />}><Operators /></Suspense>} />
           <Route path="aircraft" element={<Suspense fallback={<PageLoader />}><Aircraft /></Suspense>} />
+          <Route path="equipment" element={<Suspense fallback={<PageLoader />}><Equipment /></Suspense>} />
           <Route path="clients" element={<Suspense fallback={<PageLoader />}><Clients /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
 
