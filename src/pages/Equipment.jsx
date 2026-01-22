@@ -37,6 +37,7 @@ import {
   EQUIPMENT_CATEGORIES,
   EQUIPMENT_STATUS
 } from '../lib/firestore'
+import EquipmentModal from '../components/EquipmentModal'
 import { logger } from '../lib/logger'
 
 // ============================================
@@ -511,33 +512,12 @@ export default function Equipment() {
         </div>
       )}
 
-      {/* Equipment Modal - Placeholder for Batch 2 */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div
-            className="fixed inset-0 bg-black/50"
-            onClick={handleModalClose}
-          />
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {editingEquipment ? 'Edit Equipment' : 'Add Equipment'}
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Equipment modal will be implemented in Batch 2.
-              </p>
-              <div className="flex justify-end">
-                <button
-                  onClick={handleModalClose}
-                  className="btn-secondary"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Equipment Modal */}
+      <EquipmentModal
+        isOpen={showModal}
+        onClose={handleModalClose}
+        equipment={editingEquipment}
+      />
     </div>
   )
 }
