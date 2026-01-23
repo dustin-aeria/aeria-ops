@@ -235,7 +235,8 @@ export default function ProjectApprovals({ project, onUpdate }) {
     if (crew.length === 0) issues.push('No crew assigned')
     if (!crew.some(c => c.role === 'PIC')) issues.push('No PIC assigned')
     
-    if (project.sections?.flightPlan) {
+    // Flight Plan is always on - check for max altitude
+    if (project.sections?.flightPlan !== false) {
       if (!project.flightPlan?.maxAltitude) issues.push('Max altitude not set')
     }
     

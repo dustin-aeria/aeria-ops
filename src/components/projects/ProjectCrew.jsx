@@ -134,7 +134,7 @@ export default function ProjectCrew({ project, onUpdate }) {
   // Check for required roles
   const hasPIC = project.crew?.some(c => c.role === 'PIC')
   const hasFirstAid = project.crew?.some(c => c.role === 'First Aid')
-  const flightPlanEnabled = project.sections?.flightPlan
+  const flightPlanEnabled = project.sections?.flightPlan !== false // Default to true
 
   return (
     <div className="space-y-6">

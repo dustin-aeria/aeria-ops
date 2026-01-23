@@ -413,13 +413,83 @@ function SiteAircraftSelector({
 // WEATHER MINIMUMS FORM
 // ============================================
 
-function WeatherMinimumsForm({ weatherMinimums = {}, onChange }) {
+// Default weather minimums based on operation type
+const WEATHER_DEFAULTS = {
+  vlos: {
+    minVisibility: 3,    // 3 SM (CARs 901.40)
+    minCeiling: 500,     // 500 ft AGL
+    maxWind: 10,         // 10 m/s (36 km/h)
+    maxGust: 12,         // 12 m/s (43 km/h)
+    precipitation: false,
+    notes: 'Standard VLOS minimums per CARs Part IX'
+  },
+  advanced: {
+    minVisibility: 3,
+    minCeiling: 500,
+    maxWind: 8,
+    maxGust: 10,
+    precipitation: false,
+    notes: 'Advanced operation minimums - operations near people'
+  },
+  bvlos: {
+    minVisibility: 5,
+    minCeiling: 1000,
+    maxWind: 8,
+    maxGust: 10,
+    precipitation: false,
+    notes: 'BVLOS minimums - enhanced weather requirements'
+  }
+}
+
+function WeatherMinimumsForm({ weatherMinimums = {}, onChange, operationType }) {
   const handleChange = (field, value) => {
     onChange({ ...weatherMinimums, [field]: value })
   }
-  
+
+  const loadDefaults = (type) => {
+    const defaults = WEATHER_DEFAULTS[type] || WEATHER_DEFAULTS.vlos
+    onChange({ ...weatherMinimums, ...defaults })
+  }
+
+  const hasValues = weatherMinimums.minVisibility || weatherMinimums.minCeiling ||
+                    weatherMinimums.maxWind || weatherMinimums.maxGust
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      {/* Default buttons */}
+      {!hasValues && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-800 mb-2">
+            <Info className="w-4 h-4 inline mr-1" />
+            Load weather minimums based on operation type:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => loadDefaults('vlos')}
+              className="px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+            >
+              VLOS Defaults
+            </button>
+            <button
+              type="button"
+              onClick={() => loadDefaults('advanced')}
+              className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors"
+            >
+              Advanced Defaults
+            </button>
+            <button
+              type="button"
+              onClick={() => loadDefaults('bvlos')}
+              className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+            >
+              BVLOS Defaults
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
           <Eye className="w-4 h-4" />
@@ -504,15 +574,16 @@ function WeatherMinimumsForm({ weatherMinimums = {}, onChange }) {
         </label>
       </div>
       
-      <div className="col-span-2 md:col-span-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Weather Notes</label>
-        <textarea
-          value={weatherMinimums.notes || ''}
-          onChange={(e) => handleChange('notes', e.target.value)}
-          placeholder="Additional weather considerations..."
-          rows={2}
-          className="input"
-        />
+        <div className="col-span-2 md:col-span-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Weather Notes</label>
+          <textarea
+            value={weatherMinimums.notes || ''}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            placeholder="Additional weather considerations..."
+            rows={2}
+            className="input"
+          />
+        </div>
       </div>
     </div>
   )
@@ -1064,7 +1135,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Planned Flight Duration
+              Total Flight Time
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -1072,32 +1143,33 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
                 step="5"
                 min="0"
                 value={siteFlightPlan.flightDuration || ''}
-                onChange={(e) => updateSiteFlightPlan({ 
-                  flightDuration: e.target.value ? Number(e.target.value) : null 
+                onChange={(e) => updateSiteFlightPlan({
+                  flightDuration: e.target.value ? Number(e.target.value) : null
                 })}
-                placeholder="20"
+                placeholder="60"
                 className="input w-24"
               />
               <span className="text-sm text-gray-500">min</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Per flight / battery</p>
+            <p className="text-xs text-gray-500 mt-1">Total planned flight time at this site</p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Total Flights Planned
+              Estimated Battery Changes
             </label>
             <input
               type="number"
               step="1"
-              min="1"
-              value={siteFlightPlan.totalFlights || ''}
-              onChange={(e) => updateSiteFlightPlan({ 
-                totalFlights: e.target.value ? Number(e.target.value) : null 
+              min="0"
+              value={siteFlightPlan.batteryChanges || ''}
+              onChange={(e) => updateSiteFlightPlan({
+                batteryChanges: e.target.value ? Number(e.target.value) : null
               })}
-              placeholder="1"
+              placeholder="2"
               className="input w-24"
             />
+            <p className="text-xs text-gray-500 mt-1">Number of battery swaps expected</p>
           </div>
         </div>
       </CollapsibleSection>
@@ -1247,11 +1319,55 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
             </div>
           </div>
           
+          {/* Flight Geography Calculator */}
+          {(siteFlightPlan.maxAltitudeAGL || siteFlightPlan.contingencyBuffer || siteFlightPlan.groundRiskBuffer) && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Volume Calculator
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-xs text-green-600 font-medium mb-1">Operational Volume</p>
+                  <p className="text-green-900">
+                    Flight Geography + {siteFlightPlan.maxAltitudeAGL || 120}m AGL
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">Where normal flight occurs</p>
+                </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Contingency Volume</p>
+                  <p className="text-amber-900">
+                    OV + {siteFlightPlan.contingencyBuffer || 50}m buffer
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    ~{Math.round((siteFlightPlan.contingencyBuffer || 50) / ((siteFlightPlan.maxSpeed || 15) / 3.6))}s at max speed
+                  </p>
+                </div>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600 font-medium mb-1">Ground Risk Buffer</p>
+                  <p className="text-red-900">
+                    CV + {siteFlightPlan.groundRiskBuffer || siteFlightPlan.maxAltitudeAGL || 120}m
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {siteFlightPlan.groundRiskBufferMethod === 'altitude' ? '1:1 altitude ratio' :
+                     siteFlightPlan.groundRiskBufferMethod === 'ballistic' ? 'Ballistic calculation' :
+                     siteFlightPlan.groundRiskBufferMethod === 'containment' ? 'With containment' : 'Fixed distance'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Total horizontal extent from flight path: {
+                  (siteFlightPlan.contingencyBuffer || 50) + (siteFlightPlan.groundRiskBuffer || siteFlightPlan.maxAltitudeAGL || 120)
+                }m per side
+              </p>
+            </div>
+          )}
+
           {/* Map reference note */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
               <Info className="w-4 h-4 inline mr-1" />
-              Draw your flight geography on the map using the <strong>Drawing Tools</strong>. 
+              Draw your flight geography on the map using the <strong>Drawing Tools</strong>.
               The flight volume, contingency volume, and ground risk buffer will be visualized.
             </p>
           </div>
@@ -1264,13 +1380,37 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
         icon={Info}
         defaultOpen={false}
       >
-        <textarea
-          value={siteFlightPlan.notes || ''}
-          onChange={(e) => updateSiteFlightPlan({ notes: e.target.value })}
-          placeholder="Additional notes about flight operations at this site..."
-          rows={4}
-          className="input"
-        />
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">
+            Use bullet points (•) or dashes (-) at the start of lines for formatted lists.
+            Press Enter to add new points.
+          </p>
+          <textarea
+            value={siteFlightPlan.notes || ''}
+            onChange={(e) => updateSiteFlightPlan({ notes: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const textarea = e.target
+                const { selectionStart, value } = textarea
+                const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+                const currentLine = value.substring(lineStart, selectionStart)
+                const bulletMatch = currentLine.match(/^(\s*[-•]\s*)/)
+                if (bulletMatch) {
+                  e.preventDefault()
+                  const bullet = bulletMatch[1]
+                  const newValue = value.substring(0, selectionStart) + '\n' + bullet + value.substring(selectionStart)
+                  updateSiteFlightPlan({ notes: newValue })
+                  setTimeout(() => {
+                    textarea.selectionStart = textarea.selectionEnd = selectionStart + 1 + bullet.length
+                  }, 0)
+                }
+              }
+            }}
+            placeholder="• Key operational considerations&#10;• Site-specific requirements&#10;• Weather watch items&#10;• Client requirements"
+            rows={6}
+            className="input font-mono text-sm"
+          />
+        </div>
       </CollapsibleSection>
       
       {/* Airspace - Site Level */}

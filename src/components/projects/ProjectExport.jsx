@@ -315,8 +315,8 @@ export default function ProjectExport({ project, onUpdate }) {
       lines.push('')
     }
 
-    // Flight Plan
-    if (selectedSections.flightPlan && project.sections?.flightPlan) {
+    // Flight Plan (always on)
+    if (selectedSections.flightPlan && project.sections?.flightPlan !== false) {
       lines.push('-'.repeat(40))
       lines.push('FLIGHT PLAN')
       lines.push('-'.repeat(40))
@@ -328,8 +328,8 @@ export default function ProjectExport({ project, onUpdate }) {
       lines.push('')
     }
 
-    // Site Survey
-    if (selectedSections.siteSurvey && project.sections?.siteSurvey) {
+    // Site Survey (always on)
+    if (selectedSections.siteSurvey && project.sections?.siteSurvey !== false) {
       lines.push('-'.repeat(40))
       lines.push('SITE SURVEY')
       lines.push('-'.repeat(40))

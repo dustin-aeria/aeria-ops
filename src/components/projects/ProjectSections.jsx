@@ -24,19 +24,19 @@ const sections = [
   },
   {
     id: 'siteSurvey',
-    key: 'siteSurvey',
+    key: null, // Always on
     label: 'Site Survey',
     description: 'Document the operational area including location, airspace, obstacles, and access routes.',
     icon: MapPin,
-    alwaysOn: false
+    alwaysOn: true
   },
   {
     id: 'flightPlan',
-    key: 'flightPlan',
+    key: null, // Always on
     label: 'Flight Plan',
     description: 'Define aircraft, flight profile, weather minimums, and contingency procedures.',
     icon: Plane,
-    alwaysOn: false
+    alwaysOn: true
   },
   {
     id: 'riskAssessment',
@@ -175,14 +175,13 @@ export default function ProjectSections({ project, onUpdate }) {
           <div>
             <h3 className="font-medium text-blue-900">About Risk Assessment</h3>
             <p className="text-sm text-blue-700 mt-1">
-              When the <strong>Flight Plan</strong> section is enabled, the Risk Assessment will include 
-              the full <strong>SORA 2.5</strong> (Specific Operations Risk Assessment) wizard. 
-              This calculates Ground Risk Class, Air Risk Class, and determines the required SAIL level 
-              and Operational Safety Objectives.
+              The Risk Assessment includes the full <strong>SORA 2.5</strong> (Specific Operations Risk Assessment) wizard,
+              which calculates Ground Risk Class, Air Risk Class, and determines the required SAIL level
+              and Operational Safety Objectives based on your Site Survey and Flight Plan data.
             </p>
             <p className="text-sm text-blue-700 mt-2">
-              The <strong>HSE Hazard Assessment</strong> is always included regardless of whether 
-              Flight Plan is enabled.
+              The <strong>HSE Hazard Assessment</strong> is also included for comprehensive
+              operational hazard identification and mitigation.
             </p>
           </div>
         </div>

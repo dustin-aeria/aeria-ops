@@ -663,8 +663,8 @@ export default function ProjectRisk({ project, onUpdate }) {
   const [expandedOsos, setExpandedOsos] = useState({})
   const [showExportModal, setShowExportModal] = useState(false)
 
-  const flightPlanEnabled = project.sections?.flightPlan
-  const siteSurveyEnabled = project.sections?.siteSurvey
+  const flightPlanEnabled = project.sections?.flightPlan !== false // Default to true
+  const siteSurveyEnabled = project.sections?.siteSurvey !== false // Default to true
 
   // ============================================
   // Get data from Site Survey and Flight Plan
