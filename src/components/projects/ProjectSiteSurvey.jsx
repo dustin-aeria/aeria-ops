@@ -307,52 +307,6 @@ function SiteManagementPanel({
 }
 
 // ============================================
-// POPULATION CATEGORY SELECTOR
-// ============================================
-
-function PopulationCategorySelector({ value, onChange, label = "Population Category" }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-        {Object.entries(POPULATION_CATEGORIES).map(([id, category]) => {
-          const isSelected = value === id
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onChange(id)}
-              className={`p-3 rounded-lg border text-left transition-all ${
-                isSelected
-                  ? 'border-aeria-navy bg-aeria-navy/5 ring-2 ring-aeria-navy/20'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                <span className={`text-sm font-medium ${isSelected ? 'text-aeria-navy' : 'text-gray-900'}`}>
-                  {category.label}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">{category.density}</p>
-            </button>
-          )
-        })}
-      </div>
-      {value && (
-        <p className="mt-2 text-sm text-gray-600">
-          <Info className="w-4 h-4 inline mr-1" />
-          {POPULATION_CATEGORIES[value]?.description}
-        </p>
-      )}
-    </div>
-  )
-}
-
-// ============================================
 // OBSTACLES LIST WITH MANUAL ADD
 // ============================================
 
@@ -925,51 +879,25 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             </div>
           </CollapsibleSection>
           
-          {/* Population Assessment */}
-          <CollapsibleSection 
-            title="Population Assessment" 
-            icon={Users}
-            badge={surveyData.population?.category ? POPULATION_CATEGORIES[surveyData.population.category]?.label : null}
-          >
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-amber-800">
-                <AlertTriangle className="w-4 h-4 inline mr-1" />
-                <strong>SORA Requirement:</strong> Population category determines initial Ground Risk Class (iGRC). 
-                Select the category that best represents the operations area.
-              </p>
+          {/* Population Assessment - Moved to Flight Plan */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Users className="w-5 h-5" />
+              <span className="font-medium">Population Assessment</span>
             </div>
-            
-            <PopulationCategorySelector
-              value={surveyData.population?.category}
-              onChange={(category) => updateNestedSurveyData('population', { 
-                category,
-                assessmentDate: new Date().toISOString()
-              })}
-              label="Operations Area Population"
-            />
-            
-            <div className="mt-4">
-              <PopulationCategorySelector
-                value={surveyData.population?.adjacentCategory}
-                onChange={(category) => updateNestedSurveyData('population', { adjacentCategory: category })}
-                label="Adjacent Area Population (for containment assessment)"
-              />
-            </div>
-            
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Population Assessment Justification
-              </label>
-              <textarea
-                value={surveyData.population?.justification || ''}
-                onChange={(e) => updateNestedSurveyData('population', { justification: e.target.value })}
-                placeholder="Describe the basis for your population category selection..."
-                rows={3}
-                className="input"
-              />
-            </div>
-          </CollapsibleSection>
-          
+            <p className="text-sm text-blue-700 mt-1">
+              Population assessment is now configured in the <strong>Flight Plan</strong> section, as it's directly related to SORA ground risk class determination.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigateToSection?.('flightPlan')}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              Go to Flight Plan
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
           {/* Airspace - Moved to Flight Plan */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2 text-blue-800">

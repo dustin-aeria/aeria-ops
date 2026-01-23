@@ -43,7 +43,8 @@ import {
   Copy,
   ExternalLink,
   Radio,
-  Navigation2
+  Navigation2,
+  Users
 } from 'lucide-react'
 import UnifiedProjectMap from '../map/UnifiedProjectMap'
 import { LayerToggles, DrawingTools } from '../map/MapControls'
@@ -51,7 +52,8 @@ import { useMapData } from '../../hooks/useMapData'
 import {
   createDefaultSite,
   getSiteStats,
-  calculatePolygonArea
+  calculatePolygonArea,
+  POPULATION_CATEGORIES
 } from '../../lib/mapDataStructures'
 import NoAircraftAssignedModal from '../NoAircraftAssignedModal'
 
@@ -117,6 +119,52 @@ const AIRSPACE_CLASSES = [
   { value: 'F', label: 'Class F', description: 'Special use airspace', controlled: false },
   { value: 'G', label: 'Class G', description: 'Uncontrolled airspace', controlled: false }
 ]
+
+// ============================================
+// POPULATION CATEGORY SELECTOR COMPONENT
+// ============================================
+
+function PopulationCategorySelector({ value, onChange, label = "Population Category" }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        {Object.entries(POPULATION_CATEGORIES).map(([id, category]) => {
+          const isSelected = value === id
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onChange(id)}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                isSelected
+                  ? 'border-aeria-navy bg-aeria-navy/5 ring-2 ring-aeria-navy/20'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className={`text-sm font-medium ${isSelected ? 'text-aeria-navy' : 'text-gray-900'}`}>
+                  {category.label}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">{category.density}</p>
+            </button>
+          )
+        })}
+      </div>
+      {value && (
+        <p className="mt-2 text-sm text-gray-600">
+          <Info className="w-4 h-4 inline mr-1" />
+          {POPULATION_CATEGORIES[value]?.description}
+        </p>
+      )}
+    </div>
+  )
+}
 
 // ============================================
 // COLLAPSIBLE SECTION COMPONENT
@@ -1376,7 +1424,66 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
           </div>
         </div>
       </CollapsibleSection>
-      
+
+      {/* Population Assessment - Site Level */}
+      <CollapsibleSection
+        title="Population Assessment"
+        icon={Users}
+        badge={siteFlightPlan.population?.category ? POPULATION_CATEGORIES[siteFlightPlan.population.category]?.label : null}
+        status={siteFlightPlan.population?.category ? 'complete' : 'missing'}
+      >
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 inline mr-1" />
+              <strong>SORA Requirement:</strong> Population category determines initial Ground Risk Class (iGRC).
+              Select the category that best represents the operations area.
+            </p>
+          </div>
+
+          <PopulationCategorySelector
+            value={siteFlightPlan.population?.category}
+            onChange={(category) => updateSiteFlightPlan({
+              population: {
+                ...siteFlightPlan.population,
+                category,
+                assessmentDate: new Date().toISOString()
+              }
+            })}
+            label="Operations Area Population"
+          />
+
+          <PopulationCategorySelector
+            value={siteFlightPlan.population?.adjacentCategory}
+            onChange={(category) => updateSiteFlightPlan({
+              population: {
+                ...siteFlightPlan.population,
+                adjacentCategory: category
+              }
+            })}
+            label="Adjacent Area Population (for containment assessment)"
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Population Assessment Justification
+            </label>
+            <textarea
+              value={siteFlightPlan.population?.justification || ''}
+              onChange={(e) => updateSiteFlightPlan({
+                population: {
+                  ...siteFlightPlan.population,
+                  justification: e.target.value
+                }
+              })}
+              placeholder="Describe the basis for your population category selection..."
+              rows={3}
+              className="input"
+            />
+          </div>
+        </div>
+      </CollapsibleSection>
+
       {/* Aircraft - Site Level */}
       <CollapsibleSection
         title="Site Aircraft"
@@ -1393,7 +1500,7 @@ export default function ProjectFlightPlan({ project, onUpdate, onNavigateToSecti
           onAddAircraft={() => setShowAircraftModal(true)}
         />
       </CollapsibleSection>
-      
+
       {/* Weather Minimums - Project Level */}
       <CollapsibleSection
         title="Weather Minimums"
