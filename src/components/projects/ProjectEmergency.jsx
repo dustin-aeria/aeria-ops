@@ -208,35 +208,38 @@ function MusterPointsList({ musterPoints = [], onUpdate, onRemove, onSetPrimary 
   
   return (
     <div className="space-y-2">
-      {musterPoints.map((point, index) => (
-        <div 
-          key={point.id}
-          className={`flex items-start gap-3 p-3 rounded-lg border ${
-            point.isPrimary 
-              ? 'bg-red-50 border-red-200' 
-              : 'bg-gray-50 border-gray-200'
-          }`}
-        >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-            point.isPrimary ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-600'
-          }`}>
-            <Flag className="w-4 h-4" />
-          </div>
-          
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={point.name || `Muster Point ${index + 1}`}
-                onChange={(e) => onUpdate(point.id, { name: e.target.value })}
-                className="input text-sm py-1 flex-1"
-                placeholder="Muster point name"
-              />
-              {point.isPrimary && (
-                <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-                  Primary
-                </span>
-              )}
+      {musterPoints.map((point, index) => {
+        const identifier = `M${index + 1}`
+        return (
+          <div
+            key={point.id}
+            className={`flex items-start gap-3 p-3 rounded-lg border ${
+              point.isPrimary
+                ? 'bg-red-50 border-red-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}
+          >
+            <div className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
+              point.isPrimary ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              <span className="text-xs font-bold">{identifier}</span>
+              <Flag className="w-3 h-3" />
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={point.name || `Muster Point ${index + 1}`}
+                  onChange={(e) => onUpdate(point.id, { name: e.target.value })}
+                  className="input text-sm py-1 flex-1"
+                  placeholder="Muster point name"
+                />
+                {point.isPrimary && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
+                    Primary
+                  </span>
+                )}
             </div>
             
             <textarea
@@ -275,7 +278,8 @@ function MusterPointsList({ musterPoints = [], onUpdate, onRemove, onSetPrimary 
             </button>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -299,20 +303,23 @@ function EvacuationRoutesList({ routes = [], onUpdate, onRemove, onSetPrimary })
   
   return (
     <div className="space-y-2">
-      {routes.map((route, index) => (
-        <div 
-          key={route.id}
-          className={`flex items-start gap-3 p-3 rounded-lg border ${
-            route.isPrimary 
-              ? 'bg-red-50 border-red-200' 
-              : 'bg-gray-50 border-gray-200'
-          }`}
-        >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-            route.isPrimary ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-600'
-          }`}>
-            <Route className="w-4 h-4" />
-          </div>
+      {routes.map((route, index) => {
+        const identifier = `E${index + 1}`
+        return (
+          <div
+            key={route.id}
+            className={`flex items-start gap-3 p-3 rounded-lg border ${
+              route.isPrimary
+                ? 'bg-red-50 border-red-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}
+          >
+            <div className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
+              route.isPrimary ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              <span className="text-xs font-bold">{identifier}</span>
+              <Route className="w-3 h-3" />
+            </div>
           
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center gap-2">
@@ -360,7 +367,8 @@ function EvacuationRoutesList({ routes = [], onUpdate, onRemove, onSetPrimary })
             </button>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -656,33 +664,36 @@ function EmergencyProceduresList({ procedures = [], onChange }) {
                 <p className="text-sm text-gray-500">
                   Define step-by-step response procedure:
                 </p>
-                {(procedure.steps || ['']).map((step, stepIndex) => (
-                  <div key={stepIndex} className="flex items-start gap-2">
-                    <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center flex-shrink-0 mt-1">
-                      {stepIndex + 1}
-                    </span>
-                    <textarea
-                      value={step}
-                      onChange={(e) => {
-                        const newSteps = [...procedure.steps]
-                        newSteps[stepIndex] = e.target.value
-                        handleUpdateSteps(procedure.id, newSteps)
-                      }}
-                      placeholder={`Step ${stepIndex + 1}`}
-                      rows={2}
-                      className="input text-sm flex-1"
-                    />
-                    <button
-                      onClick={() => {
-                        const newSteps = procedure.steps.filter((_, i) => i !== stepIndex)
-                        handleUpdateSteps(procedure.id, newSteps.length ? newSteps : [''])
-                      }}
-                      className="p-1 text-gray-400 hover:text-red-500"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                {(procedure.steps || ['']).map((step, stepIndex) => {
+                  const steps = procedure.steps || ['']
+                  return (
+                    <div key={stepIndex} className="flex items-start gap-2">
+                      <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center flex-shrink-0 mt-1">
+                        {stepIndex + 1}
+                      </span>
+                      <textarea
+                        value={step || ''}
+                        onChange={(e) => {
+                          const newSteps = [...steps]
+                          newSteps[stepIndex] = e.target.value
+                          handleUpdateSteps(procedure.id, newSteps)
+                        }}
+                        placeholder={`Step ${stepIndex + 1}`}
+                        rows={2}
+                        className="input text-sm flex-1"
+                      />
+                      <button
+                        onClick={() => {
+                          const newSteps = steps.filter((_, i) => i !== stepIndex)
+                          handleUpdateSteps(procedure.id, newSteps.length ? newSteps : [''])
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )
+                })}
                 <button
                   onClick={() => handleUpdateSteps(procedure.id, [...(procedure.steps || []), ''])}
                   className="text-sm text-aeria-navy hover:underline flex items-center gap-1"
@@ -1114,13 +1125,50 @@ export default function ProjectEmergency({ project, onUpdate }) {
         icon={AlertTriangle}
         defaultOpen={false}
       >
-        <textarea
-          value={emergencyPlan.notes || ''}
-          onChange={(e) => updateEmergencyPlan({ notes: e.target.value })}
-          placeholder="Any additional emergency planning notes, site-specific hazards, or special considerations..."
-          rows={4}
-          className="input"
-        />
+        <div className="space-y-2">
+          <p className="text-sm text-gray-500">
+            Use bullet points (• or -) for organized notes. Press Enter to continue with bullets.
+          </p>
+          <textarea
+            value={emergencyPlan.notes || ''}
+            onChange={(e) => updateEmergencyPlan({ notes: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                const textarea = e.target
+                const value = textarea.value
+                const selectionStart = textarea.selectionStart
+                const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+                const currentLine = value.substring(lineStart, selectionStart)
+                const bulletMatch = currentLine.match(/^(\s*)(•|-|\*)\s/)
+
+                if (bulletMatch) {
+                  e.preventDefault()
+                  const indent = bulletMatch[1]
+                  const bullet = bulletMatch[2]
+                  const lineContent = currentLine.replace(/^(\s*)(•|-|\*)\s*/, '')
+
+                  if (lineContent.trim() === '') {
+                    const newValue = value.substring(0, lineStart) + value.substring(selectionStart)
+                    updateEmergencyPlan({ notes: newValue })
+                    setTimeout(() => {
+                      textarea.selectionStart = textarea.selectionEnd = lineStart
+                    }, 0)
+                  } else {
+                    const insertion = `\n${indent}${bullet} `
+                    const newValue = value.substring(0, selectionStart) + insertion + value.substring(selectionStart)
+                    updateEmergencyPlan({ notes: newValue })
+                    setTimeout(() => {
+                      textarea.selectionStart = textarea.selectionEnd = selectionStart + insertion.length
+                    }, 0)
+                  }
+                }
+              }
+            }}
+            placeholder="• Site-specific hazards&#10;• Special access requirements&#10;• Local emergency contact notes..."
+            rows={5}
+            className="input font-mono text-sm"
+          />
+        </div>
       </CollapsibleSection>
     </div>
   )
