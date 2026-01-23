@@ -428,117 +428,123 @@ function QuickActions({ onNavigate, onExport }) {
 }
 
 // ============================================
-// DOCUMENT CHECKLIST
+// PROJECT DETAILS (Editable)
 // ============================================
 
-function DocumentChecklist({ project, sites, calculations }) {
-  const maxSAIL = useMemo(() => {
-    const sails = Object.values(calculations).map(c => c.sail).filter(Boolean)
-    if (sails.length === 0) return null
-    const sailOrder = ['I', 'II', 'III', 'IV', 'V', 'VI']
-    return sails.reduce((max, s) => sailOrder.indexOf(s) > sailOrder.indexOf(max) ? s : max, 'I')
-  }, [calculations])
-  
-  // Define required documents based on SAIL level
-  const documents = [
-    { 
-      id: 'ops_manual', 
-      name: 'Operations Manual', 
-      required: true,
-      sailRequired: 'I',
-      present: !!project?.documents?.opsManual
-    },
-    { 
-      id: 'emergency_plan', 
-      name: 'Emergency Response Plan', 
-      required: true,
-      sailRequired: 'I',
-      present: !!project?.documents?.emergencyPlan || sites.every(s => s.emergency?.localEmergencyNotes)
-    },
-    { 
-      id: 'risk_assessment', 
-      name: 'Risk Assessment', 
-      required: true,
-      sailRequired: 'I',
-      present: sites.some(s => s.soraAssessment?.sail)
-    },
-    { 
-      id: 'pilot_certs', 
-      name: 'Pilot Certifications', 
-      required: true,
-      sailRequired: 'I',
-      present: (project?.crew || []).some(c => c.certifications?.length > 0)
-    },
-    { 
-      id: 'insurance', 
-      name: 'Insurance Certificate', 
-      required: true,
-      sailRequired: 'I',
-      present: !!project?.documents?.insurance
-    },
-    { 
-      id: 'maintenance_log', 
-      name: 'Maintenance Records', 
-      required: maxSAIL && ['III', 'IV', 'V', 'VI'].includes(maxSAIL),
-      sailRequired: 'III',
-      present: !!project?.documents?.maintenanceLog
-    },
-    { 
-      id: 'training_records', 
-      name: 'Training Records', 
-      required: maxSAIL && ['II', 'III', 'IV', 'V', 'VI'].includes(maxSAIL),
-      sailRequired: 'II',
-      present: !!project?.documents?.trainingRecords
-    },
-    { 
-      id: 'flight_auth', 
-      name: 'Flight Authorization (SFOC)', 
-      required: maxSAIL && ['IV', 'V', 'VI'].includes(maxSAIL),
-      sailRequired: 'IV',
-      present: !!project?.documents?.sfoc
-    }
-  ]
-  
-  const requiredDocs = documents.filter(d => d.required)
-  const completedDocs = requiredDocs.filter(d => d.present)
-  
+function ProjectDetails({ project, onUpdate }) {
+  const handleChange = (field, value) => {
+    onUpdate({ [field]: value })
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <h3 className="font-medium text-gray-900 flex items-center gap-2 mb-4">
+        <FileText className="w-4 h-4" />
+        Project Details
+      </h3>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Author / Prepared By</label>
+          <input
+            type="text"
+            value={project?.author || ''}
+            onChange={(e) => handleChange('author', e.target.value)}
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-blue focus:border-transparent"
+            placeholder="Name of plan author"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Authorities / Approvals Required</label>
+          <textarea
+            value={project?.authorities || ''}
+            onChange={(e) => handleChange('authorities', e.target.value)}
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-blue focus:border-transparent min-h-[60px]"
+            placeholder="e.g., NAV CANADA, SFOC, Site access permits..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Deliverables</label>
+          <textarea
+            value={project?.deliverables || ''}
+            onChange={(e) => handleChange('deliverables', e.target.value)}
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-blue focus:border-transparent min-h-[60px]"
+            placeholder="e.g., Orthomosaic, 3D model, Inspection report..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Scope of Work</label>
+          <textarea
+            value={project?.scope || ''}
+            onChange={(e) => handleChange('scope', e.target.value)}
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-blue focus:border-transparent min-h-[80px]"
+            placeholder="Describe the project scope, objectives, and boundaries..."
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// DOCUMENT CHECKLIST SUMMARY (Links to Review)
+// ============================================
+
+function DocumentChecklistSummary({ project, onNavigate }) {
+  const checklist = project?.documentChecklist || {}
+  const totalDocs = 8 // Base number of documents
+  const completedDocs = Object.values(checklist).filter(Boolean).length
+  const progress = totalDocs > 0 ? Math.round((completedDocs / totalDocs) * 100) : 0
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-medium text-gray-900 flex items-center gap-2">
           <FileText className="w-4 h-4" />
-          Document Checklist
+          Documents
         </h3>
-        <span className="text-sm text-gray-500">
-          {completedDocs.length}/{requiredDocs.length} complete
-        </span>
+        <button
+          onClick={() => onNavigate?.('review')}
+          className="text-xs text-aeria-navy hover:underline"
+        >
+          Manage
+        </button>
       </div>
-      
-      <div className="space-y-2">
-        {documents.map(doc => (
-          <div 
-            key={doc.id}
-            className={`flex items-center justify-between py-1.5 px-2 rounded ${
-              !doc.required ? 'opacity-50' : ''
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {doc.present ? (
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-              ) : doc.required ? (
-                <XCircle className="w-4 h-4 text-red-500" />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-              )}
-              <span className={`text-sm ${doc.present ? 'text-gray-700' : doc.required ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                {doc.name}
-              </span>
-            </div>
-            {doc.sailRequired && (
-              <span className="text-xs text-gray-400">SAIL {doc.sailRequired}+</span>
-            )}
-          </div>
-        ))}
+
+      {/* Progress bar */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between text-sm mb-1">
+          <span className="text-gray-600">Checklist Progress</span>
+          <span className={`font-medium ${completedDocs === totalDocs ? 'text-green-600' : 'text-gray-900'}`}>
+            {completedDocs}/{totalDocs}
+          </span>
+        </div>
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all ${completedDocs === totalDocs ? 'bg-green-500' : 'bg-aeria-blue'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Quick status */}
+      <div className="text-sm">
+        {completedDocs === 0 ? (
+          <p className="text-gray-500">No documents verified yet</p>
+        ) : completedDocs === totalDocs ? (
+          <p className="text-green-600 flex items-center gap-1">
+            <CheckCircle2 className="w-4 h-4" />
+            All documents verified
+          </p>
+        ) : (
+          <p className="text-amber-600 flex items-center gap-1">
+            <AlertCircle className="w-4 h-4" />
+            {totalDocs - completedDocs} documents remaining
+          </p>
+        )}
       </div>
     </div>
   )
@@ -867,24 +873,29 @@ export default function ProjectOverview({
         onExport={onExport}
       />
       
+      {/* Project Details - Author, Authorities, Deliverables, Scope */}
+      <ProjectDetails
+        project={project}
+        onUpdate={onUpdate}
+      />
+
       {/* Overview Grid - Documents, Team, Regulatory, Timeline */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DocumentChecklist 
-          project={project} 
-          sites={sites} 
-          calculations={calculations} 
+        <DocumentChecklistSummary
+          project={project}
+          onNavigate={onNavigateToSection}
         />
-        <TeamSummary 
-          project={project} 
-          onNavigate={onNavigateToSection} 
+        <TeamSummary
+          project={project}
+          onNavigate={onNavigateToSection}
         />
-        <RegulatoryChecklist 
-          project={project} 
-          sites={sites} 
-          calculations={calculations} 
+        <RegulatoryChecklist
+          project={project}
+          sites={sites}
+          calculations={calculations}
         />
-        <ProjectTimeline 
-          project={project} 
+        <ProjectTimeline
+          project={project}
         />
       </div>
       
