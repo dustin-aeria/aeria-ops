@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { FORM_TEMPLATES, FORM_CATEGORIES, RPAS_INCIDENT_TRIGGERS, calculateRiskScore, SEVERITY_RATINGS, PROBABILITY_RATINGS, CONTROL_TYPES, HAZARD_CATEGORIES } from '../lib/formDefinitions'
 import { logger } from '../lib/logger'
-import { createForm, getForms } from '../lib/firestore'
+import { createForm, getForms, getProjects, getOperators, getAircraft, getEquipment } from '../lib/firestore'
 import { uploadFormAttachment, deleteFormAttachment } from '../lib/storageHelpers'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -141,6 +141,185 @@ function NotificationTriggersPanel({ triggers }) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Library select component - fetches data from firestore
+function LibrarySelect({ field, value, onChange, fetchFn, labelFn, valueFn, detailFn, required, returnFullItem }) {
+  const [options, setOptions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+    async function loadOptions() {
+      try {
+        const data = await fetchFn()
+        if (mounted) {
+          setOptions(data)
+          setLoading(false)
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err.message)
+          setLoading(false)
+        }
+      }
+    }
+    loadOptions()
+    return () => { mounted = false }
+  }, [])
+
+  const handleChange = (e) => {
+    const selectedValue = e.target.value
+    if (returnFullItem) {
+      const selectedItem = options.find(opt => valueFn(opt) === selectedValue)
+      onChange(selectedValue, selectedItem)
+    } else {
+      onChange(selectedValue)
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {field.label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        value={value || ''}
+        onChange={handleChange}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-navy focus:border-transparent transition-colors"
+        required={required}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading...' : 'Select...'}</option>
+        {options.map(opt => (
+          <option key={valueFn(opt)} value={valueFn(opt)}>
+            {labelFn(opt)}{detailFn && detailFn(opt) ? ` (${detailFn(opt)})` : ''}
+          </option>
+        ))}
+      </select>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+    </div>
+  )
+}
+
+// Library multi-select component
+function LibraryMultiSelect({ field, value, onChange, fetchFn, labelFn, valueFn, detailFn, required }) {
+  const [options, setOptions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [customEntry, setCustomEntry] = useState('')
+
+  useEffect(() => {
+    let mounted = true
+    async function loadOptions() {
+      try {
+        const data = await fetchFn()
+        if (mounted) {
+          setOptions(data)
+          setLoading(false)
+        }
+      } catch (err) {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    loadOptions()
+    return () => { mounted = false }
+  }, [])
+
+  const selectedValues = Array.isArray(value) ? value : []
+
+  const toggleOption = (optValue) => {
+    if (selectedValues.includes(optValue)) {
+      onChange(selectedValues.filter(v => v !== optValue))
+    } else {
+      onChange([...selectedValues, optValue])
+    }
+  }
+
+  const addCustom = () => {
+    if (customEntry.trim() && !selectedValues.includes(customEntry.trim())) {
+      onChange([...selectedValues, customEntry.trim()])
+      setCustomEntry('')
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {field.label} {required && <span className="text-red-500">*</span>}
+      </label>
+
+      {/* Selected items */}
+      {selectedValues.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {selectedValues.map(v => {
+            const opt = options.find(o => valueFn(o) === v)
+            const label = opt ? labelFn(opt) : v
+            return (
+              <span key={v} className="inline-flex items-center gap-1 px-2 py-1 bg-aeria-sky text-aeria-navy rounded-full text-sm">
+                {label}
+                <button
+                  type="button"
+                  onClick={() => toggleOption(v)}
+                  className="hover:text-red-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Options list */}
+      <div className="space-y-1 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+        {loading ? (
+          <p className="text-sm text-gray-500 py-2 text-center">Loading...</p>
+        ) : options.length === 0 ? (
+          <p className="text-sm text-gray-500 py-2 text-center">No options available</p>
+        ) : (
+          options.map(opt => (
+            <label key={valueFn(opt)} className="flex items-center gap-2 p-1 hover:bg-gray-50 rounded cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(valueFn(opt))}
+                onChange={() => toggleOption(valueFn(opt))}
+                className="w-4 h-4 text-aeria-navy rounded"
+              />
+              <span className="text-sm text-gray-700">{labelFn(opt)}</span>
+              {detailFn && detailFn(opt) && (
+                <span className="text-xs text-gray-400">({detailFn(opt)})</span>
+              )}
+            </label>
+          ))
+        )}
+      </div>
+
+      {/* Custom entry */}
+      <div className="flex gap-2 mt-2">
+        <input
+          type="text"
+          value={customEntry}
+          onChange={(e) => setCustomEntry(e.target.value)}
+          placeholder="Add custom..."
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-navy focus:border-transparent"
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustom())}
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+        >
+          Add
+        </button>
+      </div>
+
+      {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
     </div>
   )
 }
@@ -669,10 +848,101 @@ function FormField({ field, value, onChange, formData, formId }) {
       )
 
     case 'project_select':
+      return (
+        <LibrarySelect
+          field={field}
+          value={localValue}
+          onChange={handleChange}
+          fetchFn={getProjects}
+          labelFn={(item) => item.name}
+          valueFn={(item) => item.id}
+          required={field.required}
+        />
+      )
+
     case 'operator_select':
+      return (
+        <LibrarySelect
+          field={field}
+          value={localValue}
+          onChange={(val, item) => {
+            handleChange(val)
+            // Auto-populate certificate details if field exists
+            if (item && field.autoPopulate) {
+              field.autoPopulate.forEach(mapping => {
+                if (item[mapping.from]) {
+                  onChange(mapping.to, item[mapping.from])
+                }
+              })
+            }
+          }}
+          fetchFn={getOperators}
+          labelFn={(item) => `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.name || 'Unknown'}
+          valueFn={(item) => item.id}
+          detailFn={(item) => item.certNumber ? `Cert: ${item.certNumber}` : null}
+          required={field.required}
+          returnFullItem
+        />
+      )
+
     case 'aircraft_select':
+      return (
+        <LibrarySelect
+          field={field}
+          value={localValue}
+          onChange={(val, item) => {
+            handleChange(val)
+            // Auto-populate aircraft details if configured
+            if (item && field.autoPopulate) {
+              field.autoPopulate.forEach(mapping => {
+                if (item[mapping.from] !== undefined) {
+                  onChange(mapping.to, item[mapping.from])
+                }
+              })
+            }
+          }}
+          fetchFn={getAircraft}
+          labelFn={(item) => item.nickname || item.model || 'Unknown Aircraft'}
+          valueFn={(item) => item.id}
+          detailFn={(item) => {
+            const parts = []
+            if (item.registration) parts.push(item.registration)
+            if (item.weight) parts.push(`${item.weight}kg`)
+            return parts.length > 0 ? parts.join(' | ') : null
+          }}
+          required={field.required}
+          returnFullItem
+        />
+      )
+
     case 'crew_multi_select':
+      return (
+        <LibraryMultiSelect
+          field={field}
+          value={localValue}
+          onChange={handleChange}
+          fetchFn={getOperators}
+          labelFn={(item) => `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.name || 'Unknown'}
+          valueFn={(item) => item.id}
+          detailFn={(item) => item.role || item.position}
+          required={field.required}
+        />
+      )
+
     case 'equipment_select':
+      return (
+        <LibrarySelect
+          field={field}
+          value={localValue}
+          onChange={handleChange}
+          fetchFn={() => getEquipment(field.equipmentCategory ? { category: field.equipmentCategory } : {})}
+          labelFn={(item) => item.name || item.nickname || 'Unknown'}
+          valueFn={(item) => item.id}
+          detailFn={(item) => item.serialNumber ? `S/N: ${item.serialNumber}` : null}
+          required={field.required}
+        />
+      )
+
     case 'incident_select':
       return (
         <div>
@@ -686,7 +956,7 @@ function FormField({ field, value, onChange, formData, formId }) {
             required={field.required}
           >
             <option value="">Select...</option>
-            <option value="demo">Demo Selection</option>
+            <option value="new">New Incident</option>
           </select>
           {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
         </div>
