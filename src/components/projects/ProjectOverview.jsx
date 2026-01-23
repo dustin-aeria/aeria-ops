@@ -216,9 +216,20 @@ function ProjectSummaryHeader({ project, sites, calculations }) {
   
   const operationTypes = [...new Set(sites.map(s => s.flightPlan?.operationType || 'VLOS'))]
   
+  // Format project date - show range if both start and end exist
+  const formatProjectDate = () => {
+    if (!project?.startDate) return 'No Date'
+    const startDate = new Date(project.startDate).toLocaleDateString()
+    if (project?.endDate) {
+      const endDate = new Date(project.endDate).toLocaleDateString()
+      return startDate === endDate ? startDate : `${startDate} - ${endDate}`
+    }
+    return startDate
+  }
+
   return (
     <div className="bg-gradient-to-r from-aeria-navy to-aeria-navy/80 text-white rounded-xl p-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold mb-2">{project?.name || 'Unnamed Project'}</h1>
           <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm">
@@ -232,26 +243,29 @@ function ProjectSummaryHeader({ project, sites, calculations }) {
             </span>
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              {project?.startDate ? new Date(project.startDate).toLocaleDateString() : 'No Date'}
+              {formatProjectDate()}
             </span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-6">
-          <div className="text-center">
-            <p className="text-white/70 text-xs mb-1">Sites</p>
-            <p className="text-3xl font-bold">{sites.length}</p>
+
+        {/* Summary stats - aligned grid for consistent sizing */}
+        <div className="grid grid-cols-4 gap-4 lg:gap-6">
+          <div className="text-center min-w-[80px]">
+            <p className="text-white/70 text-xs mb-1 uppercase tracking-wide">Sites</p>
+            <p className="text-2xl font-bold leading-8">{sites.length}</p>
           </div>
-          <div className="text-center">
-            <p className="text-white/70 text-xs mb-1">Operations</p>
-            <p className="text-lg font-medium">{operationTypes.join(', ')}</p>
+          <div className="text-center min-w-[80px]">
+            <p className="text-white/70 text-xs mb-1 uppercase tracking-wide">Operations</p>
+            <p className="text-sm font-medium leading-8 truncate" title={operationTypes.join(', ')}>
+              {operationTypes.join(', ') || 'N/A'}
+            </p>
           </div>
-          <div className="text-center">
-            <p className="text-white/70 text-xs mb-1">Governing SAIL</p>
+          <div className="text-center min-w-[80px]">
+            <p className="text-white/70 text-xs mb-1 uppercase tracking-wide">SAIL</p>
             {maxSAIL ? (
-              <span 
-                className="inline-block px-4 py-1 rounded-full text-lg font-bold"
-                style={{ 
+              <span
+                className="inline-block px-3 py-0.5 rounded-full text-sm font-bold leading-7"
+                style={{
                   backgroundColor: sailColors[maxSAIL],
                   color: maxSAIL === 'I' || maxSAIL === 'II' ? '#1F2937' : '#FFFFFF'
                 }}
@@ -259,16 +273,24 @@ function ProjectSummaryHeader({ project, sites, calculations }) {
                 {maxSAIL}
               </span>
             ) : (
-              <span className="text-lg">N/A</span>
+              <span className="text-sm leading-8">N/A</span>
             )}
           </div>
-          <div className="text-center">
-            <p className="text-white/70 text-xs mb-1">SORA Scope</p>
-            {allWithinScope ? (
-              <CheckCircle2 className="w-8 h-8 mx-auto text-green-400" />
-            ) : (
-              <XCircle className="w-8 h-8 mx-auto text-red-400" />
-            )}
+          <div className="text-center min-w-[80px]">
+            <p className="text-white/70 text-xs mb-1 uppercase tracking-wide">SORA</p>
+            <div className="leading-8">
+              {allWithinScope ? (
+                <span className="inline-flex items-center gap-1 text-green-400 text-sm font-medium">
+                  <CheckCircle2 className="w-5 h-5" />
+                  In Scope
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-red-400 text-sm font-medium">
+                  <XCircle className="w-5 h-5" />
+                  Review
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

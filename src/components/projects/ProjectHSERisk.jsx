@@ -163,25 +163,42 @@ const RiskMatrix = ({ hazards }) => {
     <div className="p-4 bg-gray-50 rounded-lg border">
       <h4 className="text-sm font-medium text-gray-700 mb-3">Risk Matrix Overview</h4>
       <div className="overflow-x-auto">
+        {/* Severity axis label */}
+        <div className="text-center text-xs font-medium text-gray-600 mb-1">
+          Severity →
+        </div>
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="p-1"></th>
+              <th className="p-1 text-right pr-2 text-gray-500 text-[10px] align-bottom">
+                <div className="transform -rotate-45 origin-bottom-right whitespace-nowrap">Likelihood</div>
+              </th>
               {severityLevels.map(s => (
-                <th key={s.value} className="p-1 text-center font-medium text-gray-600">{s.value}</th>
+                <th key={s.value} className="p-1 text-center" title={s.description}>
+                  <div className="font-medium text-gray-600">{s.value}</div>
+                  <div className="text-[10px] text-gray-400 font-normal truncate max-w-[60px]">{s.label}</div>
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {[...likelihoodLevels].reverse().map(l => (
               <tr key={l.value}>
-                <td className="p-1 font-medium text-gray-600 text-right pr-2">{l.value}</td>
+                <td className="p-1 text-right pr-2" title={l.description}>
+                  <div className="font-medium text-gray-600">{l.value}</div>
+                  <div className="text-[10px] text-gray-400 truncate max-w-[80px]">{l.label}</div>
+                </td>
                 {severityLevels.map(s => {
                   const key = `${l.value}-${s.value}`
                   const risk = getRiskLevel(l.value, s.value)
                   const hazardNums = matrix[key] || []
+                  const score = l.value * s.value
                   return (
-                    <td key={s.value} className={`p-1 text-center border ${risk.color} ${hazardNums.length > 0 ? 'font-bold' : ''}`}>
+                    <td
+                      key={s.value}
+                      className={`p-1 text-center border ${risk.color} ${hazardNums.length > 0 ? 'font-bold' : ''} cursor-default`}
+                      title={`${l.label} × ${s.label} = ${score} (${risk.level})`}
+                    >
                       {hazardNums.length > 0 ? hazardNums.join(',') : ''}
                     </td>
                   )
@@ -190,11 +207,29 @@ const RiskMatrix = ({ hazards }) => {
             ))}
           </tbody>
         </table>
-        <div className="flex justify-center gap-4 mt-3 text-xs">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-200 rounded"></span> Low</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-yellow-200 rounded"></span> Medium</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-orange-200 rounded"></span> High</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-200 rounded"></span> Critical</span>
+
+        {/* Legend with score ranges */}
+        <div className="mt-4 p-3 bg-white rounded border">
+          <p className="text-xs font-medium text-gray-700 mb-2">Risk Levels (Likelihood × Severity)</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-green-100 border border-green-300 rounded"></span>
+              <span><strong>Low</strong> (1-4)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></span>
+              <span><strong>Medium</strong> (5-9)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></span>
+              <span><strong>High</strong> (10-16)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-red-100 border border-red-300 rounded"></span>
+              <span><strong>Critical</strong> (17-25)</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2">Numbers in cells indicate hazard #. Hover over cells for details.</p>
         </div>
       </div>
     </div>

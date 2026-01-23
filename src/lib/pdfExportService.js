@@ -810,13 +810,15 @@ export async function generateHSERiskPDF(project, branding = null) {
   
   pdf.addNewSection('Assessment Summary')
   const hazards = risk.hazards || []
-  const highRisks = hazards.filter(h => h.riskLevel === 'high' || h.riskLevel === 'extreme' || (h.likelihood * h.severity >= 15)).length
-  const mediumRisks = hazards.filter(h => h.riskLevel === 'medium' || (h.likelihood * h.severity >= 8 && h.likelihood * h.severity < 15)).length
-  const lowRisks = hazards.filter(h => h.riskLevel === 'low' || (h.likelihood * h.severity < 8)).length
+  // Risk thresholds: Low (1-4), Medium (5-9), High (10-16), Critical (17-25)
+  const criticalRisks = hazards.filter(h => h.riskLevel === 'critical' || (h.likelihood * h.severity >= 17)).length
+  const highRisks = hazards.filter(h => h.riskLevel === 'high' || (h.likelihood * h.severity >= 10 && h.likelihood * h.severity <= 16)).length
+  const mediumRisks = hazards.filter(h => h.riskLevel === 'medium' || (h.likelihood * h.severity >= 5 && h.likelihood * h.severity <= 9)).length
+  const lowRisks = hazards.filter(h => h.riskLevel === 'low' || (h.likelihood * h.severity <= 4)).length
   
   pdf.addKPIRow([
     { label: 'Total Hazards', value: hazards.length || 0 },
-    { label: 'High/Extreme Risk', value: highRisks },
+    { label: 'Critical/High', value: criticalRisks + highRisks },
     { label: 'Medium Risk', value: mediumRisks },
     { label: 'Low Risk', value: lowRisks }
   ])

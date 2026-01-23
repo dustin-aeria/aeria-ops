@@ -59,13 +59,20 @@ export function RiskMatrixDisplay({ fhas = [], onCellClick }) {
       </div>
 
       <div className="overflow-x-auto">
+        {/* Severity axis label */}
+        <div className="text-center text-xs font-medium text-gray-600 mb-1">
+          Severity →
+        </div>
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="p-1 text-right pr-2 text-gray-500 font-normal">L / S</th>
+              <th className="p-1 text-right pr-2 text-gray-500 text-[10px] align-bottom">
+                <div className="whitespace-nowrap">Likelihood ↓</div>
+              </th>
               {SEVERITY_RATINGS.map(s => (
-                <th key={s.value} className="p-1 text-center font-medium text-gray-600" title={s.description}>
-                  {s.value}
+                <th key={s.value} className="p-1 text-center" title={s.description}>
+                  <div className="font-medium text-gray-600">{s.value}</div>
+                  <div className="text-[10px] text-gray-400 font-normal truncate max-w-[60px]">{s.label}</div>
                 </th>
               ))}
             </tr>
@@ -73,13 +80,15 @@ export function RiskMatrixDisplay({ fhas = [], onCellClick }) {
           <tbody>
             {[...LIKELIHOOD_RATINGS].reverse().map(l => (
               <tr key={l.value}>
-                <td className="p-1 font-medium text-gray-600 text-right pr-2" title={l.description}>
-                  {l.value}
+                <td className="p-1 text-right pr-2" title={l.description}>
+                  <div className="font-medium text-gray-600">{l.value}</div>
+                  <div className="text-[10px] text-gray-400 truncate max-w-[70px]">{l.label}</div>
                 </td>
                 {SEVERITY_RATINGS.map(s => {
                   const key = `${l.value}-${s.value}`
                   const cellData = matrix[key] || []
                   const hasItems = cellData.length > 0
+                  const score = l.value * s.value
 
                   return (
                     <td
@@ -88,7 +97,7 @@ export function RiskMatrixDisplay({ fhas = [], onCellClick }) {
                         hasItems ? 'font-bold cursor-pointer' : ''
                       }`}
                       onClick={() => hasItems && onCellClick?.(cellData)}
-                      title={hasItems ? `${cellData.length} FHA(s): Click to view` : `L:${l.value} × S:${s.value} = ${l.value * s.value}`}
+                      title={hasItems ? `${cellData.length} FHA(s): Click to view` : `${l.label} × ${s.label} = ${score}`}
                     >
                       {hasItems ? cellData.length : ''}
                     </td>
@@ -99,26 +108,28 @@ export function RiskMatrixDisplay({ fhas = [], onCellClick }) {
           </tbody>
         </table>
 
-        {/* Legend */}
-        <div className="flex justify-center gap-4 mt-4 text-xs">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-green-200 rounded border border-green-300"></span> Low (1-4)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-yellow-200 rounded border border-yellow-300"></span> Medium (5-9)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-orange-200 rounded border border-orange-300"></span> High (10-16)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-red-200 rounded border border-red-300"></span> Critical (17-25)
-          </span>
-        </div>
-
-        {/* Axis labels */}
-        <div className="flex justify-between mt-3 text-xs text-gray-500">
-          <span>← Lower Severity</span>
-          <span>Higher Severity →</span>
+        {/* Enhanced Legend */}
+        <div className="mt-4 p-3 bg-gray-50 rounded border">
+          <p className="text-xs font-medium text-gray-700 mb-2">Risk Levels (Likelihood × Severity)</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-green-200 rounded border border-green-300"></span>
+              <span><strong>Low</strong> (1-4)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-yellow-200 rounded border border-yellow-300"></span>
+              <span><strong>Medium</strong> (5-9)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-orange-200 rounded border border-orange-300"></span>
+              <span><strong>High</strong> (10-16)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-red-200 rounded border border-red-300"></span>
+              <span><strong>Critical</strong> (17-25)</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2">Click on cells with FHAs to view details.</p>
         </div>
       </div>
     </div>
