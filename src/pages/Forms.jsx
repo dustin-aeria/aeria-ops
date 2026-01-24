@@ -1383,6 +1383,295 @@ function FormField({ field, value, onChange, formData, formId }) {
         </div>
       )
 
+    case 'auto_increment':
+      // Auto-increment field - generates sequential number
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label}
+          </label>
+          <input
+            type="text"
+            value={localValue || 'Auto-generated'}
+            className={`${baseInputClass} bg-gray-50`}
+            disabled
+          />
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'battery_select':
+      // Battery select - filter equipment to battery type
+      const batteries = availableEquipment.filter(e =>
+        e.category === 'power' || e.name?.toLowerCase().includes('battery')
+      )
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+          <select
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
+            className={baseInputClass}
+            required={field.required}
+          >
+            <option value="">Select battery...</option>
+            {batteries.map(battery => (
+              <option key={battery.id} value={battery.id}>
+                {battery.name} {battery.serialNumber ? `(${battery.serialNumber})` : ''}
+              </option>
+            ))}
+          </select>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'yesno_text':
+      // Yes/No with text explanation field
+      const yesnoTextValue = typeof localValue === 'object' ? localValue : { answer: '', text: '' }
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="space-y-2">
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={field.id}
+                  value="yes"
+                  checked={yesnoTextValue.answer === 'yes'}
+                  onChange={() => handleChange({ ...yesnoTextValue, answer: 'yes' })}
+                  className="text-aeria-navy focus:ring-aeria-navy"
+                />
+                <span>Yes</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={field.id}
+                  value="no"
+                  checked={yesnoTextValue.answer === 'no'}
+                  onChange={() => handleChange({ ...yesnoTextValue, answer: 'no' })}
+                  className="text-aeria-navy focus:ring-aeria-navy"
+                />
+                <span>No</span>
+              </label>
+            </div>
+            <textarea
+              value={yesnoTextValue.text || ''}
+              onChange={(e) => handleChange({ ...yesnoTextValue, text: e.target.value })}
+              placeholder={field.textPlaceholder || 'Provide details...'}
+              className={baseInputClass}
+              rows={2}
+            />
+          </div>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'multiselect_text':
+      // Multiselect with text for 'other' option
+      const msTextValue = typeof localValue === 'object' ? localValue : { selected: [], otherText: '' }
+      const msTextOptions = field.options || []
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="space-y-2 border border-gray-200 rounded-lg p-3">
+            {msTextOptions.map(opt => (
+              <label key={opt.value || opt} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={(msTextValue.selected || []).includes(opt.value || opt)}
+                  onChange={(e) => {
+                    const optValue = opt.value || opt
+                    const newSelected = e.target.checked
+                      ? [...(msTextValue.selected || []), optValue]
+                      : (msTextValue.selected || []).filter(v => v !== optValue)
+                    handleChange({ ...msTextValue, selected: newSelected })
+                  }}
+                  className="rounded text-aeria-navy focus:ring-aeria-navy"
+                />
+                <span className="text-sm">{opt.label || opt}</span>
+              </label>
+            ))}
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={(msTextValue.selected || []).includes('other')}
+                onChange={(e) => {
+                  const newSelected = e.target.checked
+                    ? [...(msTextValue.selected || []), 'other']
+                    : (msTextValue.selected || []).filter(v => v !== 'other')
+                  handleChange({ ...msTextValue, selected: newSelected })
+                }}
+                className="rounded text-aeria-navy focus:ring-aeria-navy"
+              />
+              <span className="text-sm">Other</span>
+            </label>
+            {(msTextValue.selected || []).includes('other') && (
+              <input
+                type="text"
+                value={msTextValue.otherText || ''}
+                onChange={(e) => handleChange({ ...msTextValue, otherText: e.target.value })}
+                placeholder="Specify other..."
+                className={`${baseInputClass} mt-2`}
+              />
+            )}
+          </div>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'repeatable_text':
+      // Repeatable text entries
+      const repTextItems = Array.isArray(localValue) ? localValue : ['']
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="space-y-2">
+            {repTextItems.map((item, idx) => (
+              <div key={idx} className="flex gap-2">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newItems = [...repTextItems]
+                    newItems[idx] = e.target.value
+                    handleChange(newItems)
+                  }}
+                  placeholder={field.placeholder || 'Enter text...'}
+                  className={`${baseInputClass} flex-1`}
+                />
+                {repTextItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleChange(repTextItems.filter((_, i) => i !== idx))}
+                    className="px-2 py-1 text-red-600 hover:bg-red-50 rounded"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleChange([...repTextItems, ''])}
+              className="text-sm text-aeria-navy hover:underline"
+            >
+              + Add another
+            </button>
+          </div>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'repeatable_person':
+    case 'repeatable_witness':
+      // Repeatable person/witness entries
+      const repPersonItems = Array.isArray(localValue) ? localValue : [{ name: '', contact: '' }]
+      const personLabel = field.type === 'repeatable_witness' ? 'Witness' : 'Person'
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="space-y-3">
+            {repPersonItems.map((person, idx) => (
+              <div key={idx} className="p-3 border border-gray-200 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">{personLabel} {idx + 1}</span>
+                  {repPersonItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleChange(repPersonItems.filter((_, i) => i !== idx))}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={person.name || ''}
+                    onChange={(e) => {
+                      const newItems = [...repPersonItems]
+                      newItems[idx] = { ...newItems[idx], name: e.target.value }
+                      handleChange(newItems)
+                    }}
+                    placeholder="Name"
+                    className={baseInputClass}
+                  />
+                  <input
+                    type="text"
+                    value={person.contact || ''}
+                    onChange={(e) => {
+                      const newItems = [...repPersonItems]
+                      newItems[idx] = { ...newItems[idx], contact: e.target.value }
+                      handleChange(newItems)
+                    }}
+                    placeholder="Phone/Email"
+                    className={baseInputClass}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleChange([...repPersonItems, { name: '', contact: '' }])}
+              className="text-sm text-aeria-navy hover:underline"
+            >
+              + Add {personLabel.toLowerCase()}
+            </button>
+          </div>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'contact_summary':
+    case 'control_summary':
+    case 'hazard_summary':
+      // Summary display fields - show aggregated data from form
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label}
+          </label>
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            {localValue ? (
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">{localValue}</div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">
+                Summary will be generated based on form responses.
+              </p>
+            )}
+          </div>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>}
+        </div>
+      )
+
+    case 'trigger_checklist':
+      // Trigger checklist - shows notification triggers
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label}
+          </label>
+          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-sm text-amber-800">
+              Notification triggers are evaluated based on form responses. Check the Notifications section for any required actions.
+            </p>
+          </div>
+        </div>
+      )
+
     default:
       return (
         <div>
