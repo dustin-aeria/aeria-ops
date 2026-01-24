@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
 import NotificationBell from './NotificationBell'
+import CommandPalette from './CommandPalette'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -314,6 +315,9 @@ export default function Layout() {
         userId={user?.uid}
         userEmail={user?.email}
       />
+
+      {/* Command Palette */}
+      <CommandPalette />
     </div>
   )
 }
