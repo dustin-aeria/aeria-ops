@@ -29,9 +29,10 @@ import {
 } from 'lucide-react'
 import { FORM_TEMPLATES, FORM_CATEGORIES, RPAS_INCIDENT_TRIGGERS, calculateRiskScore, SEVERITY_RATINGS, PROBABILITY_RATINGS, CONTROL_TYPES, HAZARD_CATEGORIES } from '../lib/formDefinitions'
 import { logger } from '../lib/logger'
-import { createForm, getForms, getProjects, getOperators, getAircraft, getEquipment } from '../lib/firestore'
+import { createForm, getForms, getProjects, getOperators, getAircraft, getEquipment, getCustomForms, createCustomForm } from '../lib/firestore'
 import { uploadFormAttachment, deleteFormAttachment } from '../lib/storageHelpers'
 import { useAuth } from '../contexts/AuthContext'
+import FormBuilder from '../components/forms/FormBuilder'
 
 // Icon mapping
 const iconMap = {
@@ -1357,15 +1358,21 @@ export default function Forms() {
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [activeForm, setActiveForm] = useState(null)
   const [recentForms, setRecentForms] = useState([])
+  const [customForms, setCustomForms] = useState([])
   const [loadingForms, setLoadingForms] = useState(true)
   const [view, setView] = useState('templates') // 'templates' | 'submitted'
+  const [showFormBuilder, setShowFormBuilder] = useState(false)
 
-  // Load submitted forms from Firebase on mount
+  // Load submitted forms and custom forms from Firebase on mount
   useEffect(() => {
-    async function loadSubmittedForms() {
+    async function loadForms() {
       try {
-        const forms = await getForms({ status: 'completed' })
-        setRecentForms(forms.map(f => ({
+        const [submittedForms, userCustomForms] = await Promise.all([
+          getForms({ status: 'completed' }),
+          user?.uid ? getCustomForms(user.uid) : []
+        ])
+
+        setRecentForms(submittedForms.map(f => ({
           id: f.id,
           template: f.templateId,
           templateName: f.templateName,
@@ -1373,26 +1380,56 @@ export default function Forms() {
           date: f.createdAt?.toDate?.()?.toISOString() || f.createdAt,
           submittedBy: f.submittedBy || 'Unknown'
         })))
+
+        setCustomForms(userCustomForms)
       } catch (err) {
         logger.error('Error loading forms:', err)
       } finally {
         setLoadingForms(false)
       }
     }
-    loadSubmittedForms()
-  }, [])
+    loadForms()
+  }, [user?.uid])
+
+  // Save custom form
+  const handleSaveCustomForm = async (formData) => {
+    if (!user?.uid) {
+      throw new Error('You must be logged in to create custom forms')
+    }
+
+    const saved = await createCustomForm(formData, user.uid)
+    setCustomForms([saved, ...customForms])
+    logger.debug('Custom form saved:', saved.id)
+  }
   
+  // Combine built-in templates with custom forms
+  const allTemplates = [
+    ...Object.values(FORM_TEMPLATES),
+    ...customForms.map(cf => ({
+      ...cf,
+      isCustom: true,
+      category: 'custom'
+    }))
+  ]
+
   // Filter templates based on search and category
-  const filteredTemplates = Object.values(FORM_TEMPLATES).filter(template => {
-    const matchesSearch = !searchQuery || 
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.shortName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTemplates = allTemplates.filter(template => {
+    const matchesSearch = !searchQuery ||
+      template.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.shortName?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !selectedCategory || template.category === selectedCategory
     return matchesSearch && matchesCategory
   })
   
   const handleStartForm = (templateId) => {
-    const template = FORM_TEMPLATES[templateId]
+    // Check built-in templates first
+    let template = FORM_TEMPLATES[templateId]
+
+    // If not found, check custom forms
+    if (!template) {
+      template = customForms.find(f => f.id === templateId)
+    }
+
     if (template) {
       setActiveForm(template)
     }
@@ -1478,8 +1515,28 @@ export default function Forms() {
         </nav>
         
         <hr className="my-4 border-gray-200" />
-        
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors">
+
+        {/* Custom Forms Section */}
+        {customForms.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-500 uppercase mb-2 px-3">My Custom Forms</p>
+            {customForms.slice(0, 5).map(form => (
+              <button
+                key={form.id}
+                onClick={() => handleStartForm(form.id)}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors text-left"
+              >
+                <FileText className="w-4 h-4 text-aeria-navy" />
+                <span className="text-sm truncate">{form.shortName || form.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowFormBuilder(true)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-aeria-navy bg-aeria-sky hover:bg-aeria-sky/70 transition-colors"
+        >
           <Plus className="w-5 h-5" />
           <span className="font-medium">Custom Form Builder</span>
         </button>
@@ -1620,6 +1677,13 @@ export default function Forms() {
           onSave={handleSaveForm}
         />
       )}
+
+      {/* Custom Form Builder */}
+      <FormBuilder
+        isOpen={showFormBuilder}
+        onClose={() => setShowFormBuilder(false)}
+        onSave={handleSaveCustomForm}
+      />
     </div>
   )
 }

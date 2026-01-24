@@ -1526,6 +1526,79 @@ export function migrateProjectToSORA(project) {
 }
 
 // ============================================
+// CUSTOM FORMS (User-created form templates)
+// ============================================
+
+const customFormsRef = collection(db, 'customForms')
+
+/**
+ * Get all custom forms for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>}
+ */
+export async function getCustomForms(userId) {
+  const q = query(customFormsRef, where('createdBy', '==', userId), orderBy('createdAt', 'desc'))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
+ * Get a single custom form by ID
+ * @param {string} id - Form ID
+ * @returns {Promise<Object>}
+ */
+export async function getCustomForm(id) {
+  const docRef = doc(db, 'customForms', id)
+  const snapshot = await getDoc(docRef)
+
+  if (!snapshot.exists()) {
+    throw new Error('Custom form not found')
+  }
+
+  return { id: snapshot.id, ...snapshot.data() }
+}
+
+/**
+ * Create a new custom form
+ * @param {Object} data - Form data
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>}
+ */
+export async function createCustomForm(data, userId) {
+  const customForm = {
+    ...data,
+    createdBy: userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }
+
+  const docRef = await addDoc(customFormsRef, customForm)
+  return { id: docRef.id, ...customForm }
+}
+
+/**
+ * Update a custom form
+ * @param {string} id - Form ID
+ * @param {Object} data - Updated form data
+ */
+export async function updateCustomForm(id, data) {
+  const docRef = doc(db, 'customForms', id)
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: serverTimestamp()
+  })
+}
+
+/**
+ * Delete a custom form
+ * @param {string} id - Form ID
+ */
+export async function deleteCustomForm(id) {
+  const docRef = doc(db, 'customForms', id)
+  await deleteDoc(docRef)
+}
+
+// ============================================
 // USER FEEDBACK
 // ============================================
 
