@@ -90,7 +90,20 @@ export class BrandedPDF {
     this.projectName = options.projectName || ''
     this.projectCode = options.projectCode || ''
     this.clientName = options.clientName || ''
-    this.generatedDate = new Date().toLocaleDateString('en-CA')
+    // Professional date formatting
+    const now = new Date()
+    this.generatedDate = now.toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+    this.generatedTimestamp = now.toLocaleString('en-CA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
     
     this.tocEntries = []
     this.tocPageNumber = 2
