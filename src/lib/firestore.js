@@ -1253,13 +1253,50 @@ export async function getForms(filters = {}) {
 export async function createForm(data) {
   const form = {
     ...data,
-    status: 'draft',
+    projectId: data.projectId || null,  // Optional link to project
+    status: data.status || 'draft',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }
-  
+
   const docRef = await addDoc(formsRef, form)
   return { id: docRef.id, ...form }
+}
+
+/**
+ * Get forms linked to a specific project
+ * @param {string} projectId - Project ID
+ * @returns {Promise<Array>}
+ */
+export async function getFormsByProject(projectId) {
+  const q = query(formsRef, where('projectId', '==', projectId), orderBy('createdAt', 'desc'))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
+ * Link a form to a project
+ * @param {string} formId - Form ID
+ * @param {string} projectId - Project ID
+ */
+export async function linkFormToProject(formId, projectId) {
+  const docRef = doc(db, 'forms', formId)
+  await updateDoc(docRef, {
+    projectId,
+    updatedAt: serverTimestamp()
+  })
+}
+
+/**
+ * Unlink a form from a project
+ * @param {string} formId - Form ID
+ */
+export async function unlinkFormFromProject(formId) {
+  const docRef = doc(db, 'forms', formId)
+  await updateDoc(docRef, {
+    projectId: null,
+    updatedAt: serverTimestamp()
+  })
 }
 
 export async function updateForm(id, data) {

@@ -1237,13 +1237,13 @@ function FormSection({ section, formData, onChange, isExpanded, onToggle, active
 }
 
 // Active form modal/panel
-function ActiveFormPanel({ template, onClose, onSave }) {
+function ActiveFormPanel({ template, onClose, onSave, projects = [], selectedProjectId, onProjectChange }) {
   const [formData, setFormData] = useState({})
   const [expandedSections, setExpandedSections] = useState({ [template.sections[0]?.id]: true })
   const [activeTriggers, setActiveTriggers] = useState([])
   // Generate a unique form ID for file uploads (before the form is saved)
   const [formId] = useState(() => `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
-  
+
   const IconComponent = iconMap[template.icon] || ClipboardList
   
   const handleFieldChange = (fieldId, value) => {
@@ -1302,6 +1302,35 @@ function ActiveFormPanel({ template, onClose, onSave }) {
           </button>
         </div>
         
+        {/* Project Link Section */}
+        {projects.length > 0 && (
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Link to Project:
+              </label>
+              <select
+                value={selectedProjectId || ''}
+                onChange={(e) => onProjectChange(e.target.value || null)}
+                className="flex-1 max-w-xs px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-aeria-navy focus:border-transparent"
+              >
+                <option value="">No project (standalone form)</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.projectCode || ''} - {project.name}
+                  </option>
+                ))}
+              </select>
+              {selectedProjectId && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Will be linked
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Form content */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {/* Notification triggers panel */}
@@ -1365,14 +1394,17 @@ export default function Forms() {
   const [showFormBuilder, setShowFormBuilder] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [importedTemplates, setImportedTemplates] = useState([])
+  const [projects, setProjects] = useState([])
+  const [selectedProjectId, setSelectedProjectId] = useState(null)
 
-  // Load submitted forms and custom forms from Firebase on mount
+  // Load submitted forms, custom forms, and projects from Firebase on mount
   useEffect(() => {
     async function loadForms() {
       try {
-        const [submittedForms, userCustomForms] = await Promise.all([
+        const [submittedForms, userCustomForms, allProjects] = await Promise.all([
           getForms({ status: 'completed' }),
-          user?.uid ? getCustomForms(user.uid) : []
+          user?.uid ? getCustomForms(user.uid) : [],
+          getProjects().catch(() => [])
         ])
 
         setRecentForms(submittedForms.map(f => ({
@@ -1381,10 +1413,12 @@ export default function Forms() {
           templateName: f.templateName,
           status: f.status,
           date: f.createdAt?.toDate?.()?.toISOString() || f.createdAt,
-          submittedBy: f.submittedBy || 'Unknown'
+          submittedBy: f.submittedBy || 'Unknown',
+          projectId: f.projectId
         })))
 
         setCustomForms(userCustomForms)
+        setProjects(allProjects || [])
       } catch (err) {
         logger.error('Error loading forms:', err)
       } finally {
@@ -1463,19 +1497,20 @@ export default function Forms() {
     }
   }
   
-  const handleSaveForm = async (formData) => {
+  const handleSaveForm = async (formData, projectId = null) => {
     try {
-      // Save form to Firebase
+      // Save form to Firebase with optional project link
       const savedForm = await createForm({
         templateId: activeForm.id,
         templateName: activeForm.name,
         data: formData,
         status: 'completed',
         submittedBy: user?.displayName || user?.email || 'Unknown User',
-        submittedById: user?.uid
+        submittedById: user?.uid,
+        projectId: projectId || selectedProjectId  // Link to selected project
       })
 
-      logger.debug('Form saved:', savedForm.id)
+      logger.debug('Form saved:', savedForm.id, projectId ? `linked to project ${projectId}` : '')
 
       // Update local state with new form
       setRecentForms([
@@ -1485,10 +1520,14 @@ export default function Forms() {
           templateName: activeForm.name,
           status: 'completed',
           date: new Date().toISOString(),
-          submittedBy: user?.displayName || user?.email || 'Unknown User'
+          submittedBy: user?.displayName || user?.email || 'Unknown User',
+          projectId: projectId || selectedProjectId
         },
         ...recentForms
       ])
+
+      // Reset selected project after save
+      setSelectedProjectId(null)
       setActiveForm(null)
     } catch (err) {
       logger.error('Error saving form:', err)
@@ -1709,8 +1748,11 @@ export default function Forms() {
       {activeForm && (
         <ActiveFormPanel
           template={activeForm}
-          onClose={() => setActiveForm(null)}
+          onClose={() => { setActiveForm(null); setSelectedProjectId(null); }}
           onSave={handleSaveForm}
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onProjectChange={setSelectedProjectId}
         />
       )}
 

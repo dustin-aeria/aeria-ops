@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { getOperators, getAircraft, getClients } from '../../lib/firestore'
+import { getOperators, getAircraft, getClients, getFormsByProject, linkFormToProject } from '../../lib/firestore'
 import { useBranding } from '../BrandingSettings'
 import * as formDefs from '../../lib/formDefinitions'
 import { 
@@ -1977,22 +1977,25 @@ export default function ProjectForms({ project, onUpdate }) {
   const [editingForm, setEditingForm] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
+  const [linkedForms, setLinkedForms] = useState([])  // Forms from Firestore linked to this project
+
   // FIX #8 & #9: Get branding for PDF exports
   const { branding } = useBranding()
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // FIX #8 & #9: Load operators, aircraft, and clients in parallel
-        const [ops, acs, cls] = await Promise.all([
+        // Load operators, aircraft, clients, and linked forms in parallel
+        const [ops, acs, cls, linked] = await Promise.all([
           getOperators().catch(() => []),
           getAircraft().catch(() => []),
-          getClients().catch(() => [])
+          getClients().catch(() => []),
+          project?.id ? getFormsByProject(project.id).catch(() => []) : Promise.resolve([])
         ])
         setOperators(ops || [])
         setAircraft(acs || [])
         setClients(cls || [])
+        setLinkedForms(linked || [])
       } catch (err) {
         logger.error('Error loading data:', err)
         setOperators([])
@@ -2002,7 +2005,7 @@ export default function ProjectForms({ project, onUpdate }) {
       }
     }
     loadData()
-  }, [])
+  }, [project?.id])
 
   // FIX: Ensure projectForms is ALWAYS an array
   const projectForms = Array.isArray(project?.forms) ? project.forms : []
@@ -2110,8 +2113,9 @@ export default function ProjectForms({ project, onUpdate }) {
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Project Forms</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {projectForms.length} form{projectForms.length !== 1 ? 's' : ''} â€¢ 
-            {projectForms.filter(f => f.status === 'completed').length} completed
+            {projectForms.length + linkedForms.length} form{(projectForms.length + linkedForms.length) !== 1 ? 's' : ''}
+            {linkedForms.length > 0 && ` (${linkedForms.length} linked)`} •
+            {projectForms.filter(f => f.status === 'completed').length + linkedForms.filter(f => f.status === 'completed').length} completed
           </p>
         </div>
         <button
@@ -2123,8 +2127,57 @@ export default function ProjectForms({ project, onUpdate }) {
         </button>
       </div>
 
+      {/* Linked Forms from Forms Page */}
+      {linkedForms.length > 0 && (
+        <div className="card border-l-4 border-l-aeria-navy">
+          <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-aeria-navy" />
+            Linked Forms
+            <span className="text-sm font-normal text-gray-500">
+              (Submitted from Forms page)
+            </span>
+          </h3>
+          <div className="space-y-2">
+            {linkedForms.map(form => {
+              const statusConfig = {
+                draft: { color: 'bg-gray-100 text-gray-700', label: 'Draft' },
+                in_progress: { color: 'bg-blue-100 text-blue-700', label: 'In Progress' },
+                completed: { color: 'bg-green-100 text-green-700', label: 'Completed' }
+              }
+              const status = statusConfig[form.status] || statusConfig.draft
+              const createdDate = form.createdAt?.toDate?.()
+                ? form.createdAt.toDate().toLocaleDateString()
+                : 'Unknown date'
+
+              return (
+                <div
+                  key={form.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        {form.templateName || form.templateId || 'Form'}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Submitted {createdDate}
+                        {form.submittedBy && ` by ${form.submittedBy}`}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${status.color}`}>
+                    {status.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Forms by Category */}
-      {projectForms.length === 0 ? (
+      {projectForms.length === 0 && linkedForms.length === 0 ? (
         <div className="card text-center py-12">
           <ClipboardList className="w-12 h-12 mx-auto text-gray-400 mb-3" />
           <h3 className="font-medium text-gray-900">No forms yet</h3>
@@ -2136,7 +2189,7 @@ export default function ProjectForms({ project, onUpdate }) {
             Browse Form Library
           </button>
         </div>
-      ) : (
+      ) : projectForms.length === 0 ? null : (
         <div className="space-y-6">
           {categories.map(category => {
             const categoryForms = formsByCategory[category.id] || []
