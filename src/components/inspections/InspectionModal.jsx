@@ -3,8 +3,9 @@
  * Modal for scheduling, conducting, and viewing inspections
  */
 
-import { useState, useEffect } from 'react'
-import { X, Save, Play, CheckCircle2, AlertTriangle, ClipboardCheck, Plus } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Save, Play, CheckCircle2, AlertTriangle, ClipboardCheck, Plus, Camera, Image, Trash2 } from 'lucide-react'
+import { uploadInspectionPhoto, deleteInspectionPhoto } from '../../lib/storageHelpers'
 import {
   scheduleInspection,
   startInspection,
@@ -37,6 +38,10 @@ export default function InspectionModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [currentInspection, setCurrentInspection] = useState(null)
+  const [itemPhotos, setItemPhotos] = useState({}) // {itemId: [{url, path, name}]}
+  const [uploadingPhoto, setUploadingPhoto] = useState(null) // itemId being uploaded
+  const [selectedPhoto, setSelectedPhoto] = useState(null) // For photo preview modal
+  const fileInputRefs = useRef({})
 
   const isEditing = !!inspection
   const isScheduled = currentInspection?.status === 'scheduled'
@@ -56,9 +61,16 @@ export default function InspectionModal({
         inspectorName: inspection.inspectorName || '',
         notes: inspection.completionNotes || ''
       })
+      // Load existing photos from inspection data
+      if (inspection.photos) {
+        setItemPhotos(inspection.photos)
+      } else {
+        setItemPhotos({})
+      }
     } else {
       setCurrentInspection(null)
       setChecklistItems([])
+      setItemPhotos({})
       setFormData({
         templateId: '',
         scheduledDate: new Date().toISOString().split('T')[0],
@@ -147,6 +159,64 @@ export default function InspectionModal({
       await updateChecklistItem(currentInspection.id, itemId, { notes })
     } catch (err) {
       console.error('Error saving notes:', err)
+    }
+  }
+
+  const handlePhotoUpload = async (itemId, event) => {
+    const file = event.target.files?.[0]
+    if (!file || !currentInspection?.id) return
+
+    setUploadingPhoto(itemId)
+    setError(null)
+
+    try {
+      const result = await uploadInspectionPhoto(file, currentInspection.id, itemId)
+
+      // Update local state
+      setItemPhotos(prev => ({
+        ...prev,
+        [itemId]: [...(prev[itemId] || []), result]
+      }))
+
+      // Save to inspection in Firestore
+      const updatedPhotos = {
+        ...itemPhotos,
+        [itemId]: [...(itemPhotos[itemId] || []), result]
+      }
+      await updateChecklistItem(currentInspection.id, itemId, { photos: updatedPhotos[itemId] })
+    } catch (err) {
+      console.error('Error uploading photo:', err)
+      setError(err.message)
+    } finally {
+      setUploadingPhoto(null)
+      // Reset file input
+      if (fileInputRefs.current[itemId]) {
+        fileInputRefs.current[itemId].value = ''
+      }
+    }
+  }
+
+  const handleDeletePhoto = async (itemId, photoIndex) => {
+    const photo = itemPhotos[itemId]?.[photoIndex]
+    if (!photo || !currentInspection?.id) return
+
+    if (!window.confirm('Delete this photo?')) return
+
+    try {
+      await deleteInspectionPhoto(photo.path)
+
+      // Update local state
+      setItemPhotos(prev => ({
+        ...prev,
+        [itemId]: prev[itemId].filter((_, i) => i !== photoIndex)
+      }))
+
+      // Update Firestore
+      const updatedPhotos = itemPhotos[itemId].filter((_, i) => i !== photoIndex)
+      await updateChecklistItem(currentInspection.id, itemId, { photos: updatedPhotos })
+    } catch (err) {
+      console.error('Error deleting photo:', err)
+      setError(err.message)
     }
   }
 
@@ -468,6 +538,60 @@ export default function InspectionModal({
                             )}
                           </div>
                         )}
+
+                        {/* Photo upload and gallery */}
+                        {(isInProgress || (itemPhotos[item.id]?.length > 0)) && (
+                          <div className="mt-2">
+                            {/* Upload button (only during inspection) */}
+                            {isInProgress && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  ref={el => fileInputRefs.current[item.id] = el}
+                                  onChange={(e) => handlePhotoUpload(item.id, e)}
+                                  className="hidden"
+                                  id={`photo-${item.id}`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRefs.current[item.id]?.click()}
+                                  disabled={uploadingPhoto === item.id}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+                                >
+                                  <Camera className="w-3 h-3" />
+                                  {uploadingPhoto === item.id ? 'Uploading...' : 'Add Photo'}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Photo thumbnails */}
+                            {itemPhotos[item.id]?.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {itemPhotos[item.id].map((photo, idx) => (
+                                  <div key={idx} className="relative group">
+                                    <img
+                                      src={photo.url}
+                                      alt={photo.name}
+                                      className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-90"
+                                      onClick={() => setSelectedPhoto(photo)}
+                                    />
+                                    {isInProgress && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePhoto(item.id, idx)}
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -570,6 +694,29 @@ export default function InspectionModal({
           </div>
         </div>
       </div>
+
+      {/* Photo Preview Modal */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedPhoto.url}
+              alt={selectedPhoto.name}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            />
+            <p className="text-white text-center mt-2 text-sm">{selectedPhoto.name}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

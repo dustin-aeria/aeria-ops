@@ -537,3 +537,103 @@ export async function uploadMultipleFormAttachments(files, formId, fieldId, onPr
 
   return results
 }
+
+// ============================================
+// INSPECTION PHOTOS
+// ============================================
+
+/**
+ * Upload an inspection photo
+ * @param {File} file - The image file to upload
+ * @param {string} inspectionId - Inspection ID for organizing files
+ * @param {string} itemId - Optional checklist item ID (for item-specific photos)
+ * @returns {Promise<{url: string, path: string, name: string, size: number, type: string}>}
+ */
+export async function uploadInspectionPhoto(file, inspectionId, itemId = null) {
+  if (!file) throw new Error('No file provided')
+  if (!inspectionId) throw new Error('Inspection ID required')
+
+  // Validate file type
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
+  if (!validTypes.includes(file.type)) {
+    throw new Error('Invalid file type. Please upload JPEG, PNG, or WebP images.')
+  }
+
+  // Validate file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    throw new Error('File too large. Maximum size is 10MB.')
+  }
+
+  // Generate unique filename
+  const timestamp = Date.now()
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+  const filename = `${timestamp}_${safeName}`
+
+  // Create storage path: inspections/{inspectionId}/photos/{itemId?}/{filename}
+  const subPath = itemId ? `items/${itemId}` : 'general'
+  const storagePath = `inspections/${inspectionId}/photos/${subPath}/${filename}`
+  const storageRef = ref(storage, storagePath)
+
+  // Upload file
+  const snapshot = await uploadBytes(storageRef, file, {
+    contentType: file.type,
+    customMetadata: {
+      originalName: file.name,
+      uploadedAt: new Date().toISOString(),
+      inspectionId,
+      itemId: itemId || ''
+    }
+  })
+
+  // Get download URL
+  const url = await getDownloadURL(snapshot.ref)
+
+  return {
+    url,
+    path: storagePath,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    uploadedAt: new Date().toISOString(),
+    itemId
+  }
+}
+
+/**
+ * Delete an inspection photo from Firebase Storage
+ * @param {string} storagePath - The storage path of the file to delete
+ */
+export async function deleteInspectionPhoto(storagePath) {
+  if (!storagePath) throw new Error('Storage path required')
+
+  const storageRef = ref(storage, storagePath)
+  await deleteObject(storageRef)
+}
+
+/**
+ * Upload multiple inspection photos
+ * @param {FileList|File[]} files - Files to upload
+ * @param {string} inspectionId - Inspection ID
+ * @param {string} itemId - Optional checklist item ID
+ * @param {function} onProgress - Progress callback (index, total)
+ * @returns {Promise<Array<{url: string, path: string, name: string}>>}
+ */
+export async function uploadMultipleInspectionPhotos(files, inspectionId, itemId = null, onProgress) {
+  const results = []
+  const fileArray = Array.from(files)
+
+  for (let i = 0; i < fileArray.length; i++) {
+    const file = fileArray[i]
+    if (onProgress) onProgress(i + 1, fileArray.length)
+
+    try {
+      const result = await uploadInspectionPhoto(file, inspectionId, itemId)
+      results.push(result)
+    } catch (error) {
+      results.push({ error: error.message, name: file.name })
+    }
+  }
+
+  return results
+}

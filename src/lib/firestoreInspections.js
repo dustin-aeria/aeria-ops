@@ -46,7 +46,24 @@ export const INSPECTION_TYPES = {
   emergency: { label: 'Emergency', description: 'Emergency equipment and procedures' },
   vehicle: { label: 'Vehicle', description: 'Vehicle pre-use inspection' },
   aircraft: { label: 'Aircraft', description: 'UAV/Drone pre-flight inspection' },
-  specialized: { label: 'Specialized', description: 'Specialized operation inspection' }
+  specialized: { label: 'Specialized', description: 'Specialized operation inspection' },
+  custom: { label: 'Custom', description: 'User-defined inspection type' }
+}
+
+// Formal vs Informal inspection classification
+export const INSPECTION_FORMALITY = {
+  formal: {
+    label: 'Formal',
+    description: 'Planned inspection with documented checklist and findings',
+    requiresTemplate: true,
+    requiresSignature: true
+  },
+  informal: {
+    label: 'Informal',
+    description: 'Quick spot-check or walk-through observation',
+    requiresTemplate: false,
+    requiresSignature: false
+  }
 }
 
 export const INSPECTION_FREQUENCY = {
