@@ -39,6 +39,22 @@ import {
 import { BrandedPDF } from '../../lib/pdfExportService'
 import { logger } from '../../lib/logger'
 
+// Default sections to include in tailgate briefing
+const DEFAULT_INCLUDED_SECTIONS = {
+  projectOverview: true,
+  crew: true,
+  aircraft: true,
+  flightPlan: true,
+  hazards: true,
+  ppe: true,
+  emergency: true,
+  musterPoint: true,
+  evacRoutes: true,
+  communications: true,
+  weather: true,
+  siteInfo: true
+}
+
 // Default tailgate data structure
 const createDefaultTailgateDay = (date) => ({
   date: date || new Date().toISOString().split('T')[0],
@@ -70,7 +86,8 @@ const createDefaultTailgateDay = (date) => ({
   briefingEndTime: '',
   goNoGoDecision: null,
   goNoGoNotes: '',
-  flightLogs: []
+  flightLogs: [],
+  includedSections: { ...DEFAULT_INCLUDED_SECTIONS }
 })
 
 export default function ProjectTailgate({ project, onUpdate }) {
@@ -165,6 +182,18 @@ export default function ProjectTailgate({ project, onUpdate }) {
       }
     })
   }
+
+  const toggleIncludedSection = (section) => {
+    const currentIncluded = currentDay.includedSections || DEFAULT_INCLUDED_SECTIONS
+    updateCurrentDay({
+      includedSections: {
+        ...currentIncluded,
+        [section]: !currentIncluded[section]
+      }
+    })
+  }
+
+  const includedSections = currentDay.includedSections || DEFAULT_INCLUDED_SECTIONS
 
   // Multi-day management
   const addDay = () => {
@@ -565,11 +594,58 @@ export default function ProjectTailgate({ project, onUpdate }) {
               {isReadyForOps ? 'Ready for Operations' : 'Pre-Flight Items Pending'}
             </h3>
             <p className={`text-sm ${isReadyForOps ? 'text-green-600' : 'text-amber-600'}`}>
-              Checklist: {completedCount}/{totalChecklistItems} • 
-              Crew: {attendedCount}/{allCrew.length} • 
+              Checklist: {completedCount}/{totalChecklistItems} •
+              Crew: {attendedCount}/{allCrew.length} •
               Decision: {currentDay.goNoGoDecision === true ? 'GO' : currentDay.goNoGoDecision === false ? 'NO-GO' : 'Pending'}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Briefing Content Configuration */}
+      <div className="card">
+        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-aeria-blue" />
+          Briefing Content
+          <span className="text-xs font-normal text-gray-500">Select items to include</span>
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {[
+            { key: 'projectOverview', label: 'Project Overview', icon: FileText },
+            { key: 'crew', label: 'Crew & Roles', icon: Users },
+            { key: 'aircraft', label: 'Aircraft/Equipment', icon: Plane },
+            { key: 'flightPlan', label: 'Flight Plan', icon: MapPin },
+            { key: 'hazards', label: 'Hazards & Controls', icon: AlertTriangle },
+            { key: 'ppe', label: 'PPE Requirements', icon: HardHat },
+            { key: 'emergency', label: 'Emergency Contacts', icon: Phone },
+            { key: 'musterPoint', label: 'Muster Point', icon: MapPin },
+            { key: 'evacRoutes', label: 'Evacuation Routes', icon: AlertOctagon },
+            { key: 'communications', label: 'Communications', icon: Radio },
+            { key: 'weather', label: 'Weather Data', icon: Wind },
+            { key: 'siteInfo', label: 'Site Details', icon: MapPin }
+          ].map(item => {
+            const Icon = item.icon
+            const isIncluded = includedSections[item.key]
+            return (
+              <label
+                key={item.key}
+                className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors text-sm ${
+                  isIncluded
+                    ? 'bg-aeria-sky border-aeria-navy/30 text-aeria-navy'
+                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isIncluded}
+                  onChange={() => toggleIncludedSection(item.key)}
+                  className="w-4 h-4 rounded border-gray-300 text-aeria-navy"
+                />
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </label>
+            )
+          })}
         </div>
       </div>
 
@@ -888,31 +964,97 @@ export default function ProjectTailgate({ project, onUpdate }) {
 
         {expandedSections.briefing && (
           <div className="mt-4 space-y-4">
-            {/* Project Header */}
-            <div className="p-4 bg-gradient-to-r from-aeria-navy to-aeria-blue text-white rounded-lg">
-              <h3 className="text-xl font-bold">{project.name || 'Untitled Project'}</h3>
-              <div className="grid sm:grid-cols-4 gap-4 mt-3 text-sm">
-                <div>
-                  <p className="text-white/70">Date</p>
-                  <p className="font-semibold">{formatShortDate(currentDay.date)}</p>
-                </div>
-                <div>
-                  <p className="text-white/70">Client</p>
-                  <p className="font-semibold">{project.clientName || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-white/70">Operation</p>
-                  <p className="font-semibold">{project.flightPlan?.operationType || 'VLOS'}</p>
-                </div>
-                <div>
-                  <p className="text-white/70">Max Alt</p>
-                  <p className="font-semibold">{project.flightPlan?.maxAltitudeAGL || 120}m AGL</p>
+            {/* Project Header - Always visible */}
+            {includedSections.projectOverview && (
+              <div className="p-4 bg-gradient-to-r from-aeria-navy to-aeria-blue text-white rounded-lg">
+                <h3 className="text-xl font-bold">{project.name || 'Untitled Project'}</h3>
+                <div className="grid sm:grid-cols-4 gap-4 mt-3 text-sm">
+                  <div>
+                    <p className="text-white/70">Date</p>
+                    <p className="font-semibold">{formatShortDate(currentDay.date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Client</p>
+                    <p className="font-semibold">{project.clientName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Operation</p>
+                    <p className="font-semibold">{project.flightPlan?.operationType || 'VLOS'}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Max Alt</p>
+                    <p className="font-semibold">{project.flightPlan?.maxAltitudeAGL || 120}m AGL</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Crew & Roles */}
+            {includedSections.crew && allCrew.length > 0 && (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-600" />
+                  Crew Assignments
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-2 text-sm">
+                  {allCrew.map((member, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700">{member.role}:</span>
+                      <span className="text-gray-900">{member.name}</span>
+                      {member.phone && <span className="text-gray-500">({member.phone})</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Aircraft/Equipment */}
+            {includedSections.aircraft && project.aircraft && (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Plane className="w-4 h-4 text-gray-600" />
+                  Aircraft/Equipment
+                </h4>
+                <div className="text-sm">
+                  <p><span className="font-medium">Aircraft:</span> {project.aircraft?.nickname || project.aircraft?.model || 'Not specified'}</p>
+                  {project.aircraft?.registration && <p><span className="font-medium">Registration:</span> {project.aircraft.registration}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Flight Plan Details */}
+            {includedSections.flightPlan && project.flightPlan && (
+              <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                <h4 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Flight Plan Summary
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-2 text-sm text-indigo-800">
+                  <div><span className="font-medium">Operation:</span> {project.flightPlan.operationType || 'VLOS'}</div>
+                  <div><span className="font-medium">Max Altitude:</span> {project.flightPlan.maxAltitudeAGL || 120}m AGL</div>
+                  {project.flightPlan.flightArea && <div><span className="font-medium">Area:</span> {project.flightPlan.flightArea}</div>}
+                  {project.description && <div className="sm:col-span-2"><span className="font-medium">Description:</span> {project.description}</div>}
+                </div>
+              </div>
+            )}
+
+            {/* Site Information */}
+            {includedSections.siteInfo && project.sites?.[0] && (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-gray-600" />
+                  Site Details
+                </h4>
+                <div className="text-sm text-gray-700">
+                  {project.sites[0].name && <p><span className="font-medium">Site:</span> {project.sites[0].name}</p>}
+                  {project.sites[0].address && <p><span className="font-medium">Address:</span> {project.sites[0].address}</p>}
+                  {project.sites[0].coordinates && <p><span className="font-medium">Coordinates:</span> {project.sites[0].coordinates}</p>}
+                </div>
+              </div>
+            )}
 
             {/* Key Hazards */}
-            {hazards.length > 0 && (
+            {includedSections.hazards && hazards.length > 0 && (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" />
@@ -930,39 +1072,103 @@ export default function ProjectTailgate({ project, onUpdate }) {
             )}
 
             {/* PPE */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                <HardHat className="w-4 h-4" />
-                Required PPE
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {ppeItems.map((item, i) => (
-                  <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {item}
-                  </span>
-                ))}
+            {includedSections.ppe && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <HardHat className="w-4 h-4" />
+                  Required PPE
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {ppeItems.map((item, i) => (
+                    <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Communications */}
+            {includedSections.communications && project.communications && (
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                  <Radio className="w-4 h-4" />
+                  Communications
+                </h4>
+                <div className="text-sm text-purple-800">
+                  {project.communications.primaryChannel && <p><span className="font-medium">Primary Channel:</span> {project.communications.primaryChannel}</p>}
+                  {project.communications.emergencyChannel && <p><span className="font-medium">Emergency:</span> {project.communications.emergencyChannel}</p>}
+                  {project.communications.emergencyWord && <p><span className="font-medium">Emergency Word:</span> {project.communications.emergencyWord}</p>}
+                  {project.communications.stopWord && <p><span className="font-medium">Stop Word:</span> {project.communications.stopWord}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Muster Point */}
+            {includedSections.musterPoint && project.emergencyPlan?.rallyPoint && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Muster Point / Rally Point
+                </h4>
+                <p className="text-sm text-green-800">{project.emergencyPlan.rallyPoint}</p>
+              </div>
+            )}
+
+            {/* Evacuation Routes */}
+            {includedSections.evacRoutes && project.emergencyPlan?.evacuationRoutes && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+                  <AlertOctagon className="w-4 h-4" />
+                  Evacuation Routes
+                </h4>
+                <p className="text-sm text-orange-800">{project.emergencyPlan.evacuationRoutes}</p>
+              </div>
+            )}
 
             {/* Emergency */}
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
-                <AlertOctagon className="w-4 h-4" />
-                Emergency Information
-              </h4>
-              <div className="grid sm:grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-red-700">Contact: </span>
-                  <span className="text-red-900 font-medium">
-                    {project.emergencyPlan?.primaryEmergencyContact?.name || 'Not set'} - {project.emergencyPlan?.primaryEmergencyContact?.phone || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-red-700">Hospital: </span>
-                  <span className="text-red-900 font-medium">{project.emergencyPlan?.nearestHospital || 'Not set'}</span>
+            {includedSections.emergency && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+                  <AlertOctagon className="w-4 h-4" />
+                  Emergency Information
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-red-700">Contact: </span>
+                    <span className="text-red-900 font-medium">
+                      {project.emergencyPlan?.primaryEmergencyContact?.name || 'Not set'} - {project.emergencyPlan?.primaryEmergencyContact?.phone || 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-red-700">Hospital: </span>
+                    <span className="text-red-900 font-medium">{project.emergencyPlan?.nearestHospital || 'Not set'}</span>
+                  </div>
+                  {project.emergencyPlan?.hospitalAddress && (
+                    <div className="sm:col-span-2">
+                      <span className="text-red-700">Hospital Address: </span>
+                      <span className="text-red-900">{project.emergencyPlan.hospitalAddress}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Weather (from data entered above) */}
+            {includedSections.weather && (currentDay.weatherData?.temperature || currentDay.weatherData?.windSpeed || currentDay.weatherBriefing) && (
+              <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg">
+                <h4 className="font-semibold text-sky-900 mb-2 flex items-center gap-2">
+                  <Wind className="w-4 h-4" />
+                  Current Weather
+                </h4>
+                <div className="grid sm:grid-cols-3 gap-2 text-sm text-sky-800">
+                  {currentDay.weatherData?.temperature && <div><span className="font-medium">Temp:</span> {currentDay.weatherData.temperature}</div>}
+                  {currentDay.weatherData?.windSpeed && <div><span className="font-medium">Wind:</span> {currentDay.weatherData.windSpeed} {currentDay.weatherData.windDirection || ''}</div>}
+                  {currentDay.weatherData?.visibility && <div><span className="font-medium">Visibility:</span> {currentDay.weatherData.visibility}</div>}
+                </div>
+                {currentDay.weatherBriefing && <p className="text-sm text-sky-700 mt-2">{currentDay.weatherBriefing}</p>}
+              </div>
+            )}
 
             {/* Additional Notes */}
             <div>
