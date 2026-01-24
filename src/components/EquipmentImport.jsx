@@ -24,7 +24,8 @@ import {
   Zap,
   Radio,
   Briefcase,
-  Package
+  Package,
+  Archive
 } from 'lucide-react'
 import { createEquipment, EQUIPMENT_CATEGORIES } from '../lib/firestore'
 
@@ -54,7 +55,9 @@ const categoryIcons = {
   vehicles: Truck,
   power: Zap,
   communication: Radio,
-  support: Briefcase
+  support: Briefcase,
+  rpas: Package,
+  other: Archive
 }
 
 // ============================================
