@@ -28,10 +28,7 @@ import {
   RATE_TYPES,
   COST_CATEGORIES
 } from '../../lib/costEstimator'
-import { getEquipment } from '../../lib/firestore'
-
-// Crew members may come from project data or a dedicated collection
-// For now, we'll work with project-assigned crew
+import { getEquipment, getOperators } from '../../lib/firestore'
 
 export default function ProjectCostEstimate({ project, operatorId, onSave }) {
   const [loading, setLoading] = useState(true)
@@ -56,10 +53,8 @@ export default function ProjectCostEstimate({ project, operatorId, onSave }) {
   const [newItem, setNewItem] = useState({ description: '', category: 'other', cost: '' })
 
   useEffect(() => {
-    if (operatorId) {
-      loadData()
-    }
-  }, [operatorId])
+    loadData()
+  }, [project?.crew])
 
   useEffect(() => {
     if (equipment.length > 0 || crew.length > 0) {
@@ -70,10 +65,28 @@ export default function ProjectCostEstimate({ project, operatorId, onSave }) {
   const loadData = async () => {
     setLoading(true)
     try {
-      const equipmentData = await getEquipment(operatorId)
+      // Load equipment with billing rates
+      const equipmentData = await getEquipment()
       setEquipment(equipmentData || [])
-      // Crew data comes from project.crew array
-      setCrew(project?.crew || [])
+
+      // Load operators with billing rates
+      const operatorsData = await getOperators()
+
+      // Map project crew assignments to full operator objects with rates
+      const projectCrew = project?.crew || []
+      const crewWithRates = projectCrew.map(assignment => {
+        const operator = operatorsData.find(op => op.id === assignment.operatorId || op.id === assignment.crewMemberId)
+        if (operator) {
+          return {
+            ...assignment,
+            ...operator,
+            name: `${operator.firstName || ''} ${operator.lastName || ''}`.trim() || operator.name || 'Unknown'
+          }
+        }
+        return assignment
+      }).filter(c => c.hourlyRate || c.dailyRate || c.weeklyRate)
+
+      setCrew(crewWithRates)
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
