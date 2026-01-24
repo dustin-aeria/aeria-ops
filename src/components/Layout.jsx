@@ -28,6 +28,7 @@ import {
   CalendarDays
 } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
+import NotificationBell from './NotificationBell'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -263,22 +264,30 @@ export default function Layout() {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Mobile header */}
-        <div className="sticky top-0 z-30 flex items-center h-16 px-4 bg-white border-b border-gray-200 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -ml-2 text-gray-500 hover:text-gray-700"
-            aria-label="Open navigation menu"
-            aria-expanded={sidebarOpen}
-          >
-            <Menu className="w-6 h-6" aria-hidden="true" />
-          </button>
-          <div className="flex items-center gap-2 ml-3">
-            <div className="w-7 h-7 bg-aeria-navy rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">A</span>
+        <div className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 lg:hidden">
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 -ml-2 text-gray-500 hover:text-gray-700"
+              aria-label="Open navigation menu"
+              aria-expanded={sidebarOpen}
+            >
+              <Menu className="w-6 h-6" aria-hidden="true" />
+            </button>
+            <div className="flex items-center gap-2 ml-3">
+              <div className="w-7 h-7 bg-aeria-navy rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xs">A</span>
+              </div>
+              <span className="font-semibold text-aeria-navy">Aeria Ops</span>
             </div>
-            <span className="font-semibold text-aeria-navy">Aeria Ops</span>
           </div>
+          <NotificationBell />
+        </div>
+
+        {/* Desktop header bar */}
+        <div className="hidden lg:flex items-center justify-end h-14 px-8 bg-white border-b border-gray-200">
+          <NotificationBell />
         </div>
 
         {/* Page content */}
