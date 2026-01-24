@@ -1526,6 +1526,112 @@ export function migrateProjectToSORA(project) {
 }
 
 // ============================================
+// USER FEEDBACK
+// ============================================
+
+const feedbackRef = collection(db, 'feedback')
+
+/**
+ * Submit user feedback
+ * @param {Object} data - Feedback data
+ * @returns {Promise<Object>}
+ */
+export async function submitFeedback(data) {
+  const feedback = {
+    type: data.type || 'general',
+    message: data.message || '',
+    page: data.page || '',
+    userId: data.userId || null,
+    userEmail: data.userEmail || null,
+    userAgent: data.userAgent || '',
+    screenSize: data.screenSize || '',
+    status: 'new',  // new | reviewed | resolved
+    notes: '',      // Admin notes
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null
+  }
+
+  const docRef = await addDoc(feedbackRef, feedback)
+  return { id: docRef.id, ...feedback }
+}
+
+/**
+ * Get all feedback with optional filters
+ * @param {Object} filters - Optional filters (status, type, limit)
+ * @returns {Promise<Array>}
+ */
+export async function getFeedback(filters = {}) {
+  let q = query(feedbackRef, orderBy('createdAt', 'desc'))
+
+  if (filters.status) {
+    q = query(feedbackRef, where('status', '==', filters.status), orderBy('createdAt', 'desc'))
+  }
+
+  if (filters.type) {
+    q = query(feedbackRef, where('type', '==', filters.type), orderBy('createdAt', 'desc'))
+  }
+
+  if (filters.limit) {
+    q = query(q, limit(filters.limit))
+  }
+
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
+ * Update feedback status/notes
+ * @param {string} id - Feedback ID
+ * @param {Object} data - Update data (status, notes, reviewedBy)
+ */
+export async function updateFeedback(id, data) {
+  const docRef = doc(db, 'feedback', id)
+  await updateDoc(docRef, {
+    ...data,
+    reviewedAt: data.status !== 'new' ? serverTimestamp() : null
+  })
+}
+
+/**
+ * Delete feedback
+ * @param {string} id - Feedback ID
+ */
+export async function deleteFeedback(id) {
+  const docRef = doc(db, 'feedback', id)
+  await deleteDoc(docRef)
+}
+
+/**
+ * Get feedback statistics
+ * @returns {Promise<Object>}
+ */
+export async function getFeedbackStats() {
+  const allFeedback = await getFeedback()
+
+  const stats = {
+    total: allFeedback.length,
+    byStatus: { new: 0, reviewed: 0, resolved: 0 },
+    byType: { general: 0, bug: 0, feature: 0, question: 0 },
+    recentFeedback: allFeedback.slice(0, 5)
+  }
+
+  allFeedback.forEach(item => {
+    const status = item.status || 'new'
+    const type = item.type || 'general'
+
+    if (stats.byStatus[status] !== undefined) {
+      stats.byStatus[status]++
+    }
+    if (stats.byType[type] !== undefined) {
+      stats.byType[type]++
+    }
+  })
+
+  return stats
+}
+
+// ============================================
 // UTILITY EXPORTS
 // ============================================
 

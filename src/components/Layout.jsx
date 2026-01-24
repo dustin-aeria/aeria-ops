@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard,
@@ -23,8 +23,10 @@ import {
   UserCheck,
   GraduationCap,
   Award,
-  ListChecks
+  ListChecks,
+  MessageSquarePlus
 } from 'lucide-react'
+import FeedbackModal from './FeedbackModal'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -230,6 +232,9 @@ function Sidebar({ mobile, onClose }) {
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
+  const location = useLocation()
+  const { user } = useAuth()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -279,6 +284,25 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating Feedback Button */}
+      <button
+        onClick={() => setShowFeedback(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 bg-aeria-navy text-white rounded-full shadow-lg hover:bg-aeria-navy/90 transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-aeria-navy focus:ring-offset-2"
+        aria-label="Send feedback"
+      >
+        <MessageSquarePlus className="w-5 h-5" />
+        <span className="text-sm font-medium hidden sm:inline">Feedback</span>
+      </button>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        currentPage={location.pathname}
+        userId={user?.uid}
+        userEmail={user?.email}
+      />
     </div>
   )
 }
