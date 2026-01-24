@@ -48,7 +48,8 @@ import {
   CloudOff,
   Target,
   MessageSquare,
-  FileEdit
+  FileEdit,
+  Layers
 } from 'lucide-react'
 import { getProject, updateProject, deleteProject, migrateProjectToDecoupledStructure, getClients } from '../lib/firestore'
 import ProjectOverview from '../components/projects/ProjectOverview'
@@ -68,6 +69,7 @@ import ProjectExport from '../components/projects/ProjectExport'
 import ProjectNeedsAnalysis from '../components/projects/ProjectNeedsAnalysis'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectProposal from '../components/projects/ProjectProposal'
+import ProjectTemplates from '../components/projects/ProjectTemplates'
 import { useAuth } from '../contexts/AuthContext'
 import { logger } from '../lib/logger'
 
@@ -75,6 +77,7 @@ const tabs = [
   { id: 'overview', label: 'Overview', icon: FolderKanban },
   { id: 'needs', label: 'Needs Analysis', icon: Target },
   { id: 'sections', label: 'Sections', icon: Settings2 },
+  { id: 'templates', label: 'Templates', icon: Layers },
   { id: 'crew', label: 'Crew', icon: Users },
   { id: 'team', label: 'Team', icon: MessageSquare },
   { id: 'site', label: 'Site Survey', icon: MapPin, toggleable: true, sectionKey: 'siteSurvey' },
@@ -602,6 +605,9 @@ export default function ProjectView() {
         )}
         {activeTab === 'sections' && (
           <ProjectSections project={project} onUpdate={handleUpdate} />
+        )}
+        {activeTab === 'templates' && (
+          <ProjectTemplates project={project} mode="manage" />
         )}
         {activeTab === 'crew' && (
           <ProjectCrew project={project} onUpdate={handleUpdate} />
