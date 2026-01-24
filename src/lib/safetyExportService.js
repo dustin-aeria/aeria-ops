@@ -1,12 +1,13 @@
 /**
  * Safety Export Service
- * Export CAPA and Incident reports as professional PDFs
+ * Export CAPA, Incident, and Training reports as professional PDFs
  *
  * @location src/lib/safetyExportService.js
  */
 
 import { logger } from './logger'
 import { CAPA_STATUS, CAPA_TYPES, PRIORITY_LEVELS, INCIDENT_STATUS, INCIDENT_TYPES, SEVERITY_LEVELS, RPAS_INCIDENT_TYPES } from './firestoreSafety'
+import { TRAINING_CATEGORIES, TRAINING_STATUS, COMPETENCY_STATUS } from './firestoreTraining'
 import { format } from 'date-fns'
 
 const JSPDF_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
@@ -842,5 +843,241 @@ export async function exportIncidentReport(incident, options = {}) {
   doc.save(filename)
 
   logger.info(`Incident report exported: ${filename}`)
+  return filename
+}
+
+/**
+ * Export Training Records as PDF
+ */
+export async function exportTrainingReport(records, metrics, options = {}) {
+  const jsPDF = await loadJsPDF()
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+
+  const pageWidth = 215.9
+  const pageHeight = 279.4
+  const margin = 20
+  const contentWidth = pageWidth - (margin * 2)
+  let currentY = margin
+  let pageNumber = 1
+
+  const operatorName = options.operatorName || 'Aeria Operations'
+  const generatedDate = new Date().toLocaleDateString('en-CA', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  })
+
+  // Helper functions
+  const setColor = (color) => doc.setTextColor(color.r, color.g, color.b)
+  const setFillColor = (color) => doc.setFillColor(color.r, color.g, color.b)
+  const setDrawColor = (color) => doc.setDrawColor(color.r, color.g, color.b)
+
+  const addHeader = () => {
+    setFillColor(COLORS.primary)
+    doc.rect(0, 0, pageWidth, 15, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('TRAINING RECORDS REPORT', margin, 10)
+    currentY = 25
+  }
+
+  const addFooter = (pageNum, totalPages) => {
+    const footerY = pageHeight - 10
+    setDrawColor(COLORS.primary)
+    doc.setLineWidth(0.3)
+    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5)
+
+    setColor(COLORS.textLight)
+    doc.setFontSize(8)
+    doc.text(operatorName, margin, footerY)
+
+    const dateWidth = doc.getTextWidth(generatedDate)
+    doc.text(generatedDate, (pageWidth - dateWidth) / 2, footerY)
+
+    const pageText = `Page ${pageNum} of ${totalPages}`
+    const pageWidth2 = doc.getTextWidth(pageText)
+    doc.text(pageText, pageWidth - margin - pageWidth2, footerY)
+  }
+
+  const checkPageBreak = (required = 30) => {
+    if (currentY + required > pageHeight - 25) {
+      doc.addPage()
+      pageNumber++
+      addHeader()
+      return true
+    }
+    return false
+  }
+
+  const addSectionTitle = (text) => {
+    checkPageBreak(20)
+    setFillColor(COLORS.primary)
+    doc.roundedRect(margin, currentY, contentWidth, 10, 2, 2, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text(text.toUpperCase(), margin + 5, currentY + 7)
+    currentY += 18
+  }
+
+  // ===== COVER PAGE =====
+  setFillColor(COLORS.primary)
+  doc.rect(0, 0, pageWidth, 80, 'F')
+  setFillColor(COLORS.secondary)
+  doc.rect(0, 80, pageWidth, 4, 'F')
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text(operatorName, margin, 25)
+
+  doc.setFontSize(28)
+  doc.text('Training Records', margin, 50)
+
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'normal')
+  doc.text('COR Element 3 - Training & Instruction', margin, 65)
+
+  // Summary box
+  currentY = 100
+  setFillColor(COLORS.lightBg)
+  doc.roundedRect(margin, currentY, contentWidth, 50, 3, 3, 'F')
+
+  const summaryDetails = [
+    ['Total Records', String(metrics?.totalRecords || records.length)],
+    ['Current', String(metrics?.statusCounts?.current || 0)],
+    ['Expiring Soon', String(metrics?.expiringCount || 0)],
+    ['Expired', String(metrics?.expiredCount || 0)],
+    ['Compliance Rate', `${metrics?.complianceRate || 0}%`],
+    ['Generated', generatedDate]
+  ]
+
+  let detailY = currentY + 15
+  doc.setFontSize(9)
+  summaryDetails.forEach((d, i) => {
+    const col = i % 2
+    const row = Math.floor(i / 2)
+    const x = margin + 10 + (col * (contentWidth / 2))
+    const y = detailY + (row * 12)
+
+    setColor(COLORS.textLight)
+    doc.setFont('helvetica', 'bold')
+    doc.text(d[0] + ':', x, y)
+    setColor(COLORS.text)
+    doc.setFont('helvetica', 'normal')
+    doc.text(d[1], x + 35, y)
+  })
+
+  // ===== CONTENT PAGES =====
+  doc.addPage()
+  pageNumber++
+  addHeader()
+
+  // Training Records Table
+  addSectionTitle('Training Records')
+
+  const recordHeaders = ['Course', 'Employee', 'Completed', 'Expires', 'Provider', 'Status']
+  const recordRows = records.map(r => [
+    r.courseName || '-',
+    r.crewMemberName || '-',
+    formatDate(r.completionDate),
+    r.expiryDate ? formatDate(r.expiryDate) : 'No expiry',
+    r.provider || '-',
+    TRAINING_STATUS[r.status]?.label || r.status || 'Unknown'
+  ])
+
+  if (recordRows.length > 0) {
+    checkPageBreak(30)
+    doc.autoTable({
+      startY: currentY,
+      head: [recordHeaders],
+      body: recordRows,
+      margin: { left: margin, right: margin },
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [COLORS.primary.r, COLORS.primary.g, COLORS.primary.b], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 20 }
+      }
+    })
+    currentY = doc.lastAutoTable.finalY + 10
+  }
+
+  // Expiring Soon Section
+  const expiringRecords = records.filter(r => r.status === 'expiring_soon')
+  if (expiringRecords.length > 0) {
+    addSectionTitle('Training Expiring Soon')
+
+    const expiringHeaders = ['Course', 'Employee', 'Expiry Date', 'Days Remaining']
+    const expiringRows = expiringRecords.map(r => {
+      const expiry = r.expiryDate?.toDate?.() || new Date(r.expiryDate)
+      const days = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24))
+      return [
+        r.courseName || '-',
+        r.crewMemberName || '-',
+        formatDate(r.expiryDate),
+        String(days)
+      ]
+    })
+
+    checkPageBreak(30)
+    doc.autoTable({
+      startY: currentY,
+      head: [expiringHeaders],
+      body: expiringRows,
+      margin: { left: margin, right: margin },
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [245, 158, 11], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [254, 243, 199] }
+    })
+    currentY = doc.lastAutoTable.finalY + 10
+  }
+
+  // Expired Section
+  const expiredRecords = records.filter(r => r.status === 'expired')
+  if (expiredRecords.length > 0) {
+    addSectionTitle('Expired Training')
+
+    const expiredHeaders = ['Course', 'Employee', 'Expired Date', 'Days Overdue']
+    const expiredRows = expiredRecords.map(r => {
+      const expiry = r.expiryDate?.toDate?.() || new Date(r.expiryDate)
+      const days = Math.abs(Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)))
+      return [
+        r.courseName || '-',
+        r.crewMemberName || '-',
+        formatDate(r.expiryDate),
+        String(days)
+      ]
+    })
+
+    checkPageBreak(30)
+    doc.autoTable({
+      startY: currentY,
+      head: [expiredHeaders],
+      body: expiredRows,
+      margin: { left: margin, right: margin },
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [239, 68, 68], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [254, 226, 226] }
+    })
+    currentY = doc.lastAutoTable.finalY + 10
+  }
+
+  // Add footers to all pages
+  const totalPages = pageNumber
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    if (i > 1) addFooter(i, totalPages)
+  }
+
+  // Save
+  const filename = `Training_Records_${format(new Date(), 'yyyy-MM-dd')}.pdf`
+  doc.save(filename)
+
+  logger.info(`Training report exported: ${filename}`)
   return filename
 }

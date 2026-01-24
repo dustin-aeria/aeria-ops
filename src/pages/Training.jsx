@@ -39,6 +39,7 @@ import {
   TRAINING_CATEGORIES,
   TRAINING_STATUS
 } from '../lib/firestoreTraining'
+import { exportTrainingReport } from '../lib/safetyExportService'
 
 import TrainingCourseModal from '../components/training/TrainingCourseModal'
 import TrainingRecordModal from '../components/training/TrainingRecordModal'
@@ -63,6 +64,7 @@ export default function Training() {
   const [recordModalOpen, setRecordModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [selectedRecord, setSelectedRecord] = useState(null)
+  const [exporting, setExporting] = useState(false)
 
   // Load data
   const loadData = useCallback(async () => {
@@ -128,6 +130,18 @@ export default function Training() {
     setSelectedCourse(null)
     setSelectedRecord(null)
     loadData()
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      await exportTrainingReport(records, metrics)
+    } catch (error) {
+      console.error('Error exporting training records:', error)
+      alert('Failed to export training report')
+    } finally {
+      setExporting(false)
+    }
   }
 
   // Format date helper
@@ -197,6 +211,14 @@ export default function Training() {
             title="Refresh"
           >
             <RefreshCw className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting || records.length === 0}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? 'Exporting...' : 'Export PDF'}
           </button>
           <button
             onClick={() => handleAddRecord()}
