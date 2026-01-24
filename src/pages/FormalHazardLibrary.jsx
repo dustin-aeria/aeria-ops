@@ -168,9 +168,7 @@ export default function FormalHazardLibrary() {
         address: userProfile?.organization?.address || ''
       }
 
-      const result = await seedDefaultFHAs(user.uid, businessDetails, DEFAULT_FHA_TEMPLATES)
-      console.log('Seeding result:', result)
-
+      await seedDefaultFHAs(user.uid, businessDetails, DEFAULT_FHA_TEMPLATES)
       await loadFHAs()
     } catch (err) {
       console.error('Error seeding FHAs:', err)
@@ -397,8 +395,7 @@ export default function FormalHazardLibrary() {
           <RiskMatrixDisplay
             fhas={filteredFHAs}
             onCellClick={(cellData) => {
-              console.log('Cell clicked:', cellData)
-              // Could filter to show only FHAs in this cell
+              // TODO: Filter to show only FHAs in this risk cell
             }}
           />
         </div>
