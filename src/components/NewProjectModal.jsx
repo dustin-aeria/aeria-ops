@@ -53,37 +53,50 @@ export default function NewProjectModal({ isOpen, onClose }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
+
+    // Build all updates in one object to avoid multiple re-renders
+    const updates = { [name]: value }
+
     // Auto-generate project code when client changes
     if (name === 'clientId' && value) {
       const client = clients.find(c => c.id === value)
       if (client) {
         const year = new Date().getFullYear()
         const code = `${client.shortName || client.name.substring(0, 3).toUpperCase()}-${year}-001`
-        setFormData(prev => ({ 
-          ...prev, 
-          clientId: value,
-          clientName: client.name,
-          projectCode: prev.projectCode || code 
+        updates.clientName = client.name
+        // Only set project code if not already set
+        setFormData(prev => ({
+          ...prev,
+          ...updates,
+          projectCode: prev.projectCode || code
         }))
+        return
       }
     }
+
+    // Single setState call for normal field updates
+    setFormData(prev => ({ ...prev, ...updates }))
   }
 
   const handleNewClientChange = (e) => {
     const { name, value } = e.target
-    setNewClient(prev => ({ ...prev, [name]: value }))
-    
-    // Auto-generate short name
-    if (name === 'name' && !newClient.shortName) {
+
+    // Build all updates in one object to avoid multiple re-renders
+    const updates = { [name]: value }
+
+    // Auto-generate short name when typing client name
+    if (name === 'name') {
       const short = value.split(' ')
+        .filter(w => w.length > 0)
         .map(w => w[0])
         .join('')
         .toUpperCase()
         .substring(0, 4)
-      setNewClient(prev => ({ ...prev, shortName: short }))
+      updates.shortName = short
     }
+
+    // Single setState call
+    setNewClient(prev => ({ ...prev, ...updates }))
   }
 
   const handleCreateClient = async () => {

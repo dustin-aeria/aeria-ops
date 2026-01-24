@@ -803,6 +803,90 @@ function FormField({ field, value, onChange, formData, formId }) {
         </div>
       )
 
+    case 'multi_signature':
+    case 'crew_multi_signature':
+      // Multi-person signature field - allows multiple crew members to sign
+      const currentSignatures = Array.isArray(localValue) ? localValue : []
+      const currentUserSigned = currentSignatures.some(sig => sig.userId === user?.uid)
+      const currentUserName = user?.displayName || user?.email || 'User'
+
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {field.label} {field.required && <span className="text-red-500">*</span>}
+          </label>
+
+          {/* List of signatures */}
+          {currentSignatures.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {currentSignatures.map((sig, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">{sig.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(sig.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  {sig.userId === user?.uid && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = currentSignatures.filter((_, i) => i !== idx)
+                        handleChange(updated.length > 0 ? updated : null)
+                      }}
+                      className="text-xs text-red-500 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Sign button for current user */}
+          {!currentUserSigned ? (
+            <div
+              className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+              onClick={() => {
+                const newSignature = {
+                  name: currentUserName,
+                  timestamp: new Date().toISOString(),
+                  userId: user?.uid
+                }
+                handleChange([...currentSignatures, newSignature])
+              }}
+            >
+              <User className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm text-gray-600">Click to sign as {currentUserName}</p>
+              {currentSignatures.length > 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {currentSignatures.length} signature{currentSignatures.length !== 1 ? 's' : ''} collected
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle2 className="w-6 h-6 mx-auto text-green-500 mb-1" />
+              <p className="text-sm text-green-700">You have signed this form</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {currentSignatures.length} total signature{currentSignatures.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+
+          {field.helpText && (
+            <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>
+          )}
+        </div>
+      )
+
     case 'gps':
     case 'map_location':
       return (

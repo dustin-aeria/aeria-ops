@@ -1238,19 +1238,23 @@ const formsRef = collection(db, 'forms')
 
 export async function getForms(filters = {}) {
   let q = query(formsRef, orderBy('createdAt', 'desc'))
-  
+
   if (filters.projectId) {
     q = query(q, where('projectId', '==', filters.projectId))
   }
-  
+
   if (filters.type) {
     q = query(q, where('type', '==', filters.type))
   }
-  
+
+  if (filters.status) {
+    q = query(q, where('status', '==', filters.status))
+  }
+
   if (filters.limit) {
     q = query(q, limit(filters.limit))
   }
-  
+
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
