@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus,
   Search,
@@ -93,6 +94,7 @@ const statusConfig = {
 // MAIN COMPONENT
 // ============================================
 export default function Equipment() {
+  const navigate = useNavigate()
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -588,7 +590,11 @@ export default function Equipment() {
             const maintenanceSoon = isMaintenanceDueSoon(item)
 
             return (
-              <div key={item.id} className="card hover:shadow-md transition-shadow">
+              <div
+                key={item.id}
+                className="card hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(`/equipment/${item.id}`)}
+              >
                 {/* Image Header */}
                 {item.imageUrl && (
                   <div className="mb-3 -mx-4 -mt-4 overflow-hidden rounded-t-xl">
@@ -621,7 +627,10 @@ export default function Equipment() {
                   {/* More menu */}
                   <div className="relative">
                     <button
-                      onClick={() => setMenuOpen(menuOpen === item.id ? null : item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpen(menuOpen === item.id ? null : item.id)
+                      }}
                       className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                     >
                       <MoreVertical className="w-4 h-4" />
@@ -745,7 +754,11 @@ export default function Equipment() {
                   const maintenanceOverdue = isMaintenanceOverdue(item)
 
                   return (
-                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={item.id}
+                      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/equipment/${item.id}`)}
+                    >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <CategoryIcon className="w-5 h-5 text-gray-400" />
@@ -778,13 +791,19 @@ export default function Equipment() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button
-                          onClick={() => handleEdit(item)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEdit(item)
+                          }}
                           className="p-1.5 text-gray-400 hover:text-gray-600 rounded"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id, item.name)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(item.id, item.name)
+                          }}
                           className="p-1.5 text-gray-400 hover:text-red-600 rounded ml-1"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -32,6 +32,7 @@ const Forms = lazy(() => import('./pages/Forms'))
 const Operators = lazy(() => import('./pages/Operators'))
 const Aircraft = lazy(() => import('./pages/Aircraft'))
 const Equipment = lazy(() => import('./pages/Equipment'))
+const EquipmentView = lazy(() => import('./pages/EquipmentView'))
 const Clients = lazy(() => import('./pages/Clients'))
 const Settings = lazy(() => import('./pages/Settings'))
 const PolicyProcedureLibrary = lazy(() => import('./pages/PolicyProcedureLibrary'))
@@ -135,6 +136,7 @@ function App() {
           <Route path="operators" element={<Suspense fallback={<PageLoader />}><Operators /></Suspense>} />
           <Route path="aircraft" element={<Suspense fallback={<PageLoader />}><Aircraft /></Suspense>} />
           <Route path="equipment" element={<Suspense fallback={<PageLoader />}><Equipment /></Suspense>} />
+          <Route path="equipment/:equipmentId" element={<Suspense fallback={<PageLoader />}><EquipmentView /></Suspense>} />
           <Route path="clients" element={<Suspense fallback={<PageLoader />}><Clients /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
           <Route path="calendar" element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
