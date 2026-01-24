@@ -54,6 +54,7 @@ const Training = lazy(() => import('./pages/Training'))
 const CORAuditManagement = lazy(() => import('./pages/CORAuditManagement'))
 const Inspections = lazy(() => import('./pages/Inspections'))
 const CORDashboard = lazy(() => import('./pages/CORDashboard'))
+const Calendar = lazy(() => import('./pages/Calendar'))
 
 // Compliance Module Pages - lazy-loaded
 const ComplianceHub = lazy(() => import('./pages/ComplianceHub'))
@@ -136,6 +137,7 @@ function App() {
           <Route path="equipment" element={<Suspense fallback={<PageLoader />}><Equipment /></Suspense>} />
           <Route path="clients" element={<Suspense fallback={<PageLoader />}><Clients /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+          <Route path="calendar" element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
 
           {/* Safety Module Routes - lazy-loaded */}
           <Route path="safety" element={<Suspense fallback={<PageLoader />}><SafetyDashboard /></Suspense>} />

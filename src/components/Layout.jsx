@@ -24,13 +24,15 @@ import {
   GraduationCap,
   Award,
   ListChecks,
-  MessageSquarePlus
+  MessageSquarePlus,
+  CalendarDays
 } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
+  { name: 'Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
   { name: 'Policies & Procedures', href: '/policies', icon: BookOpen },
 ]
