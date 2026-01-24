@@ -48,6 +48,8 @@ import {
 } from '../lib/soraConfig'
 import { getStatusInfo } from '../components/PolicyLibrary'
 import { logger } from '../lib/logger'
+import ActivityFeed from '../components/dashboard/ActivityFeed'
+import UpcomingEvents from '../components/dashboard/UpcomingEvents'
 
 // ============================================
 // SAIL CALCULATION HELPER
@@ -689,6 +691,14 @@ export default function Dashboard() {
           </div>
         </div>
       ) : null}
+
+      {/* Activity & Upcoming Events */}
+      {!loading && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <ActivityFeed limit={8} />
+          <UpcomingEvents daysAhead={14} limit={5} />
+        </div>
+      )}
     </div>
   )
 }
