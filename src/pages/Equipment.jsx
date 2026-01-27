@@ -34,7 +34,8 @@ import {
   List,
   FileSpreadsheet,
   FileText,
-  ChevronDown
+  ChevronDown,
+  DollarSign
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import {
@@ -43,6 +44,7 @@ import {
   EQUIPMENT_CATEGORIES,
   EQUIPMENT_STATUS
 } from '../lib/firestore'
+import { formatCurrency } from '../lib/costEstimator'
 import EquipmentModal from '../components/EquipmentModal'
 import EquipmentSpecSheet, { generateEquipmentSpecPDF } from '../components/EquipmentSpecSheet'
 import EquipmentImport from '../components/EquipmentImport'
@@ -729,6 +731,25 @@ export default function Equipment() {
                     </p>
                   )}
                 </div>
+
+                {/* Rates */}
+                {(item.hourlyRate || item.dailyRate) && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-3 text-sm">
+                      <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+                      {item.hourlyRate > 0 && (
+                        <span className="text-gray-600">
+                          {formatCurrency(item.hourlyRate)}/hr
+                        </span>
+                      )}
+                      {item.dailyRate > 0 && (
+                        <span className="text-gray-600">
+                          {formatCurrency(item.dailyRate)}/day
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -745,6 +766,7 @@ export default function Equipment() {
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Manufacturer</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Serial #</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Rates</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Next Service</th>
                   <th className="text-right py-3 px-4 font-medium text-gray-700">Actions</th>
                 </tr>
@@ -781,6 +803,16 @@ export default function Equipment() {
                         <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-full ${status.color}`}>
                           {status.label}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {(item.hourlyRate > 0 || item.dailyRate > 0) ? (
+                          <div className="text-xs text-gray-600 space-y-0.5">
+                            {item.hourlyRate > 0 && <div>{formatCurrency(item.hourlyRate)}/hr</div>}
+                            {item.dailyRate > 0 && <div>{formatCurrency(item.dailyRate)}/day</div>}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         {item.nextServiceDate ? (
