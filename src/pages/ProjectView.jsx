@@ -49,7 +49,8 @@ import {
   Target,
   MessageSquare,
   FileEdit,
-  Layers
+  Layers,
+  Bell
 } from 'lucide-react'
 import { getProject, updateProject, deleteProject, migrateProjectToDecoupledStructure, getClients } from '../lib/firestore'
 import ProjectOverview from '../components/projects/ProjectOverview'
@@ -70,6 +71,7 @@ import ProjectNeedsAnalysis from '../components/projects/ProjectNeedsAnalysis'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectProposal from '../components/projects/ProjectProposal'
 import ProjectTemplates from '../components/projects/ProjectTemplates'
+import ProjectTeam from '../components/projects/ProjectTeam'
 import { useAuth } from '../contexts/AuthContext'
 import { logger } from '../lib/logger'
 
@@ -80,6 +82,7 @@ const tabs = [
   { id: 'templates', label: 'Templates', icon: Layers },
   { id: 'crew', label: 'Crew', icon: Users },
   { id: 'team', label: 'Team', icon: MessageSquare },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'site', label: 'Site Survey', icon: MapPin, toggleable: true, sectionKey: 'siteSurvey' },
   { id: 'flight', label: 'Flight Plan', icon: Plane, toggleable: true, sectionKey: 'flightPlan' },
   { id: 'hseRisk', label: 'HSE Risk', icon: AlertTriangle },
@@ -614,6 +617,9 @@ export default function ProjectView() {
         )}
         {activeTab === 'team' && (
           <ProjectComments project={project} operatorId={user?.uid} />
+        )}
+        {activeTab === 'notifications' && (
+          <ProjectTeam project={project} onUpdate={handleUpdate} />
         )}
         {activeTab === 'site' && (
           <ProjectSiteSurvey project={project} onUpdate={handleUpdate} />

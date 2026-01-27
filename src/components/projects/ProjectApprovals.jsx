@@ -21,6 +21,7 @@ import {
   Square,
   CheckSquare
 } from 'lucide-react'
+import { sendTeamNotification } from '../../lib/teamNotificationService'
 
 const approvalStatuses = {
   pending: { label: 'Pending Review', color: 'bg-gray-100 text-gray-700', icon: Clock },
@@ -149,15 +150,33 @@ export default function ProjectApprovals({ project, onUpdate }) {
   }
 
   // Approve
-  const handleApprove = (withConditions = false) => {
+  const handleApprove = async (withConditions = false) => {
     if (!approvals.reviewer?.name) {
       alert('Please enter reviewer name.')
       return
     }
+
+    const newStatus = withConditions ? 'conditional' : 'approved'
+    const reviewDate = new Date().toISOString().split('T')[0]
+
     updateApprovals({
-      status: withConditions ? 'conditional' : 'approved',
-      reviewDate: new Date().toISOString().split('T')[0]
+      status: newStatus,
+      reviewDate
     })
+
+    // Send notification for approval
+    if (project.id) {
+      try {
+        await sendTeamNotification(project.id, 'planApproved', {
+          approver: approvals.reviewer?.name,
+          date: reviewDate,
+          conditions: withConditions ? approvals.conditions : null
+        })
+      } catch (error) {
+        // Log error but don't block the UI update
+        console.error('Failed to send plan approved notification:', error)
+      }
+    }
   }
 
   // Reject

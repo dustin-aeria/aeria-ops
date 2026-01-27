@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { BrandedPDF } from '../../lib/pdfExportService'
 import { logger } from '../../lib/logger'
+import { sendTeamNotification } from '../../lib/teamNotificationService'
 
 // Default sections to include in tailgate briefing
 const DEFAULT_INCLUDED_SECTIONS = {
@@ -194,6 +195,29 @@ export default function ProjectTailgate({ project, onUpdate }) {
   }
 
   const includedSections = currentDay.includedSections || DEFAULT_INCLUDED_SECTIONS
+
+  // Handle GO/NO GO decision with notification
+  const handleGoNoGoDecision = async (decision) => {
+    const previousDecision = currentDay.goNoGoDecision
+
+    // Update the decision
+    updateCurrentDay({ goNoGoDecision: decision })
+
+    // Send notification if this is a new decision (not just toggling)
+    if (previousDecision !== decision && project.id) {
+      try {
+        await sendTeamNotification(project.id, 'goNoGo', {
+          decision: decision ? 'GO' : 'NO-GO',
+          date: currentDay.date || new Date().toISOString(),
+          pic: pic?.operatorName || pic?.name || 'Not assigned',
+          notes: decision === false ? currentDay.goNoGoNotes : ''
+        })
+      } catch (error) {
+        // Log error but don't block the UI update
+        logger.error('Failed to send GO/NO GO notification:', error)
+      }
+    }
+  }
 
   // Multi-day management
   const addDay = () => {
@@ -677,22 +701,22 @@ export default function ProjectTailgate({ project, onUpdate }) {
         
         <div className="flex flex-wrap gap-4 mb-4">
           <button
-            onClick={() => updateCurrentDay({ goNoGoDecision: true })}
+            onClick={() => handleGoNoGoDecision(true)}
             className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
-              currentDay.goNoGoDecision === true 
-                ? 'border-green-500 bg-green-50 text-green-700' 
+              currentDay.goNoGoDecision === true
+                ? 'border-green-500 bg-green-50 text-green-700'
                 : 'border-gray-200 hover:border-green-300 hover:bg-green-50/50'
             }`}
           >
             <ThumbsUp className="w-6 h-6" />
             <span className="text-lg font-semibold">GO</span>
           </button>
-          
+
           <button
-            onClick={() => updateCurrentDay({ goNoGoDecision: false })}
+            onClick={() => handleGoNoGoDecision(false)}
             className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
-              currentDay.goNoGoDecision === false 
-                ? 'border-red-500 bg-red-50 text-red-700' 
+              currentDay.goNoGoDecision === false
+                ? 'border-red-500 bg-red-50 text-red-700'
                 : 'border-gray-200 hover:border-red-300 hover:bg-red-50/50'
             }`}
           >
