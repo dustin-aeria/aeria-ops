@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal, { ModalFooter } from './Modal'
 import { createAircraft, updateAircraft } from '../lib/firestore'
-import { AlertCircle, Plane, Info, DollarSign } from 'lucide-react'
+import { AlertCircle, Plane, Info, DollarSign, Wrench, Gauge, RotateCcw, Calendar } from 'lucide-react'
 
 const categoryOptions = [
   { value: 'multirotor', label: 'Multirotor' },
@@ -43,6 +43,13 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
     hourlyRate: '',
     dailyRate: '',
     weeklyRate: '',
+    // Maintenance & flight tracking
+    totalFlightHours: '',
+    totalCycles: '',
+    totalFlights: '',
+    firmwareVersion: '',
+    lastInspection: '',
+    nextInspectionDue: '',
     notes: ''
   })
 
@@ -67,6 +74,12 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
         hourlyRate: aircraft.hourlyRate || '',
         dailyRate: aircraft.dailyRate || '',
         weeklyRate: aircraft.weeklyRate || '',
+        totalFlightHours: aircraft.totalFlightHours || '',
+        totalCycles: aircraft.totalCycles || '',
+        totalFlights: aircraft.totalFlights || '',
+        firmwareVersion: aircraft.firmwareVersion || '',
+        lastInspection: aircraft.lastInspection || '',
+        nextInspectionDue: aircraft.nextInspectionDue || '',
         notes: aircraft.notes || ''
       })
     } else {
@@ -93,6 +106,12 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
       hourlyRate: '',
       dailyRate: '',
       weeklyRate: '',
+      totalFlightHours: '',
+      totalCycles: '',
+      totalFlights: '',
+      firmwareVersion: '',
+      lastInspection: '',
+      nextInspectionDue: '',
       notes: ''
     })
     setError('')
@@ -124,7 +143,10 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
         purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null,
         hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
         dailyRate: formData.dailyRate ? parseFloat(formData.dailyRate) : null,
-        weeklyRate: formData.weeklyRate ? parseFloat(formData.weeklyRate) : null
+        weeklyRate: formData.weeklyRate ? parseFloat(formData.weeklyRate) : null,
+        totalFlightHours: formData.totalFlightHours ? parseFloat(formData.totalFlightHours) : null,
+        totalCycles: formData.totalCycles ? parseInt(formData.totalCycles, 10) : null,
+        totalFlights: formData.totalFlights ? parseInt(formData.totalFlights, 10) : null
       }
 
       if (isEditing) {
@@ -414,6 +436,110 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Flight & Maintenance Tracking */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Wrench className="w-4 h-4" />
+            Flight & Maintenance Tracking
+          </h3>
+          <div className="grid sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="label flex items-center gap-1">
+                <Gauge className="w-3 h-3" />
+                Total Flight Hours
+              </label>
+              <input
+                type="number"
+                name="totalFlightHours"
+                value={formData.totalFlightHours}
+                onChange={handleChange}
+                className="input"
+                placeholder="0.0"
+                step="0.1"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="label flex items-center gap-1">
+                <RotateCcw className="w-3 h-3" />
+                Total Cycles
+              </label>
+              <input
+                type="number"
+                name="totalCycles"
+                value={formData.totalCycles}
+                onChange={handleChange}
+                className="input"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="label">Total Flights</label>
+              <input
+                type="number"
+                name="totalFlights"
+                value={formData.totalFlights}
+                onChange={handleChange}
+                className="input"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label className="label">Firmware Version</label>
+              <input
+                type="text"
+                name="firmwareVersion"
+                value={formData.firmwareVersion}
+                onChange={handleChange}
+                className="input font-mono"
+                placeholder="e.g., v01.02.0303"
+              />
+            </div>
+            <div>
+              <label className="label flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Last Inspection
+              </label>
+              <input
+                type="date"
+                name="lastInspection"
+                value={formData.lastInspection}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Next Inspection Due</label>
+              <input
+                type="date"
+                name="nextInspectionDue"
+                value={formData.nextInspectionDue}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
+          </div>
+          {isEditing && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                For detailed maintenance schedules and history, visit the{' '}
+                <a
+                  href={`/maintenance/item/aircraft/${aircraft?.id}`}
+                  className="font-medium underline hover:text-blue-900"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Maintenance Detail Page
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Notes */}

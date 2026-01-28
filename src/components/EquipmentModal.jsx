@@ -201,7 +201,9 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
     dailyRate: '',
     weeklyRate: '',
 
-    // Maintenance
+    // Maintenance & Usage
+    currentHours: '',
+    currentCycles: '',
     maintenanceInterval: '',
     lastServiceDate: '',
     nextServiceDate: '',
@@ -228,6 +230,8 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
         hourlyRate: equipment.hourlyRate || '',
         dailyRate: equipment.dailyRate || '',
         weeklyRate: equipment.weeklyRate || '',
+        currentHours: equipment.currentHours || '',
+        currentCycles: equipment.currentCycles || '',
         maintenanceInterval: equipment.maintenanceInterval || '',
         lastServiceDate: equipment.lastServiceDate || '',
         nextServiceDate: equipment.nextServiceDate || '',
@@ -258,6 +262,8 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
       hourlyRate: '',
       dailyRate: '',
       weeklyRate: '',
+      currentHours: '',
+      currentCycles: '',
       maintenanceInterval: '',
       lastServiceDate: '',
       nextServiceDate: '',
@@ -357,6 +363,8 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
         hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
         dailyRate: formData.dailyRate ? parseFloat(formData.dailyRate) : null,
         weeklyRate: formData.weeklyRate ? parseFloat(formData.weeklyRate) : null,
+        currentHours: formData.currentHours ? parseFloat(formData.currentHours) : null,
+        currentCycles: formData.currentCycles ? parseInt(formData.currentCycles, 10) : null,
         maintenanceInterval: formData.maintenanceInterval ? parseInt(formData.maintenanceInterval, 10) : null
       }
 
@@ -743,12 +751,43 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
           </p>
         </div>
 
-        {/* Maintenance Schedule */}
+        {/* Maintenance & Usage Tracking */}
         <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Wrench className="w-4 h-4" />
-            Maintenance Schedule
+            Maintenance & Usage Tracking
           </h3>
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="eq-currentHours" className="label">Current Hours</label>
+              <input
+                id="eq-currentHours"
+                type="number"
+                name="currentHours"
+                value={formData.currentHours}
+                onChange={handleChange}
+                className="input"
+                placeholder="Operating hours"
+                step="0.1"
+                min="0"
+              />
+              <p className="text-xs text-gray-500 mt-1">Used for hour-based maintenance schedules</p>
+            </div>
+            <div>
+              <label htmlFor="eq-currentCycles" className="label">Current Cycles</label>
+              <input
+                id="eq-currentCycles"
+                type="number"
+                name="currentCycles"
+                value={formData.currentCycles}
+                onChange={handleChange}
+                className="input"
+                placeholder="Usage cycles"
+                min="0"
+              />
+              <p className="text-xs text-gray-500 mt-1">Used for cycle-based maintenance schedules</p>
+            </div>
+          </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
               <label htmlFor="eq-interval" className="label">Service Interval (days)</label>
@@ -789,6 +828,21 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
               )}
             </div>
           </div>
+          {isEditing && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                For detailed maintenance schedules and history, visit the{' '}
+                <a
+                  href={`/maintenance/item/equipment/${equipment?.id}`}
+                  className="font-medium underline hover:text-blue-900"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Maintenance Detail Page
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Condition & Notes */}
