@@ -1005,20 +1005,23 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] Dashboard expiry reminders *(Completed - ExpiryRemindersWidget consolidates permits, insurance, and certifications expiring within 30 days)*
 - [x] Loading states and error handling improvements *(Completed - Components already have good loading/error states; widget includes loading, error, and empty states)*
 
-### Lower Priority - **BATCH 11 PARTIAL**
-- [ ] Bug: Notification list creation broken *(Needs investigation - code looks correct, may be UI state issue)*
-- [ ] Bug: Spacebar in Site Access field *(Needs investigation - no blocking keyhandler found)*
-- [x] Bug: SORA SAIL score without mitigation *(Verified working - SAIL calculates with defaults when no mitigations selected)*
-- [x] Pre-field "Safety" task type *(Completed - Added safety task type with ShieldAlert icon)*
-- [x] Hours & operators on pre-field/post-field tasks *(Completed - Tasks now support hours, assigned operators, and auto cost calculation)*
-- [ ] Map distance measurement tool *(Deferred to next batch)*
-- [ ] "Same as boundary" flight area option *(Deferred to next batch)*
+### Lower Priority - **BATCH 12 COMPLETE (Jan 28, 2026)**
+- [x] WeatherWidget moved to Tailgate *(Completed - Weather is day-of operations, not planning. Moved from Site Survey to Tailgate where it's relevant)*
+- [x] Map distance measurement tool *(Completed - DistanceMeasurement component with Haversine formula, measureDistance drawing mode)*
+- [x] "Same as boundary" flight area option *(Completed - Flight geography method option that copies operations boundary)*
+- [ ] Bug: Notification list creation *(Needs investigation - code looks correct, may be Firestore permissions or state issue)*
+- [ ] Bug: Spacebar in Site Access field *(Needs investigation - no blocking keyhandler found in code)*
 - [ ] Mapbox airspace integration *(Deferred - requires Mapbox API configuration)*
 - [ ] Mapbox municipality borders *(Deferred - requires Mapbox API configuration)*
 - [ ] Mapbox population density *(Deferred - requires Mapbox API configuration)*
 
+### Lower Priority - **BATCH 11 COMPLETE (Jan 28, 2026)**
+- [x] Pre-field "Safety" task type *(Completed - Added safety task type with ShieldAlert icon)*
+- [x] Hours & operators on pre-field/post-field tasks *(Completed - Tasks now support hours, assigned operators, and auto cost calculation)*
+- [x] Bug: SORA SAIL score without mitigation *(Verified working - SAIL calculates with defaults when no mitigations selected)*
+
 ### Lower Priority - **BATCH 10 COMPLETE**
-- [x] Weather API integration *(Completed - Open-Meteo API with current conditions, 5-day forecast, VFR/IFR flight conditions, drone flight assessment, integrated into Site Survey)*
+- [x] Weather API integration *(Completed - Open-Meteo API with current conditions, 5-day forecast, VFR/IFR flight conditions, drone flight assessment, integrated into Tailgate)*
 - [ ] NOTAMs integration *(Future)*
 - [ ] Platform migration (Firebase to Supabase)
 
@@ -1029,12 +1032,12 @@ VITE_MAPBOX_ACCESS_TOKEN=
 Items considered but not yet implemented. Prioritize from this list for future batches.
 
 ### Pre-Field & Post-Field Tasks
-- [ ] **Add "Safety" task type** - Add "safety" as an option in pre-field task types
-- [ ] **Hours & Operators on tasks** - Allow assigning hours and operators to pre-field/post-field tasks so costs auto-calculate based on rates and time input
+- [x] **Add "Safety" task type** - *(Completed Batch 11)*
+- [x] **Hours & Operators on tasks** - *(Completed Batch 11)*
 
 ### Map & Flight Planning
-- [ ] **Distance Measurement Tool** - Ability to measure distance within the map for operation parameters (max distance from pilot)
-- [ ] **"Same as Boundary" for Flight Area** - Option to set flight area equal to operations boundary
+- [x] **Distance Measurement Tool** - *(Completed Batch 12)* Haversine formula, displays in m/km/ft/NM
+- [x] **"Same as Boundary" for Flight Area** - *(Completed Batch 12)* Option to copy operations boundary to flight geography
 - [ ] **Mapbox Airspace Integration** - Pull airspace data from Mapbox, auto-update flight airspace classification (account for altitude - flights may be under/above one airspace and in another)
 - [ ] **Mapbox Municipality Borders** - Integrate municipal boundaries for BVLOS flight planning considerations
 - [ ] **Mapbox Population Density** - Incorporate population density layers, allow users to query Mapbox for population density during flight planning
