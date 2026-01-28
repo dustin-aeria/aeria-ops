@@ -152,6 +152,9 @@ export function UnifiedProjectMap({
   // Store polygon/line element data for click lookups
   const polygonsDataRef = useRef([])
   const linesDataRef = useRef([])
+  // Track if we're in vertex editing mode
+  const [isEditingVertices, setIsEditingVertices] = useState(false)
+  const editingElementRef = useRef(null)
   
   // ============================================
   // PHASE 1 FIX: Refs for drawing state
@@ -273,6 +276,101 @@ export function UnifiedProjectMap({
   }, [editMode, selectedElement, removeElement, setSelectedElement])
 
   // ============================================
+  // VERTEX EDITING FUNCTIONS
+  // ============================================
+
+  // Start editing vertices of selected polygon/line
+  const startVertexEditing = useCallback(() => {
+    if (!selectedElement || !drawRef.current || !mapRef.current) return
+
+    const draw = drawRef.current
+    const geometry = selectedElement.geometry
+
+    if (!geometry || (geometry.type !== 'Polygon' && geometry.type !== 'LineString')) {
+      return
+    }
+
+    // Store reference to element being edited
+    editingElementRef.current = {
+      id: selectedElement.id,
+      elementType: selectedElement.elementType,
+      originalGeometry: JSON.parse(JSON.stringify(geometry))
+    }
+
+    // Clear any existing draw features
+    draw.deleteAll()
+
+    // Add the feature to draw
+    const featureId = draw.add({
+      type: 'Feature',
+      properties: {},
+      geometry: geometry
+    })
+
+    // Enter direct_select mode to edit vertices
+    draw.changeMode('direct_select', { featureId: featureId[0] })
+
+    setIsEditingVertices(true)
+  }, [selectedElement])
+
+  // Save vertex edits
+  const saveVertexEdits = useCallback(() => {
+    if (!drawRef.current || !editingElementRef.current || !updateElement) return
+
+    const draw = drawRef.current
+    const features = draw.getAll()
+
+    if (features.features.length > 0) {
+      const editedGeometry = features.features[0].geometry
+      const { id, elementType } = editingElementRef.current
+
+      // Update the element with new geometry
+      updateElement(id, elementType, {
+        geometry: editedGeometry
+      })
+    }
+
+    // Clean up
+    draw.deleteAll()
+    draw.changeMode('simple_select')
+    editingElementRef.current = null
+    setIsEditingVertices(false)
+    setSelectedElement(null)
+  }, [updateElement, setSelectedElement])
+
+  // Cancel vertex edits
+  const cancelVertexEdits = useCallback(() => {
+    if (!drawRef.current) return
+
+    const draw = drawRef.current
+    draw.deleteAll()
+    draw.changeMode('simple_select')
+    editingElementRef.current = null
+    setIsEditingVertices(false)
+  }, [])
+
+  // Listen for draw update events
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+
+    const handleDrawUpdate = (e) => {
+      // Feature was updated (vertex moved)
+      if (e.features && e.features.length > 0) {
+        // We'll save on explicit "Done" click, not on every update
+        // This allows users to make multiple edits before confirming
+      }
+    }
+
+    map.on('draw.update', handleDrawUpdate)
+
+    return () => {
+      map.off('draw.update', handleDrawUpdate)
+    }
+  }, [mapLoaded])
+
+  // ============================================
   // INITIALIZE MAP
   // ============================================
   
@@ -304,7 +402,72 @@ export function UnifiedProjectMap({
       map.on('load', () => {
         setMapLoaded(true)
         mapRef.current = map
-        
+
+        // Initialize MapboxDraw for vertex editing
+        const draw = new MapboxDraw({
+          displayControlsDefault: false,
+          controls: {},
+          defaultMode: 'simple_select',
+          styles: [
+            // Polygon fill when selected
+            {
+              id: 'gl-draw-polygon-fill',
+              type: 'fill',
+              filter: ['all', ['==', '$type', 'Polygon']],
+              paint: {
+                'fill-color': '#3B82F6',
+                'fill-opacity': 0.1
+              }
+            },
+            // Polygon outline
+            {
+              id: 'gl-draw-polygon-stroke',
+              type: 'line',
+              filter: ['all', ['==', '$type', 'Polygon']],
+              paint: {
+                'line-color': '#3B82F6',
+                'line-width': 2
+              }
+            },
+            // Line
+            {
+              id: 'gl-draw-line',
+              type: 'line',
+              filter: ['all', ['==', '$type', 'LineString']],
+              paint: {
+                'line-color': '#F59E0B',
+                'line-width': 3
+              }
+            },
+            // Vertex points
+            {
+              id: 'gl-draw-point',
+              type: 'circle',
+              filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+              paint: {
+                'circle-radius': 7,
+                'circle-color': '#FFFFFF',
+                'circle-stroke-color': '#3B82F6',
+                'circle-stroke-width': 2
+              }
+            },
+            // Midpoint vertices
+            {
+              id: 'gl-draw-midpoint',
+              type: 'circle',
+              filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+              paint: {
+                'circle-radius': 5,
+                'circle-color': '#3B82F6',
+                'circle-opacity': 0.5
+              }
+            }
+          ]
+        })
+
+        map.addControl(draw, 'top-left')
+        drawRef.current = draw
+
         // Fit to bounds if available
         if (currentBounds) {
           map.fitBounds(currentBounds, {
@@ -1160,8 +1323,43 @@ export function UnifiedProjectMap({
             </button>
           </div>
 
+          {/* Edit Vertices button for polygons/lines */}
+          {(selectedElement.geometry?.type === 'Polygon' || selectedElement.geometry?.type === 'LineString') && !isEditingVertices && (
+            <button
+              onClick={startVertexEditing}
+              className="mt-2 w-full py-1.5 px-3 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                <path d="m15 5 4 4"/>
+              </svg>
+              Edit Vertices
+            </button>
+          )}
+
+          {/* Editing mode controls */}
+          {isEditingVertices && (
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={saveVertexEdits}
+                className="flex-1 py-1.5 px-3 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Done
+              </button>
+              <button
+                onClick={cancelVertexEdits}
+                className="flex-1 py-1.5 px-3 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {/* Re-draw option for polygons/boundaries */}
-          {selectedElement.geometry?.type === 'Polygon' && startDrawing && (
+          {selectedElement.geometry?.type === 'Polygon' && startDrawing && !isEditingVertices && (
             <button
               onClick={() => {
                 const elementType = selectedElement.elementType
@@ -1183,21 +1381,32 @@ export function UnifiedProjectMap({
           )}
 
           <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-            {/* Only show drag hint for Point geometry (markers) */}
-            {selectedElement.geometry?.type === 'Point' && (
+            {isEditingVertices ? (
               <>
                 <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Drag</span>
-                <span>to move</span>
+                <span>vertices to move</span>
                 <span className="mx-1">|</span>
+                <span>Click midpoints to add</span>
               </>
-            )}
-            <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Del</span>
-            <span>to delete</span>
-            {selectedElement.geometry?.type !== 'Point' && (
+            ) : (
               <>
-                <span className="mx-1">|</span>
-                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Esc</span>
-                <span>to deselect</span>
+                {/* Only show drag hint for Point geometry (markers) */}
+                {selectedElement.geometry?.type === 'Point' && (
+                  <>
+                    <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Drag</span>
+                    <span>to move</span>
+                    <span className="mx-1">|</span>
+                  </>
+                )}
+                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Del</span>
+                <span>to delete</span>
+                {selectedElement.geometry?.type !== 'Point' && (
+                  <>
+                    <span className="mx-1">|</span>
+                    <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Esc</span>
+                    <span>to deselect</span>
+                  </>
+                )}
               </>
             )}
           </div>

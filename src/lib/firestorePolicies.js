@@ -271,13 +271,20 @@ export async function createPolicyVersion(policyId, policyData, versionNotes = '
  * @returns {Promise<Array>}
  */
 export async function getPolicyVersions(policyId) {
+  // Query without orderBy to avoid composite index requirement
+  // Sort in memory instead
   const q = query(
     policyVersionsRef,
-    where('policyId', '==', policyId),
-    orderBy('createdAt', 'desc')
+    where('policyId', '==', policyId)
   )
   const snapshot = await getDocs(q)
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  return snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0
+      const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0
+      return bTime - aTime // Descending order
+    })
 }
 
 /**
@@ -414,10 +421,15 @@ export function findChangedFields(oldPolicy, newPolicy) {
 
 /**
  * Create an acknowledgment record
+ * Sets expiry to 1 year from acknowledgment date for user-based tracking
  * @param {Object} data - Acknowledgment data
  * @returns {Promise<Object>}
  */
 export async function createAcknowledgment(data) {
+  // Calculate expiry date: 1 year from now
+  const oneYearFromNow = new Date()
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1)
+
   const acknowledgment = {
     policyId: data.policyId,
     policyVersion: data.policyVersion,
@@ -427,7 +439,7 @@ export async function createAcknowledgment(data) {
     acknowledgedAt: serverTimestamp(),
     signatureType: data.signatureType || 'checkbox', // checkbox | typed | drawn
     signatureData: data.signatureData || null,
-    expiresAt: data.expiresAt || null,
+    expiresAt: data.expiresAt || Timestamp.fromDate(oneYearFromNow), // Default to 1 year expiry
     isValid: true
   }
 
@@ -466,8 +478,33 @@ export async function getUserAcknowledgments(userId) {
 }
 
 /**
+ * Check if an acknowledgment has expired
+ * @param {Object} ack - Acknowledgment record
+ * @returns {boolean}
+ */
+export function isAcknowledgmentExpired(ack) {
+  if (!ack || !ack.expiresAt) return false
+  const expiresAt = ack.expiresAt?.toDate?.() || new Date(ack.expiresAt)
+  return new Date() > expiresAt
+}
+
+/**
+ * Get days until acknowledgment expires
+ * @param {Object} ack - Acknowledgment record
+ * @returns {number|null} Days until expiry, negative if expired, null if no expiry
+ */
+export function getDaysUntilExpiry(ack) {
+  if (!ack || !ack.expiresAt) return null
+  const expiresAt = ack.expiresAt?.toDate?.() || new Date(ack.expiresAt)
+  const now = new Date()
+  const diffMs = expiresAt - now
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+/**
  * Get pending acknowledgments for a user
  * Checks which policies require acknowledgment that user hasn't acknowledged
+ * Also treats expired acknowledgments as pending
  * @param {string} userId - User ID
  * @param {string} userRole - User's role
  * @returns {Promise<Array>}
@@ -484,13 +521,17 @@ export async function getPendingAcknowledgments(userId, userRole) {
 
   // Get user's existing acknowledgments
   const userAcks = await getUserAcknowledgments(userId)
-  const acknowledgedPolicyIds = new Set(
-    userAcks
-      .filter(ack => ack.isValid)
-      .map(ack => `${ack.policyId}:${ack.policyVersion}`)
-  )
 
-  // Filter to policies user needs to acknowledge
+  // Build map of valid, non-expired acknowledgments
+  const validAcknowledgments = new Map()
+  userAcks.forEach(ack => {
+    if (ack.isValid && !isAcknowledgmentExpired(ack)) {
+      const key = `${ack.policyId}:${ack.policyVersion}`
+      validAcknowledgments.set(key, ack)
+    }
+  })
+
+  // Filter to policies user needs to acknowledge (including expired ones)
   const pending = requiredPolicies.filter(policy => {
     // Check if user's role is in required roles
     const requiredRoles = policy.acknowledgmentSettings?.requiredRoles || []
@@ -498,9 +539,9 @@ export async function getPendingAcknowledgments(userId, userRole) {
       return false
     }
 
-    // Check if already acknowledged current version
+    // Check if already has a valid, non-expired acknowledgment for current version
     const key = `${policy.id}:${policy.version}`
-    return !acknowledgedPolicyIds.has(key)
+    return !validAcknowledgments.has(key)
   })
 
   return pending
@@ -508,10 +549,11 @@ export async function getPendingAcknowledgments(userId, userRole) {
 
 /**
  * Check if a user has acknowledged a specific policy version
+ * Includes expiry status information
  * @param {string} policyId - Policy ID
  * @param {string} policyVersion - Policy version
  * @param {string} userId - User ID
- * @returns {Promise<Object|null>} Acknowledgment record or null
+ * @returns {Promise<Object|null>} Acknowledgment record with expiry status or null
  */
 export async function checkAcknowledgmentStatus(policyId, policyVersion, userId) {
   const q = query(
@@ -526,8 +568,15 @@ export async function checkAcknowledgmentStatus(policyId, policyVersion, userId)
   const snapshot = await getDocs(q)
   if (snapshot.empty) return null
 
-  const doc = snapshot.docs[0]
-  return { id: doc.id, ...doc.data() }
+  const docData = snapshot.docs[0]
+  const ack = { id: docData.id, ...docData.data() }
+
+  // Add computed expiry status
+  ack.isExpired = isAcknowledgmentExpired(ack)
+  ack.daysUntilExpiry = getDaysUntilExpiry(ack)
+  ack.isExpiringSoon = ack.daysUntilExpiry !== null && ack.daysUntilExpiry <= 30 && ack.daysUntilExpiry > 0
+
+  return ack
 }
 
 /**

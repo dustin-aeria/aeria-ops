@@ -32,7 +32,9 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   getPendingAcknowledgments,
   getUserAcknowledgments,
-  getPoliciesEnhanced
+  getPoliciesEnhanced,
+  isAcknowledgmentExpired,
+  getDaysUntilExpiry
 } from '../lib/firestorePolicies'
 import PolicyAcknowledgment from '../components/policies/PolicyAcknowledgment'
 import { logger } from '../lib/logger'
@@ -76,6 +78,16 @@ function PolicyCard({ policy, acknowledgment, isPending, onAcknowledge }) {
                 <Clock className="w-3 h-3" />
                 Pending
               </span>
+            ) : acknowledgment && isAcknowledgmentExpired(acknowledgment) ? (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">
+                <AlertCircle className="w-3 h-3" />
+                Expired
+              </span>
+            ) : acknowledgment && getDaysUntilExpiry(acknowledgment) !== null && getDaysUntilExpiry(acknowledgment) <= 30 ? (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">
+                <Clock className="w-3 h-3" />
+                Expiring Soon
+              </span>
             ) : (
               <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
                 <Check className="w-3 h-3" />
@@ -92,9 +104,30 @@ function PolicyCard({ policy, acknowledgment, isPending, onAcknowledge }) {
         <p className="text-sm text-gray-500 line-clamp-2">{policy.description}</p>
 
         {acknowledgment && (
-          <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            Acknowledged {formatDate(acknowledgment.acknowledgedAt)}
+          <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              Acknowledged {formatDate(acknowledgment.acknowledgedAt)}
+            </div>
+            {acknowledgment.expiresAt && (
+              <div className="flex items-center gap-1 mt-1">
+                {isAcknowledgmentExpired(acknowledgment) ? (
+                  <span className="text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Expired {formatDate(acknowledgment.expiresAt)}
+                  </span>
+                ) : getDaysUntilExpiry(acknowledgment) <= 30 ? (
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Expires {formatDate(acknowledgment.expiresAt)} ({getDaysUntilExpiry(acknowledgment)} days)
+                  </span>
+                ) : (
+                  <span className="text-gray-400">
+                    Expires {formatDate(acknowledgment.expiresAt)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

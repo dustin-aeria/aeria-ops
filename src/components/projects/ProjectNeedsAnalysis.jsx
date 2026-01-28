@@ -847,7 +847,7 @@ const estimateSAIL = (analysis) => {
 }
 
 const generateCrewRequirements = (analysis) => {
-  const { missionProfiles = [], operationTypes = [], coverage, environments = [] } = analysis
+  const { missionProfiles = [], operationTypes = [], coverages = [], environments = [] } = analysis
   const requirements = {
     pic: { required: true, count: 1, notes: [] },
     vo: { required: false, count: 0, notes: [] },
@@ -862,7 +862,11 @@ const generateCrewRequirements = (analysis) => {
     requirements.vo.notes.push('Required for EVLOS operations')
   }
 
-  if (coverage === 'large_area' || coverage === 'very_large' || coverage === 'linear_long') {
+  // Check if any selected coverage requires additional crew
+  const hasLargeCoverage = coverages.some(c =>
+    c === 'large_area' || c === 'very_large' || c === 'linear_long'
+  )
+  if (hasLargeCoverage) {
     requirements.vo.required = true
     requirements.vo.count = Math.max(requirements.vo.count, 2)
     requirements.vo.notes.push('Recommended for large area operations')
@@ -902,15 +906,17 @@ const generateCrewRequirements = (analysis) => {
 }
 
 const generateAircraftRequirements = (analysis) => {
-  const { missionProfiles = [], coverage, payloads, operationTypes = [] } = analysis
-  const coverageInfo = COVERAGE_TYPES[coverage]
+  const { missionProfiles = [], coverages = [], payloads, operationTypes = [] } = analysis
+  // Use the most demanding coverage for recommendations
+  const primaryCoverage = coverages[0]
+  const coverageInfo = COVERAGE_TYPES[primaryCoverage]
   const weightClass = getWeightClass(payloads || [])
 
-  // Determine platform type
+  // Determine platform type based on most demanding coverage
   let platformType = 'Multi-rotor'
-  if (coverage === 'very_large' || coverage === 'linear_long') {
+  if (coverages.some(c => c === 'very_large' || c === 'linear_long')) {
     platformType = 'Fixed-wing or VTOL'
-  } else if (coverage === 'large_area' || coverage === 'linear_short') {
+  } else if (coverages.some(c => c === 'large_area' || c === 'linear_short')) {
     platformType = 'Multi-rotor or VTOL'
   }
 
@@ -919,9 +925,9 @@ const generateAircraftRequirements = (analysis) => {
   if (weightClass === 'medium') minCapacity = '500g'
   if (weightClass === 'heavy') minCapacity = '1kg+'
 
-  // Flight time
+  // Flight time - based on most demanding coverage
   let minFlightTime = '20 min'
-  if (['large_area', 'very_large', 'linear_long'].includes(coverage)) {
+  if (coverages.some(c => ['large_area', 'very_large', 'linear_long'].includes(c))) {
     minFlightTime = '30+ min'
   }
 
@@ -1563,7 +1569,8 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
       environments: saved.environments || (saved.environment ? [saved.environment] : []),
       airspaces: saved.airspaces || (saved.airspace ? [saved.airspace] : []),
       operationTypes: saved.operationTypes || (saved.operationType ? [saved.operationType] : []),
-      coverage: saved.coverage || null,
+      // Convert legacy single coverage to array
+      coverages: saved.coverages || (saved.coverage ? [saved.coverage] : []),
       payloads: saved.payloads || [],
       // Weather/atmosphere section
       weatherConditions: saved.weatherConditions || [],
@@ -1573,7 +1580,8 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
       missionProfile: saved.missionProfile || null,
       environment: saved.environment || null,
       airspace: saved.airspace || null,
-      operationType: saved.operationType || null
+      operationType: saved.operationType || null,
+      coverage: saved.coverage || null // Keep for backward compat
     }
   })
   
@@ -1616,6 +1624,7 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
   const toggleEnvironment = useCallback((id) => toggleArrayField('environments', id), [toggleArrayField])
   const toggleAirspace = useCallback((id) => toggleArrayField('airspaces', id), [toggleArrayField])
   const toggleOperationType = useCallback((id) => toggleArrayField('operationTypes', id), [toggleArrayField])
+  const toggleCoverage = useCallback((id) => toggleArrayField('coverages', id), [toggleArrayField])
   const togglePayload = useCallback((id) => toggleArrayField('payloads', id), [toggleArrayField])
   const toggleWeatherCondition = useCallback((id) => toggleArrayField('weatherConditions', id), [toggleArrayField])
   const toggleSeason = useCallback((id) => toggleArrayField('seasons', id), [toggleArrayField])
@@ -1645,7 +1654,7 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
       environments: (analysis.environments?.length || 0) > 0,
       airspaces: (analysis.airspaces?.length || 0) > 0,
       operationTypes: (analysis.operationTypes?.length || 0) > 0,
-      coverage: !!analysis.coverage,
+      coverage: (analysis.coverages?.length || 0) > 0,
       payloads: (analysis.payloads?.length || 0) > 0,
       weather: (analysis.weatherConditions?.length || 0) > 0 || (analysis.seasons?.length || 0) > 0
     }
@@ -1961,39 +1970,59 @@ export default function ProjectNeedsAnalysis({ project, onUpdate, onNavigate }) 
           defaultOpen={completeness.checks.operationTypes && !completeness.checks.coverage}
         >
           <p className="text-sm text-gray-600 mb-4">
-            Estimate the area or distance to be covered.
+            Select all coverage types that apply to this mission. Multiple selections allowed.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {Object.values(COVERAGE_TYPES).map(cov => (
-              <button
-                key={cov.id}
-                onClick={() => updateAnalysis('coverage', cov.id)}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
-                  analysis.coverage === cov.id
-                    ? 'border-aeria-navy bg-aeria-navy/5'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <p className={`font-medium ${
-                  analysis.coverage === cov.id ? 'text-aeria-navy' : 'text-gray-900'
-                }`}>
-                  {cov.name}
-                </p>
-                <p className="text-sm text-gray-500 mb-2">{cov.description}</p>
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="text-gray-500">
-                    <strong>Area:</strong> {cov.areaRange}
-                  </span>
-                  <span className="text-gray-500">
-                    <strong>Est. Flights:</strong> {cov.flightEstimate}
-                  </span>
-                </div>
-                <p className="text-xs text-aeria-navy mt-1">
-                  <strong>Platform:</strong> {cov.platformSuggestion}
-                </p>
-              </button>
-            ))}
+            {Object.values(COVERAGE_TYPES).map(cov => {
+              const isSelected = analysis.coverages?.includes(cov.id)
+              return (
+                <button
+                  key={cov.id}
+                  onClick={() => toggleCoverage(cov.id)}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    isSelected
+                      ? 'border-aeria-navy bg-aeria-navy/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <p className={`font-medium ${
+                      isSelected ? 'text-aeria-navy' : 'text-gray-900'
+                    }`}>
+                      {cov.name}
+                    </p>
+                    {isSelected && (
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-aeria-navy text-white flex items-center justify-center text-xs">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mb-2">{cov.description}</p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-gray-500">
+                      <strong>Area:</strong> {cov.areaRange}
+                    </span>
+                    <span className="text-gray-500">
+                      <strong>Est. Flights:</strong> {cov.flightEstimate}
+                    </span>
+                  </div>
+                  <p className="text-xs text-aeria-navy mt-1">
+                    <strong>Platform:</strong> {cov.platformSuggestion}
+                  </p>
+                </button>
+              )
+            })}
           </div>
+
+          {/* Summary of selected coverages */}
+          {analysis.coverages?.length > 0 && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Selected Coverage Types ({analysis.coverages.length}):</strong>{' '}
+                {analysis.coverages.map(id => COVERAGE_TYPES[id]?.name).filter(Boolean).join(', ')}
+              </p>
+            </div>
+          )}
         </CollapsibleSection>
         
         {/* Payloads & Sensors */}
