@@ -68,6 +68,7 @@ const ComplianceProjectView = lazy(() => import('./pages/ComplianceProjectView')
 const MaintenanceDashboard = lazy(() => import('./pages/MaintenanceDashboard'))
 const MaintenanceItemList = lazy(() => import('./pages/MaintenanceItemList'))
 const MaintenanceSchedulesPage = lazy(() => import('./pages/MaintenanceSchedulesPage'))
+const MaintenanceItemDetail = lazy(() => import('./pages/MaintenanceItemDetail'))
 
 // Suspense fallback component
 function PageLoader() {
@@ -177,6 +178,7 @@ function App() {
           <Route path="maintenance" element={<Suspense fallback={<PageLoader />}><MaintenanceDashboard /></Suspense>} />
           <Route path="maintenance/items" element={<Suspense fallback={<PageLoader />}><MaintenanceItemList /></Suspense>} />
           <Route path="maintenance/schedules" element={<Suspense fallback={<PageLoader />}><MaintenanceSchedulesPage /></Suspense>} />
+          <Route path="maintenance/item/:itemType/:itemId" element={<Suspense fallback={<PageLoader />}><MaintenanceItemDetail /></Suspense>} />
         </Route>
 
         {/* Catch all - redirect to dashboard */}

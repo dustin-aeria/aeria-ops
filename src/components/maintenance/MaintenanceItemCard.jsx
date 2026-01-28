@@ -92,10 +92,8 @@ export default function MaintenanceItemCard({ item, compact = false, onLogServic
   // Get schedule count
   const scheduleCount = item.maintenanceScheduleIds?.length || 0
 
-  // Build the link path
-  const linkPath = item.itemType === 'aircraft'
-    ? `/aircraft/${item.id}`
-    : `/equipment/${item.id}`
+  // Build the link path - link to maintenance detail page
+  const linkPath = `/maintenance/item/${item.itemType}/${item.id}`
 
   const handleLogService = (e) => {
     e.preventDefault()
