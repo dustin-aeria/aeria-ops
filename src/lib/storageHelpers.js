@@ -711,3 +711,113 @@ export async function deleteInsuranceDocument(storagePath) {
   const storageRef = ref(storage, storagePath)
   await deleteObject(storageRef)
 }
+
+// ============================================
+// PERMIT DOCUMENTS
+// ============================================
+
+/**
+ * Upload a permit document (PDF, Word doc, images, etc.)
+ * @param {File} file - The file to upload
+ * @param {string} operatorId - Operator ID for organizing files
+ * @param {string} permitId - Permit ID for organizing files
+ * @returns {Promise<{url: string, path: string, name: string, size: number, type: string}>}
+ */
+export async function uploadPermitDocument(file, operatorId, permitId) {
+  if (!file) throw new Error('No file provided')
+  if (!operatorId) throw new Error('Operator ID required')
+  if (!permitId) throw new Error('Permit ID required')
+
+  // Validate file type
+  const validTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'image/jpeg',
+    'image/png',
+    'image/webp'
+  ]
+
+  if (!validTypes.includes(file.type)) {
+    throw new Error('Invalid file type. Please upload PDF, Word, Excel, text, or image files.')
+  }
+
+  // Validate file size (max 50MB for permit documents)
+  const maxSize = 50 * 1024 * 1024
+  if (file.size > maxSize) {
+    throw new Error('File too large. Maximum size is 50MB.')
+  }
+
+  // Generate unique filename
+  const timestamp = Date.now()
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+  const filename = `${timestamp}_${safeName}`
+
+  // Create storage path: permits/{operatorId}/{permitId}/{filename}
+  const storagePath = `permits/${operatorId}/${permitId}/${filename}`
+  const storageRef = ref(storage, storagePath)
+
+  // Upload file
+  const snapshot = await uploadBytes(storageRef, file, {
+    contentType: file.type,
+    customMetadata: {
+      originalName: file.name,
+      uploadedAt: new Date().toISOString(),
+      operatorId,
+      permitId
+    }
+  })
+
+  // Get download URL
+  const url = await getDownloadURL(snapshot.ref)
+
+  return {
+    url,
+    path: storagePath,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    uploadedAt: new Date().toISOString()
+  }
+}
+
+/**
+ * Delete a permit document from Firebase Storage
+ * @param {string} storagePath - The storage path of the file to delete
+ */
+export async function deletePermitDocument(storagePath) {
+  if (!storagePath) throw new Error('Storage path required')
+
+  const storageRef = ref(storage, storagePath)
+  await deleteObject(storageRef)
+}
+
+/**
+ * Upload multiple permit documents
+ * @param {FileList|File[]} files - Files to upload
+ * @param {string} operatorId - Operator ID
+ * @param {string} permitId - Permit ID
+ * @param {function} onProgress - Progress callback (index, total)
+ * @returns {Promise<Array<{url: string, path: string, name: string}>>}
+ */
+export async function uploadMultiplePermitDocuments(files, operatorId, permitId, onProgress) {
+  const results = []
+  const fileArray = Array.from(files)
+
+  for (let i = 0; i < fileArray.length; i++) {
+    const file = fileArray[i]
+    if (onProgress) onProgress(i + 1, fileArray.length)
+
+    try {
+      const result = await uploadPermitDocument(file, operatorId, permitId)
+      results.push(result)
+    } catch (error) {
+      results.push({ error: error.message, name: file.name })
+    }
+  }
+
+  return results
+}

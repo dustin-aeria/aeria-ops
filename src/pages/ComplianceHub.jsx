@@ -41,7 +41,9 @@ import {
   Database,
   Sparkles,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  Award,
+  Shield
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -58,6 +60,19 @@ import { seedAllComplianceTemplates } from '../lib/seedComplianceTemplates'
 import { KnowledgeBasePanel, BatchIndexPanel } from '../components/compliance'
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase'
 import { logger } from '../lib/logger'
+import {
+  PermitCard,
+  PermitStatusBadge,
+  AddPermitModal,
+  PermitDetailPanel
+} from '../components/permits'
+import {
+  getPermits,
+  getPermitMetrics,
+  deletePermit,
+  PERMIT_TYPES,
+  PERMIT_STATUS
+} from '../lib/firestorePermits'
 
 // ============================================
 // STATUS HELPERS
@@ -708,6 +723,9 @@ export default function ComplianceHub() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState('applications') // 'applications' or 'permits'
+
   // State
   const [applications, setApplications] = useState([])
   const [qaProjects, setQaProjects] = useState([])
@@ -724,6 +742,16 @@ export default function ComplianceHub() {
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false)
   const [kbTab, setKbTab] = useState('search') // 'search' or 'index'
 
+  // Permits state
+  const [permits, setPermits] = useState([])
+  const [permitMetrics, setPermitMetrics] = useState(null)
+  const [permitTypeFilter, setPermitTypeFilter] = useState(null)
+  const [permitStatusFilter, setPermitStatusFilter] = useState(null)
+  const [permitSearchQuery, setPermitSearchQuery] = useState('')
+  const [showAddPermitModal, setShowAddPermitModal] = useState(false)
+  const [editingPermit, setEditingPermit] = useState(null)
+  const [selectedPermitId, setSelectedPermitId] = useState(null)
+
   // Knowledge Base
   const { indexStatus, isIndexed, reindexPolicies, indexing } = useKnowledgeBase()
 
@@ -731,19 +759,39 @@ export default function ComplianceHub() {
   const loadData = async () => {
     try {
       setError('')
-      const [appsData, templatesData, qaData] = await Promise.all([
+      const operatorId = user?.operatorId || user?.uid
+      const [appsData, templatesData, qaData, permitsData, metricsData] = await Promise.all([
         getComplianceApplications(),
         getComplianceTemplates(),
-        getComplianceProjects(user?.operatorId || user?.uid)
+        getComplianceProjects(operatorId),
+        getPermits(operatorId),
+        getPermitMetrics(operatorId)
       ])
       setApplications(appsData)
       setTemplates(templatesData)
       setQaProjects(qaData || [])
+      setPermits(permitsData || [])
+      setPermitMetrics(metricsData)
     } catch (err) {
       logger.error('Error loading compliance data:', err)
       setError('Failed to load compliance data. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Load permits only
+  const loadPermits = async () => {
+    try {
+      const operatorId = user?.operatorId || user?.uid
+      const [permitsData, metricsData] = await Promise.all([
+        getPermits(operatorId),
+        getPermitMetrics(operatorId)
+      ])
+      setPermits(permitsData || [])
+      setPermitMetrics(metricsData)
+    } catch (err) {
+      logger.error('Error loading permits:', err)
     }
   }
 
@@ -814,6 +862,65 @@ export default function ComplianceHub() {
       setError('Failed to delete project.')
     }
   }
+
+  // Delete permit
+  const handleDeletePermit = async (id) => {
+    try {
+      await deletePermit(id)
+      setPermits(prev => prev.filter(p => p.id !== id))
+      await loadPermits()
+    } catch (err) {
+      logger.error('Error deleting permit:', err)
+      setError('Failed to delete permit.')
+    }
+  }
+
+  // Handle permit save
+  const handlePermitSave = async () => {
+    await loadPermits()
+    setShowAddPermitModal(false)
+    setEditingPermit(null)
+  }
+
+  // Handle permit view
+  const handleViewPermit = (permit) => {
+    setSelectedPermitId(permit.id)
+  }
+
+  // Handle permit edit
+  const handleEditPermit = (permit) => {
+    setEditingPermit(permit)
+    setShowAddPermitModal(true)
+    setSelectedPermitId(null)
+  }
+
+  // Filter permits
+  const filteredPermits = useMemo(() => {
+    let result = [...permits]
+
+    // Apply type filter
+    if (permitTypeFilter) {
+      result = result.filter(p => p.type === permitTypeFilter)
+    }
+
+    // Apply status filter
+    if (permitStatusFilter) {
+      result = result.filter(p => p.status === permitStatusFilter)
+    }
+
+    // Apply search
+    if (permitSearchQuery) {
+      const query = permitSearchQuery.toLowerCase()
+      result = result.filter(permit =>
+        permit.name?.toLowerCase().includes(query) ||
+        permit.permitNumber?.toLowerCase().includes(query) ||
+        permit.issuingAuthority?.toLowerCase().includes(query) ||
+        permit.geographicArea?.toLowerCase().includes(query)
+      )
+    }
+
+    return result
+  }, [permits, permitTypeFilter, permitStatusFilter, permitSearchQuery])
 
   // Filter and combine all items
   const filteredItems = useMemo(() => {
@@ -950,16 +1057,16 @@ export default function ComplianceHub() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <ClipboardCheck className="w-7 h-7 text-aeria-navy" />
-              Compliance Assistant
+              Compliance Hub
             </h1>
             <p className="text-gray-500 mt-1">
-              Manage compliance applications, client prequalifications, regulatory submissions, and audits
+              Manage compliance applications, permits, and regulatory certificates
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Seed Templates Button (only show if no templates) */}
-            {templates.length === 0 && (
+            {templates.length === 0 && activeTab === 'applications' && (
               <button
                 onClick={handleSeedTemplates}
                 disabled={seeding}
@@ -994,109 +1101,151 @@ export default function ComplianceHub() {
                 <span className="w-2 h-2 rounded-full bg-green-500" title="Knowledge Base indexed" />
               )}
             </button>
-
-            {/* Template Library Link */}
-            <Link
-              to="/compliance/templates"
-              className="btn-secondary flex items-center gap-2"
-            >
-              <BookOpen className="w-4 h-4" />
-              Templates
-            </Link>
-
-            {/* New Q&A Project Button */}
-            <button
-              onClick={() => setShowNewQAModal(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Q&A Project
-            </button>
-
-            {/* New Template Application Button */}
-            <button
-              onClick={() => setShowNewModal(true)}
-              disabled={templates.filter(t => t.status === 'active').length === 0}
-              className="btn-primary flex items-center gap-2"
-            >
-              <FileCheck className="w-4 h-4" />
-              From Template
-            </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 mt-6 pt-6 border-t border-gray-200 flex-wrap">
-          {/* Type filters */}
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 mt-6 pt-4 border-t border-gray-200">
           <button
-            onClick={() => { setTypeFilter(null); setStatusFilter(null); }}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              typeFilter === null && statusFilter === null ? 'bg-gray-100' : 'hover:bg-gray-50'
+            onClick={() => setActiveTab('applications')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+              activeTab === 'applications'
+                ? 'bg-aeria-navy text-white'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            <p className="text-2xl font-bold text-gray-900">{stats.all}</p>
-            <p className="text-xs text-gray-500">All</p>
+            <FileCheck className="w-4 h-4" />
+            Applications & Projects
           </button>
           <button
-            onClick={() => { setTypeFilter('application'); setStatusFilter(null); }}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              typeFilter === 'application' ? 'bg-blue-100' : 'hover:bg-gray-50'
+            onClick={() => setActiveTab('permits')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+              activeTab === 'permits'
+                ? 'bg-cyan-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            <p className="text-2xl font-bold text-blue-600">{stats.allApps}</p>
-            <p className="text-xs text-gray-500">Templates</p>
-          </button>
-          <button
-            onClick={() => { setTypeFilter('qa'); setStatusFilter(null); }}
-            className={`text-center px-4 py-2 rounded-lg transition-colors ${
-              typeFilter === 'qa' ? 'bg-purple-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-2xl font-bold text-purple-600">{stats.allQA}</p>
-            <p className="text-xs text-gray-500">Q&A</p>
-          </button>
-
-          <div className="w-px h-8 bg-gray-300 mx-2" />
-
-          {/* Status filters (for template apps) */}
-          <button
-            onClick={() => { setTypeFilter('application'); setStatusFilter('draft'); }}
-            className={`text-center px-3 py-2 rounded-lg transition-colors ${
-              statusFilter === 'draft' ? 'bg-gray-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-lg font-bold text-gray-500">{stats.draft}</p>
-            <p className="text-xs text-gray-500">Draft</p>
-          </button>
-          <button
-            onClick={() => { setTypeFilter('application'); setStatusFilter('in-progress'); }}
-            className={`text-center px-3 py-2 rounded-lg transition-colors ${
-              statusFilter === 'in-progress' ? 'bg-blue-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-lg font-bold text-blue-600">{stats.inProgress}</p>
-            <p className="text-xs text-gray-500">In Progress</p>
-          </button>
-          <button
-            onClick={() => { setTypeFilter('application'); setStatusFilter('submitted'); }}
-            className={`text-center px-3 py-2 rounded-lg transition-colors ${
-              statusFilter === 'submitted' ? 'bg-amber-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-lg font-bold text-amber-600">{stats.submitted}</p>
-            <p className="text-xs text-gray-500">Submitted</p>
-          </button>
-          <button
-            onClick={() => { setTypeFilter('application'); setStatusFilter('approved'); }}
-            className={`text-center px-3 py-2 rounded-lg transition-colors ${
-              statusFilter === 'approved' ? 'bg-green-100' : 'hover:bg-gray-50'
-            }`}
-          >
-            <p className="text-lg font-bold text-green-600">{stats.approved}</p>
-            <p className="text-xs text-gray-500">Approved</p>
+            <Award className="w-4 h-4" />
+            Permits & Certificates
+            {permitMetrics?.expiringSoon > 0 && (
+              <span className="px-1.5 py-0.5 text-xs bg-yellow-400 text-yellow-900 rounded-full">
+                {permitMetrics.expiringSoon}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* APPLICATIONS & PROJECTS TAB */}
+      {/* ============================================ */}
+      {activeTab === 'applications' && (
+        <>
+          {/* Application Stats */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {/* Template Library Link */}
+                <Link
+                  to="/compliance/templates"
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Templates
+                </Link>
+
+                {/* New Q&A Project Button */}
+                <button
+                  onClick={() => setShowNewQAModal(true)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Q&A Project
+                </button>
+
+                {/* New Template Application Button */}
+                <button
+                  onClick={() => setShowNewModal(true)}
+                  disabled={templates.filter(t => t.status === 'active').length === 0}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <FileCheck className="w-4 h-4" />
+                  From Template
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Type filters */}
+              <button
+                onClick={() => { setTypeFilter(null); setStatusFilter(null); }}
+                className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                  typeFilter === null && statusFilter === null ? 'bg-gray-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-2xl font-bold text-gray-900">{stats.all}</p>
+                <p className="text-xs text-gray-500">All</p>
+              </button>
+              <button
+                onClick={() => { setTypeFilter('application'); setStatusFilter(null); }}
+                className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                  typeFilter === 'application' ? 'bg-blue-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-2xl font-bold text-blue-600">{stats.allApps}</p>
+                <p className="text-xs text-gray-500">Templates</p>
+              </button>
+              <button
+                onClick={() => { setTypeFilter('qa'); setStatusFilter(null); }}
+                className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                  typeFilter === 'qa' ? 'bg-purple-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-2xl font-bold text-purple-600">{stats.allQA}</p>
+                <p className="text-xs text-gray-500">Q&A</p>
+              </button>
+
+              <div className="w-px h-8 bg-gray-300 mx-2" />
+
+              {/* Status filters (for template apps) */}
+              <button
+                onClick={() => { setTypeFilter('application'); setStatusFilter('draft'); }}
+                className={`text-center px-3 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'draft' ? 'bg-gray-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-lg font-bold text-gray-500">{stats.draft}</p>
+                <p className="text-xs text-gray-500">Draft</p>
+              </button>
+              <button
+                onClick={() => { setTypeFilter('application'); setStatusFilter('in-progress'); }}
+                className={`text-center px-3 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'in-progress' ? 'bg-blue-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-lg font-bold text-blue-600">{stats.inProgress}</p>
+                <p className="text-xs text-gray-500">In Progress</p>
+              </button>
+              <button
+                onClick={() => { setTypeFilter('application'); setStatusFilter('submitted'); }}
+                className={`text-center px-3 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'submitted' ? 'bg-amber-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-lg font-bold text-amber-600">{stats.submitted}</p>
+                <p className="text-xs text-gray-500">Submitted</p>
+              </button>
+              <button
+                onClick={() => { setTypeFilter('application'); setStatusFilter('approved'); }}
+                className={`text-center px-3 py-2 rounded-lg transition-colors ${
+                  statusFilter === 'approved' ? 'bg-green-100' : 'hover:bg-gray-50'
+                }`}
+              >
+                <p className="text-lg font-bold text-green-600">{stats.approved}</p>
+                <p className="text-xs text-gray-500">Approved</p>
+              </button>
+            </div>
+          </div>
 
       {/* Knowledge Base Panel */}
       {showKnowledgeBase && (
@@ -1313,6 +1462,207 @@ export default function ComplianceHub() {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {/* ============================================ */}
+      {/* PERMITS & CERTIFICATES TAB */}
+      {/* ============================================ */}
+      {activeTab === 'permits' && (
+        <>
+          {/* Permit Stats */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                {/* Stats Cards */}
+                <button
+                  onClick={() => { setPermitTypeFilter(null); setPermitStatusFilter(null); }}
+                  className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                    !permitTypeFilter && !permitStatusFilter ? 'bg-gray-100' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-gray-900">{permitMetrics?.totalPermits || 0}</p>
+                  <p className="text-xs text-gray-500">Total</p>
+                </button>
+                <button
+                  onClick={() => { setPermitStatusFilter('active'); setPermitTypeFilter(null); }}
+                  className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                    permitStatusFilter === 'active' ? 'bg-green-100' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-green-600">{permitMetrics?.active || 0}</p>
+                  <p className="text-xs text-gray-500">Active</p>
+                </button>
+                <button
+                  onClick={() => { setPermitStatusFilter('expiring_soon'); setPermitTypeFilter(null); }}
+                  className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                    permitStatusFilter === 'expiring_soon' ? 'bg-yellow-100' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-yellow-600">{permitMetrics?.expiringSoon || 0}</p>
+                  <p className="text-xs text-gray-500">Expiring</p>
+                </button>
+                <button
+                  onClick={() => { setPermitStatusFilter('expired'); setPermitTypeFilter(null); }}
+                  className={`text-center px-4 py-2 rounded-lg transition-colors ${
+                    permitStatusFilter === 'expired' ? 'bg-red-100' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-red-600">{permitMetrics?.expired || 0}</p>
+                  <p className="text-xs text-gray-500">Expired</p>
+                </button>
+              </div>
+
+              <button
+                onClick={() => { setEditingPermit(null); setShowAddPermitModal(true); }}
+                className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Permit
+              </button>
+            </div>
+          </div>
+
+          {/* Permit Search and Filters */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
+                <label htmlFor="permit-search" className="sr-only">Search permits</label>
+                <input
+                  id="permit-search"
+                  type="search"
+                  placeholder="Search permits..."
+                  value={permitSearchQuery}
+                  onChange={(e) => setPermitSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Type Filter */}
+              <select
+                value={permitTypeFilter || ''}
+                onChange={(e) => setPermitTypeFilter(e.target.value || null)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              >
+                <option value="">All Types</option>
+                {Object.entries(PERMIT_TYPES).map(([key, type]) => (
+                  <option key={key} value={key}>{type.shortLabel}</option>
+                ))}
+              </select>
+
+              {/* Status Filter */}
+              <select
+                value={permitStatusFilter || ''}
+                onChange={(e) => setPermitStatusFilter(e.target.value || null)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              >
+                <option value="">All Statuses</option>
+                {Object.entries(PERMIT_STATUS).map(([key, status]) => (
+                  <option key={key} value={key}>{status.label}</option>
+                ))}
+              </select>
+
+              {/* Clear Filters */}
+              {(permitSearchQuery || permitTypeFilter || permitStatusFilter) && (
+                <button
+                  onClick={() => {
+                    setPermitSearchQuery('')
+                    setPermitTypeFilter(null)
+                    setPermitStatusFilter(null)
+                  }}
+                  className="text-sm text-cyan-600 hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
+
+              {/* View Toggle */}
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 ${viewMode === 'list' ? 'bg-cyan-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <List className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 ${viewMode === 'grid' ? 'bg-cyan-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Refresh */}
+              <button
+                onClick={loadPermits}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+                title="Refresh"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {filteredPermits.length} of {permits.length} permits
+            </p>
+          </div>
+
+          {/* Permits List/Grid */}
+          {filteredPermits.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <Shield className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {permits.length === 0 ? 'No Permits Yet' : 'No Matching Permits'}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {permits.length === 0
+                  ? 'Add your regulatory permits, SFOCs, and certificates to track their status and expiry dates.'
+                  : 'Try adjusting your filters or search query.'}
+              </p>
+              {permits.length === 0 && (
+                <button
+                  onClick={() => { setEditingPermit(null); setShowAddPermitModal(true); }}
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Your First Permit
+                </button>
+              )}
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="space-y-2">
+              {filteredPermits.map(permit => (
+                <PermitCard
+                  key={permit.id}
+                  permit={permit}
+                  viewMode="list"
+                  onView={handleViewPermit}
+                  onEdit={handleEditPermit}
+                  onDelete={handleDeletePermit}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPermits.map(permit => (
+                <PermitCard
+                  key={permit.id}
+                  permit={permit}
+                  viewMode="grid"
+                  onView={handleViewPermit}
+                  onEdit={handleEditPermit}
+                  onDelete={handleDeletePermit}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* New Application Modal */}
       <NewApplicationModal
@@ -1328,6 +1678,25 @@ export default function ComplianceHub() {
         onClose={() => setShowNewQAModal(false)}
         onCreateProject={handleCreateQAProject}
       />
+
+      {/* Add/Edit Permit Modal */}
+      <AddPermitModal
+        isOpen={showAddPermitModal}
+        onClose={() => { setShowAddPermitModal(false); setEditingPermit(null); }}
+        onSave={handlePermitSave}
+        operatorId={user?.operatorId || user?.uid}
+        editPermit={editingPermit}
+      />
+
+      {/* Permit Detail Panel */}
+      {selectedPermitId && (
+        <PermitDetailPanel
+          permitId={selectedPermitId}
+          onClose={() => setSelectedPermitId(null)}
+          onEdit={handleEditPermit}
+          onUpdate={loadPermits}
+        />
+      )}
     </div>
   )
 }

@@ -25,7 +25,8 @@ import {
   FileText,
   Shield,
   Settings,
-  RefreshCw
+  RefreshCw,
+  FileCheck
 } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, parseISO } from 'date-fns'
 import { getProjects } from '../lib/firestore'
@@ -33,6 +34,7 @@ import { getAllTrainingRecords, getTrainingMetrics } from '../lib/firestoreTrain
 import { getInsurancePolicies } from '../lib/firestoreInsurance'
 import { getInspections } from '../lib/firestoreInspections'
 import { getUpcomingMaintenance, getAllMaintainableItems } from '../lib/firestoreMaintenance'
+import { getPermitExpiryEvents } from '../lib/firestorePermits'
 
 // Event types with colors
 const EVENT_TYPES = {
@@ -42,6 +44,7 @@ const EVENT_TYPES = {
   inspection: { label: 'Inspection', color: 'bg-purple-500', icon: ClipboardCheck, bgLight: 'bg-purple-100 text-purple-800' },
   insurance_expiry: { label: 'Insurance Expiry', color: 'bg-red-500', icon: Shield, bgLight: 'bg-red-100 text-red-800' },
   maintenance: { label: 'Maintenance', color: 'bg-orange-500', icon: Settings, bgLight: 'bg-orange-100 text-orange-800' },
+  permit_expiry: { label: 'Permit Expiry', color: 'bg-cyan-500', icon: FileCheck, bgLight: 'bg-cyan-100 text-cyan-800' },
   manual: { label: 'Event', color: 'bg-gray-500', icon: CalendarIcon, bgLight: 'bg-gray-100 text-gray-800' }
 }
 
@@ -62,6 +65,7 @@ export default function Calendar() {
     inspection: true,
     insurance_expiry: true,
     maintenance: true,
+    permit_expiry: true,
     manual: true
   })
 
@@ -201,6 +205,12 @@ export default function Calendar() {
             }
           })
         }
+      })
+
+      // Load permit expiry events
+      const permitEvents = await getPermitExpiryEvents(operatorId, 365).catch(() => [])
+      permitEvents.forEach(event => {
+        allEvents.push(event)
       })
 
       // Add manual events
