@@ -39,6 +39,7 @@ import {
 import { BrandedPDF } from '../../lib/pdfExportService'
 import { logger } from '../../lib/logger'
 import { sendTeamNotification } from '../../lib/teamNotificationService'
+import WeatherWidget from '../weather/WeatherWidget'
 
 // Default sections to include in tailgate briefing
 const DEFAULT_INCLUDED_SECTIONS = {
@@ -753,6 +754,20 @@ export default function ProjectTailgate({ project, onUpdate }) {
 
         {expandedSections.weather && (
           <div className="mt-4 space-y-4">
+            {/* Live Weather Widget */}
+            {project.sites?.[0]?.coordinates && (
+              <WeatherWidget
+                latitude={parseFloat(project.sites[0].coordinates.split(',')[0]?.trim())}
+                longitude={parseFloat(project.sites[0].coordinates.split(',')[1]?.trim())}
+                siteName={project.sites[0].name || 'Operation Site'}
+                compact={false}
+              />
+            )}
+
+            {/* Manual Weather Entry (for overrides or when no site coordinates) */}
+            <div className="border-t border-gray-200 pt-4">
+              <p className="text-sm text-gray-500 mb-3">Manual entry (use if live data unavailable or to record official observations)</p>
+            </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="weather-temperature" className="label flex items-center gap-2">

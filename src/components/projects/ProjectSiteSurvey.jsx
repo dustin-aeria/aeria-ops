@@ -54,7 +54,6 @@ import {
   getSiteStats,
   validateSiteCompleteness
 } from '../../lib/mapDataStructures'
-import { WeatherWidget } from '../weather'
 
 // ============================================
 // CONSTANTS
@@ -863,18 +862,6 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
                   {mapData.siteLocation.geometry.coordinates[1].toFixed(6)},{' '}
                   {mapData.siteLocation.geometry.coordinates[0].toFixed(6)}
                 </p>
-              </div>
-            )}
-
-            {/* Site Weather */}
-            {mapData.siteLocation && (
-              <div className="mt-4">
-                <WeatherWidget
-                  lat={mapData.siteLocation.geometry.coordinates[1]}
-                  lon={mapData.siteLocation.geometry.coordinates[0]}
-                  siteName={activeSite?.name || 'Site'}
-                  compact={true}
-                />
               </div>
             )}
 
