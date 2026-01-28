@@ -941,102 +941,103 @@ export default function ProjectSiteSurvey({ project, onUpdate }) {
             />
           </CollapsibleSection>
 
-          {/* Weather Planning */}
-          <CollapsibleSection title="Weather Planning" icon={Cloud} defaultOpen={false}>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-blue-700">
-                  Document assumed weather conditions for planning. These are the conditions you're planning your operation around.
-                  Actual weather will be checked in the <strong>Tailgate Briefing</strong> on the day of operations.
-                </p>
-              </div>
+          {/* Expected Weather Conditions */}
+          <CollapsibleSection title="Expected Weather Conditions" icon={Cloud} defaultOpen={false}>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-blue-700">
+                Select conditions typical for this location at the planned time of year. Live weather will be shown in Tailgate on the day of operations.
+              </p>
             </div>
 
             <div className="space-y-4">
+              {/* Condition Checkboxes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Expected Conditions (select all that may apply)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {[
+                    { id: 'clear', label: 'Clear/Sunny', icon: '☀️' },
+                    { id: 'cloudy', label: 'Cloudy', icon: '☁️' },
+                    { id: 'overcast', label: 'Overcast', icon: '🌥️' },
+                    { id: 'rain', label: 'Rain', icon: '🌧️' },
+                    { id: 'snow', label: 'Snow', icon: '❄️' },
+                    { id: 'fog', label: 'Fog', icon: '🌫️' },
+                    { id: 'wind', label: 'Wind', icon: '💨' },
+                    { id: 'thunderstorms', label: 'Thunderstorms', icon: '⛈️' },
+                    { id: 'haze', label: 'Haze/Smoke', icon: '🌁' },
+                    { id: 'freezing', label: 'Freezing', icon: '🥶' },
+                    { id: 'hot', label: 'Hot (>30°C)', icon: '🔥' },
+                    { id: 'variable', label: 'Variable', icon: '🔄' }
+                  ].map(condition => {
+                    const conditions = surveyData.weatherPlanning?.expectedConditions || []
+                    const isChecked = conditions.includes(condition.id)
+                    return (
+                      <label
+                        key={condition.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                          isChecked
+                            ? 'bg-blue-50 border-blue-300 text-blue-800'
+                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const newConditions = e.target.checked
+                              ? [...conditions, condition.id]
+                              : conditions.filter(c => c !== condition.id)
+                            updateNestedSurveyData('weatherPlanning', { expectedConditions: newConditions })
+                          }}
+                          className="sr-only"
+                        />
+                        <span>{condition.icon}</span>
+                        <span className="text-sm">{condition.label}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Wind and Visibility Limits */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Sun className="w-4 h-4 inline mr-1" />
-                    Assumed Weather Conditions
-                  </label>
-                  <select
-                    value={surveyData.weatherPlanning?.assumedConditions || 'vfr'}
-                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { assumedConditions: e.target.value })}
-                    className="input"
-                  >
-                    <option value="vfr">VFR - Visual Flight Rules</option>
-                    <option value="mvfr">MVFR - Marginal VFR</option>
-                    <option value="overcast">Overcast but workable</option>
-                    <option value="variable">Variable conditions expected</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Wind className="w-4 h-4 inline mr-1" />
-                    Wind Limits (max acceptable)
+                    Max Wind (km/h)
                   </label>
                   <input
-                    type="text"
-                    value={surveyData.weatherPlanning?.windLimits || ''}
-                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { windLimits: e.target.value })}
-                    placeholder="e.g., 20 km/h sustained, 30 km/h gusts"
+                    type="number"
+                    value={surveyData.weatherPlanning?.maxWind || ''}
+                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { maxWind: e.target.value })}
+                    placeholder="e.g., 25"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Min Visibility (km)
+                  </label>
+                  <input
+                    type="number"
+                    value={surveyData.weatherPlanning?.minVisibility || ''}
+                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { minVisibility: e.target.value })}
+                    placeholder="e.g., 5"
                     className="input"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Visibility Minimum
-                  </label>
-                  <input
-                    type="text"
-                    value={surveyData.weatherPlanning?.visibilityMinimum || ''}
-                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { visibilityMinimum: e.target.value })}
-                    placeholder="e.g., 3 SM / 5 km"
-                    className="input"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ceiling Minimum
-                  </label>
-                  <input
-                    type="text"
-                    value={surveyData.weatherPlanning?.ceilingMinimum || ''}
-                    onChange={(e) => updateNestedSurveyData('weatherPlanning', { ceilingMinimum: e.target.value })}
-                    placeholder="e.g., 1000 ft AGL or VFR"
-                    className="input"
-                  />
-                </div>
-              </div>
-
+              {/* Notes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Local Weather Factors
+                  Weather Notes
                 </label>
                 <textarea
-                  value={surveyData.weatherPlanning?.localFactors || ''}
-                  onChange={(e) => updateNestedSurveyData('weatherPlanning', { localFactors: e.target.value })}
-                  placeholder="Any local weather considerations: valley winds, terrain effects, fog patterns, afternoon thunderstorms..."
-                  rows={3}
-                  className="input resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Weather Go/No-Go Criteria
-                </label>
-                <textarea
-                  value={surveyData.weatherPlanning?.goNoGoCriteria || ''}
-                  onChange={(e) => updateNestedSurveyData('weatherPlanning', { goNoGoCriteria: e.target.value })}
-                  placeholder="Define specific weather thresholds that would cancel operations..."
-                  rows={3}
+                  value={surveyData.weatherPlanning?.notes || ''}
+                  onChange={(e) => updateNestedSurveyData('weatherPlanning', { notes: e.target.value })}
+                  placeholder="Local weather patterns, seasonal considerations, go/no-go criteria..."
+                  rows={2}
                   className="input resize-none"
                 />
               </div>
