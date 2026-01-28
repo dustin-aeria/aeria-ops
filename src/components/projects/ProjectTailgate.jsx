@@ -43,6 +43,12 @@ import WeatherWidget from '../weather/WeatherWidget'
 
 // Helper component to get coordinates and show weather
 function SiteWeatherWidget({ activeSite }) {
+  // Debug logging to trace data structure
+  console.log('SiteWeatherWidget - activeSite:', activeSite)
+  console.log('SiteWeatherWidget - mapData:', activeSite?.mapData)
+  console.log('SiteWeatherWidget - siteSurvey:', activeSite?.mapData?.siteSurvey)
+  console.log('SiteWeatherWidget - siteLocation:', activeSite?.mapData?.siteSurvey?.siteLocation)
+
   if (!activeSite) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -51,9 +57,16 @@ function SiteWeatherWidget({ activeSite }) {
     )
   }
 
-  // Get coordinates from the site location marker
-  const siteLocation = activeSite.mapData?.siteSurvey?.siteLocation
-  const coords = siteLocation?.geometry?.coordinates
+  // Get coordinates - check multiple possible paths
+  // Path 1: Direct on mapData (older structure)
+  let coords = activeSite.mapData?.siteLocation?.geometry?.coordinates
+
+  // Path 2: Under siteSurvey (current structure used by Site Survey tab)
+  if (!coords) {
+    coords = activeSite.mapData?.siteSurvey?.siteLocation?.geometry?.coordinates
+  }
+
+  console.log('SiteWeatherWidget - found coords:', coords)
 
   // Coordinates are stored as [lng, lat] in GeoJSON format
   if (coords && coords.length >= 2) {
