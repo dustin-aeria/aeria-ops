@@ -52,6 +52,8 @@ import { logger } from '../lib/logger'
 import ActivityFeed from '../components/dashboard/ActivityFeed'
 import UpcomingEvents from '../components/dashboard/UpcomingEvents'
 import MaintenanceAlertWidget from '../components/maintenance/MaintenanceAlertWidget'
+import OnboardingChecklist from '../components/onboarding/OnboardingChecklist'
+import ContentGapAnalysis from '../components/onboarding/ContentGapAnalysis'
 
 // ============================================
 // SAIL CALCULATION HELPER
@@ -310,6 +312,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {/* Onboarding Checklist - shows for new users */}
+      <OnboardingChecklist />
+
       {/* Error display */}
       {loadError && (
         <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -375,9 +380,9 @@ export default function Dashboard() {
                 SORA Overview
               </h2>
               {maxSAIL && (
-                <span 
+                <span
                   className="px-3 py-1 rounded-full text-sm font-bold"
-                  style={{ 
+                  style={{
                     backgroundColor: sailColors[maxSAIL],
                     color: maxSAIL === 'I' || maxSAIL === 'II' ? '#1F2937' : '#FFFFFF'
                   }}
@@ -386,27 +391,27 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            
+
             {totalSAILAssessments > 0 ? (
               <>
                 <p className="text-sm text-gray-600 mb-4">
                   {totalSAILAssessments} site{totalSAILAssessments !== 1 ? 's' : ''} with SORA assessments
                 </p>
-                
+
                 {/* SAIL Distribution Bar */}
                 <div className="space-y-2">
                   <div className="flex h-4 rounded-full overflow-hidden bg-gray-100">
                     {['I', 'II', 'III', 'IV', 'V', 'VI'].map(sail => {
                       const count = sailDistribution[sail] || 0
-                      const percentage = totalSAILAssessments > 0 
-                        ? (count / totalSAILAssessments) * 100 
+                      const percentage = totalSAILAssessments > 0
+                        ? (count / totalSAILAssessments) * 100
                         : 0
                       if (percentage === 0) return null
                       return (
                         <div
                           key={sail}
                           className="h-full transition-all"
-                          style={{ 
+                          style={{
                             width: `${percentage}%`,
                             backgroundColor: sailColors[sail]
                           }}
@@ -415,7 +420,7 @@ export default function Dashboard() {
                       )
                     })}
                   </div>
-                  
+
                   {/* Legend */}
                   <div className="flex flex-wrap gap-3 mt-3">
                     {['I', 'II', 'III', 'IV', 'V', 'VI'].map(sail => {
@@ -423,7 +428,7 @@ export default function Dashboard() {
                       if (count === 0) return null
                       return (
                         <div key={sail} className="flex items-center gap-1.5 text-xs">
-                          <div 
+                          <div
                             className="w-3 h-3 rounded"
                             style={{ backgroundColor: sailColors[sail] }}
                           />
@@ -454,7 +459,7 @@ export default function Dashboard() {
                 View all →
               </Link>
             </div>
-            
+
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-gray-900">{policyStats.totalPolicies}</p>
@@ -469,7 +474,7 @@ export default function Dashboard() {
                 <p className="text-xs text-red-700">Overdue</p>
               </div>
             </div>
-            
+
             {(policyStats.reviewDue > 0 || policyStats.reviewOverdue > 0) && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="flex items-start gap-2">
@@ -483,23 +488,23 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-500 mb-2">Quick Access</p>
               <div className="flex flex-wrap gap-2">
-                <Link 
+                <Link
                   to="/policies?category=rpas"
                   className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
                 >
                   RPAS Operations
                 </Link>
-                <Link 
+                <Link
                   to="/policies?category=crm"
                   className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
                 >
                   CRM
                 </Link>
-                <Link 
+                <Link
                   to="/policies?category=hse"
                   className="px-3 py-1.5 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200"
                 >
@@ -510,6 +515,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Content Gap Analysis */}
+      {!loading && <ContentGapAnalysis />}
 
       {/* Recent activity */}
       <div className="grid lg:grid-cols-2 gap-6">

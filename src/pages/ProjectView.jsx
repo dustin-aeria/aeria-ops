@@ -76,6 +76,7 @@ import ProjectTemplates from '../components/projects/ProjectTemplates'
 import ProjectTeam from '../components/projects/ProjectTeam'
 import ProjectPreField from '../components/projects/ProjectPreField'
 import ProjectPostField from '../components/projects/ProjectPostField'
+import ProjectTeamPanel from '../components/projects/ProjectTeamPanel'
 import { useAuth } from '../contexts/AuthContext'
 import { logger } from '../lib/logger'
 
@@ -625,7 +626,10 @@ export default function ProjectView() {
           <ProjectPreField project={project} onUpdate={handleUpdate} />
         )}
         {activeTab === 'crew' && (
-          <ProjectCrew project={project} onUpdate={handleUpdate} />
+          <div className="space-y-6">
+            <ProjectCrew project={project} onUpdate={handleUpdate} />
+            <ProjectTeamPanel project={project} onUpdate={handleUpdate} />
+          </div>
         )}
         {activeTab === 'team' && (
           <ProjectComments project={project} operatorId={user?.uid} />

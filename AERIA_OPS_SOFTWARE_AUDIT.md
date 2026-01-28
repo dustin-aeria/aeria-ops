@@ -971,12 +971,12 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] Forms library expansion *(Completed - 4 new forms: Post-Flight Report, Battery Cycle Log, Client Orientation, Crew Competency Check)*
 - [x] Cost of Safety dashboard widget *(Completed - CostOfSafetyWidget on SafetyDashboard)*
 
-### Medium Priority
-- [ ] Training module separation
-- [ ] User roles & permissions
-- [ ] Multi-person collaboration
-- [ ] Forms library expansion
-- [ ] Cost of Safety widget
+### Medium Priority - **BATCH 5 COMPLETE (Jan 28, 2026)**
+- [x] New user onboarding *(Completed - OnboardingChecklist guides users through setup steps)*
+- [x] Content gap analysis *(Completed - ContentGapAnalysis identifies missing policies, training, certifications)*
+- [x] Multi-person collaboration basics *(Completed - ProjectTeamPanel for team member management with roles)*
+
+### Lower Priority
 
 ### Lower Priority
 - [ ] New user onboarding
