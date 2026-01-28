@@ -27,7 +27,8 @@ import {
   MessageSquarePlus,
   CalendarDays,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  Wrench
 } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
 import NotificationBell from './NotificationBell'
@@ -58,6 +59,10 @@ const complianceNavigation = [
   { name: 'Compliance Hub', href: '/compliance', icon: ClipboardCheck },
 ]
 
+const maintenanceNavigation = [
+  { name: 'Maintenance', href: '/maintenance', icon: Wrench },
+]
+
 const libraries = [
   { name: 'Operators', href: '/operators', icon: Users },
   { name: 'Fleet', href: '/aircraft', icon: Plane },
@@ -73,6 +78,7 @@ function Sidebar({ mobile, onClose }) {
   const [librariesOpen, setLibrariesOpen] = useState(true)
   const [safetyOpen, setSafetyOpen] = useState(true)
   const [complianceOpen, setComplianceOpen] = useState(true)
+  const [maintenanceOpen, setMaintenanceOpen] = useState(true)
 
   const handleSignOut = async () => {
     await signOut()
@@ -166,6 +172,30 @@ function Sidebar({ mobile, onClose }) {
           {complianceOpen && (
             <div id="compliance-nav" className="mt-1 space-y-1">
               {complianceNavigation.map((item) => (
+                <NavItem key={item.name} item={item} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Maintenance section */}
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={() => setMaintenanceOpen(!maintenanceOpen)}
+            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700"
+            aria-expanded={maintenanceOpen}
+            aria-controls="maintenance-nav"
+          >
+            <span className="flex items-center gap-2">
+              <Wrench className="w-4 h-4" aria-hidden="true" />
+              Maintenance
+            </span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${maintenanceOpen ? '' : '-rotate-90'}`} aria-hidden="true" />
+          </button>
+          {maintenanceOpen && (
+            <div id="maintenance-nav" className="mt-1 space-y-1">
+              {maintenanceNavigation.map((item) => (
                 <NavItem key={item.name} item={item} />
               ))}
             </div>

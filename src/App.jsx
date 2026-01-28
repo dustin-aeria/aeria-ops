@@ -64,6 +64,9 @@ const ComplianceHub = lazy(() => import('./pages/ComplianceHub'))
 const ComplianceApplicationEditor = lazy(() => import('./pages/ComplianceApplicationEditor'))
 const ComplianceProjectView = lazy(() => import('./pages/ComplianceProjectView'))
 
+// Maintenance Module Pages - lazy-loaded
+const MaintenanceDashboard = lazy(() => import('./pages/MaintenanceDashboard'))
+
 // Suspense fallback component
 function PageLoader() {
   return <LoadingSpinner size="lg" message="Loading..." />
@@ -167,6 +170,9 @@ function App() {
           <Route path="compliance/templates" element={<Suspense fallback={<PageLoader />}><ComplianceHub /></Suspense>} />
           <Route path="compliance/application/:id" element={<Suspense fallback={<PageLoader />}><ComplianceApplicationEditor /></Suspense>} />
           <Route path="compliance/project/:id" element={<Suspense fallback={<PageLoader />}><ComplianceProjectView /></Suspense>} />
+
+          {/* Maintenance Module Routes - lazy-loaded */}
+          <Route path="maintenance" element={<Suspense fallback={<PageLoader />}><MaintenanceDashboard /></Suspense>} />
         </Route>
 
         {/* Catch all - redirect to dashboard */}
