@@ -345,34 +345,18 @@ export default function PolicyDetail() {
           </div>
         </div>
 
-        {/* Metadata bar */}
+        {/* Simplified metadata bar - shows only actionable items */}
         <div className="px-6 py-3 bg-white border-t border-gray-100 flex flex-wrap items-center gap-4 text-sm">
-          <span className="flex items-center gap-1.5 text-gray-600">
-            <GitBranch className="w-4 h-4 text-gray-400" />
+          <span className="flex items-center gap-1.5 text-gray-500">
+            <GitBranch className="w-4 h-4" />
             v{policy.version}
           </span>
-          {policy.effectiveDate && (
-            <span className="flex items-center gap-1.5 text-gray-600">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              Effective: {formatDate(policy.effectiveDate)}
-            </span>
-          )}
-          {(() => {
-            const reviewDue = getReviewDueDate(policy)
-            const overdue = isReviewOverdue(policy)
-            if (!reviewDue) return null
-            return (
-              <span className={`flex items-center gap-1.5 ${overdue ? 'text-red-600' : 'text-gray-600'}`}>
-                <Clock className={`w-4 h-4 ${overdue ? 'text-red-500' : 'text-gray-400'}`} />
-                Review Due: {formatDate(reviewDue)}
-                {overdue && <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs ml-1">Overdue</span>}
-              </span>
-            )
-          })()}
-          {policy.owner && (
-            <span className="flex items-center gap-1.5 text-gray-600">
-              <User className="w-4 h-4 text-gray-400" />
-              {policy.owner}
+          {/* Only show review date if overdue - makes it actionable */}
+          {isReviewOverdue(policy) && (
+            <span className="flex items-center gap-1.5 text-red-600">
+              <Clock className="w-4 h-4" />
+              Review Overdue
+              <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">Action Required</span>
             </span>
           )}
           {policy.acknowledgmentSettings?.required && (

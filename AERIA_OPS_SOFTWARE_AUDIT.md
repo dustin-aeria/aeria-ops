@@ -989,6 +989,11 @@ VITE_MAPBOX_ACCESS_TOKEN=
 ### Medium Priority - **BATCH 8 COMPLETE (Jan 28, 2026)**
 - [x] Permits & Certificates feature *(Completed - Full CRUD for permits/certificates with types: SFOC, COR, Land Access, Airspace Auth, Client Approval. Features: status badges, expiry tracking, privileges & conditions, document upload, Calendar integration, ComplianceHub tab)*
 
+### Medium Priority - **BATCH 9 COMPLETE**
+- [x] Policy header simplification *(Completed - Simplified to show only actionable items: version, review overdue alert, acknowledgment count)*
+- [x] Dashboard expiry reminders *(Completed - ExpiryRemindersWidget consolidates permits, insurance, and certifications expiring within 30 days)*
+- [x] Loading states and error handling improvements *(Completed - Components already have good loading/error states; widget includes loading, error, and empty states)*
+
 ### Lower Priority
 - [ ] API integrations (Weather, NOTAMs, etc.)
 - [ ] Platform migration (Firebase to Supabase)
