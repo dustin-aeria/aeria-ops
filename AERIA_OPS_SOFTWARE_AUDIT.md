@@ -959,9 +959,11 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] Project section navigation & templates placement *(Completed - templates moved to end, all tabs toggleable)*
 - [x] Project review/approval workflow *(Completed - Quick Approve button added)*
 - [x] Preflight checklist auto-population *(Already complete - Tailgate pulls hazards, PPE, emergency, etc.)*
-- [ ] Policy/procedure library selection & editing
-- [ ] Document upload/conversion
-- [ ] Operation types alignment with CARs
+
+### High Priority - **BATCH 3 COMPLETE (Jan 28, 2026)**
+- [x] Policy/procedure library selection & editing *(Completed - PolicyLibrarySelector modal)*
+- [x] Document upload/conversion *(Completed - PDF upload with text extraction)*
+- [x] Operation types alignment with CARs *(Already aligned - VLOS/EVLOS/BVLOS/Night with CARs Part IX)*
 
 ### Medium Priority
 - [ ] Training module separation

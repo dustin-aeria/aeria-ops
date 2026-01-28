@@ -51,6 +51,8 @@ import {
   ChevronDown
 } from 'lucide-react'
 import PolicyEditor from './policies/PolicyEditor'
+import PolicyLibrarySelector from './policies/PolicyLibrarySelector'
+import PolicyDocumentUpload from './policies/PolicyDocumentUpload'
 import { getPoliciesEnhanced, deletePolicyEnhanced, seedSamplePolicies, seedMissingPolicies, updatePoliciesWithContent, updatePolicyField, seedFromMasterPolicies, seedMissingFromMaster } from '../lib/firestorePolicies'
 import { usePolicyPermissions, usePendingAcknowledgments } from '../hooks/usePolicyPermissions'
 import { useAuth } from '../contexts/AuthContext'
@@ -1861,6 +1863,8 @@ export default function PolicyLibrary() {
   const [seeding, setSeeding] = useState(false)
   const [populatingContent, setPopulatingContent] = useState(false)
   const [showUpdatesPanel, setShowUpdatesPanel] = useState(false)
+  const [showLibrarySelector, setShowLibrarySelector] = useState(false)
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false)
 
   // Load policies from Firestore
   const loadPolicies = async () => {
@@ -2135,27 +2139,25 @@ export default function PolicyLibrary() {
               </button>
             )}
 
-            {/* Add Missing Policies Button - adds new policies without clearing existing */}
-            {policies.length > 0 && (
-              <button
-                onClick={handleSeedMissingPolicies}
-                disabled={seeding}
-                className="btn-secondary flex items-center gap-2"
-                title="Add new policies that don't exist yet"
-              >
-                {seeding ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Add Missing Policies
-                  </>
-                )}
-              </button>
-            )}
+            {/* Browse Library Button - opens selector to choose specific policies */}
+            <button
+              onClick={() => setShowLibrarySelector(true)}
+              className="btn-secondary flex items-center gap-2"
+              title="Browse and select policies from the master library"
+            >
+              <Book className="w-4 h-4" />
+              Browse Library
+            </button>
+
+            {/* Upload Document Button */}
+            <button
+              onClick={() => setShowDocumentUpload(true)}
+              className="btn-secondary flex items-center gap-2"
+              title="Upload a PDF document to create a new policy"
+            >
+              <FileText className="w-4 h-4" />
+              Upload PDF
+            </button>
 
             {/* Populate Content Button - only show when there are policies */}
             {policies.length > 0 && (
@@ -2367,6 +2369,25 @@ export default function PolicyLibrary() {
           }}
         />
       )}
+
+      {/* Policy Library Selector */}
+      <PolicyLibrarySelector
+        isOpen={showLibrarySelector}
+        onClose={() => setShowLibrarySelector(false)}
+        onImported={() => {
+          loadPolicies()
+          refreshUpdates()
+        }}
+      />
+
+      {/* Document Upload Modal */}
+      <PolicyDocumentUpload
+        isOpen={showDocumentUpload}
+        onClose={() => setShowDocumentUpload(false)}
+        onCreated={() => {
+          loadPolicies()
+        }}
+      />
     </div>
   )
 }
