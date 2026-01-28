@@ -40,6 +40,7 @@ import { BrandedPDF } from '../../lib/pdfExportService'
 import { logger } from '../../lib/logger'
 import { sendTeamNotification } from '../../lib/teamNotificationService'
 import WeatherWidget from '../weather/WeatherWidget'
+// Force rebuild - currentSite bug fix deployed
 
 // Default sections to include in tailgate briefing
 const DEFAULT_INCLUDED_SECTIONS = {
