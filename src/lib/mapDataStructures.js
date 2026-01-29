@@ -180,6 +180,54 @@ export const MAP_BASEMAPS = {
   }
 }
 
+// Map overlay layers (togglable reference layers)
+export const MAP_OVERLAY_LAYERS = {
+  adminBoundaries: {
+    id: 'adminBoundaries',
+    label: 'Municipal Boundaries',
+    description: 'Administrative boundaries (provinces, municipalities)',
+    icon: 'landmark',
+    source: 'mapbox-streets',
+    sourceLayer: 'admin',
+    type: 'line',
+    filter: ['>=', ['get', 'admin_level'], 2],
+    paint: {
+      'line-color': [
+        'match',
+        ['get', 'admin_level'],
+        2, '#6366F1', // National border - indigo
+        4, '#8B5CF6', // Province/state - purple
+        '#A855F7'     // Municipal - violet
+      ],
+      'line-width': [
+        'match',
+        ['get', 'admin_level'],
+        2, 2,
+        4, 1.5,
+        1
+      ],
+      'line-opacity': 0.7,
+      'line-dasharray': [2, 2]
+    }
+  },
+  airspace: {
+    id: 'airspace',
+    label: 'Airspace (Coming Soon)',
+    description: 'Controlled airspace zones - requires NAV CANADA data',
+    icon: 'plane',
+    enabled: false, // Not yet implemented
+    comingSoon: true
+  },
+  populationDensity: {
+    id: 'populationDensity',
+    label: 'Population Density (Coming Soon)',
+    description: 'Population density heatmap - requires Statistics Canada data',
+    icon: 'users',
+    enabled: false, // Not yet implemented
+    comingSoon: true
+  }
+}
+
 // Population categories (aligned with SORA)
 export const POPULATION_CATEGORIES = {
   controlled: {
@@ -1004,6 +1052,7 @@ export default {
   MAP_LAYERS,
   MAP_ELEMENT_STYLES,
   MAP_BASEMAPS,
+  MAP_OVERLAY_LAYERS,
   POPULATION_CATEGORIES,
   createGeoPoint,
   createGeoPolygon,

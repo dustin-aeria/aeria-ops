@@ -29,11 +29,12 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useMapData, DRAWING_MODES } from '../../hooks/useMapData'
 import { MapControlsPanel, FullscreenButton } from './MapControls'
 import { MapLegend, SiteColorLegend } from './MapLegend'
-import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, getSiteBounds } from '../../lib/mapDataStructures'
+import { MAP_ELEMENT_STYLES, MAP_BASEMAPS, MAP_OVERLAY_LAYERS, getSiteBounds } from '../../lib/mapDataStructures'
 import {
   Loader2,
   AlertCircle,
-  WifiOff
+  WifiOff,
+  Layers
 } from 'lucide-react'
 import { logger } from '../../lib/logger'
 
@@ -180,6 +181,8 @@ export function UnifiedProjectMap({
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [styleVersion, setStyleVersion] = useState(0) // Increments when style changes to force layer re-render
+  const [overlayLayers, setOverlayLayers] = useState({}) // Which overlay layers are enabled
+  const [showOverlayPanel, setShowOverlayPanel] = useState(false) // Show overlay layer picker
   
   // Map data hook - use external if provided, otherwise create internal
   const internalMapData = useMapData(project, onUpdate, {
@@ -612,6 +615,61 @@ export function UnifiedProjectMap({
       map.off('style.load', handleStyleLoad)
     }
   }, [basemap, mapLoaded])
+
+  // ============================================
+  // OVERLAY LAYERS MANAGEMENT
+  // Add/remove overlay layers based on toggle state
+  // ============================================
+
+  const toggleOverlayLayer = useCallback((layerId) => {
+    setOverlayLayers(prev => ({
+      ...prev,
+      [layerId]: !prev[layerId]
+    }))
+  }, [])
+
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+
+    // Handle each overlay layer type
+    Object.entries(MAP_OVERLAY_LAYERS).forEach(([layerId, config]) => {
+      // Skip layers that are marked as coming soon
+      if (config.comingSoon || config.enabled === false) return
+
+      const isEnabled = overlayLayers[layerId]
+      const mapLayerId = `overlay-${layerId}`
+
+      if (isEnabled) {
+        // Add the layer if it doesn't exist
+        if (!map.getLayer(mapLayerId)) {
+          // For admin boundaries, use the composite source that's already in Mapbox styles
+          if (layerId === 'adminBoundaries') {
+            // Check if we have the admin source (from Mapbox Streets style)
+            // The source 'composite' contains admin boundaries in streets/outdoors styles
+            try {
+              map.addLayer({
+                id: mapLayerId,
+                type: config.type,
+                source: 'composite',
+                'source-layer': config.sourceLayer,
+                filter: config.filter,
+                paint: config.paint
+              })
+            } catch (err) {
+              console.warn('Could not add admin boundaries layer:', err.message)
+            }
+          }
+        }
+      } else {
+        // Remove the layer if it exists
+        if (map.getLayer(mapLayerId)) {
+          map.removeLayer(mapLayerId)
+        }
+      }
+    })
+  }, [overlayLayers, mapLoaded, styleVersion]) // Re-run when style changes
 
   // ============================================
   // FIT TO BOUNDS
@@ -1250,6 +1308,77 @@ export function UnifiedProjectMap({
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
           />
+        </div>
+      )}
+
+      {/* Overlay Layers Toggle Button */}
+      {mapLoaded && (
+        <div className="absolute top-4 left-4 z-20">
+          <div className="relative">
+            <button
+              onClick={() => setShowOverlayPanel(!showOverlayPanel)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg shadow-md transition-colors ${
+                showOverlayPanel || Object.values(overlayLayers).some(Boolean)
+                  ? 'bg-aeria-navy text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+              title="Toggle overlay layers"
+            >
+              <Layers className="w-4 h-4" />
+              <span className="text-sm font-medium">Layers</span>
+              {Object.values(overlayLayers).filter(Boolean).length > 0 && (
+                <span className="bg-white text-aeria-navy text-xs px-1.5 py-0.5 rounded-full font-medium">
+                  {Object.values(overlayLayers).filter(Boolean).length}
+                </span>
+              )}
+            </button>
+
+            {/* Overlay Layers Panel */}
+            {showOverlayPanel && (
+              <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+                <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900">Reference Layers</h4>
+                  <p className="text-xs text-gray-500">Toggle additional map data</p>
+                </div>
+                <div className="p-2 space-y-1">
+                  {Object.entries(MAP_OVERLAY_LAYERS).map(([layerId, config]) => (
+                    <button
+                      key={layerId}
+                      onClick={() => !config.comingSoon && toggleOverlayLayer(layerId)}
+                      disabled={config.comingSoon}
+                      className={`w-full flex items-start gap-3 p-2 rounded-lg transition-colors text-left ${
+                        config.comingSoon
+                          ? 'bg-gray-50 cursor-not-allowed opacity-60'
+                          : overlayLayers[layerId]
+                            ? 'bg-aeria-navy/10 border border-aeria-navy/30'
+                            : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center ${
+                        overlayLayers[layerId] && !config.comingSoon
+                          ? 'bg-aeria-navy border-aeria-navy'
+                          : 'border-gray-300'
+                      }`}>
+                        {overlayLayers[layerId] && !config.comingSoon && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {config.label}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {config.description}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
       
