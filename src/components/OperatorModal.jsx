@@ -98,9 +98,14 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
         },
         roles: operator.roles || [],
         status: operator.status || 'active',
-        hourlyRate: operator.hourlyRate || '',
-        dailyRate: operator.dailyRate || '',
-        weeklyRate: operator.weeklyRate || ''
+        hourlyRate: operator.hourlyRate != null ? operator.hourlyRate : '',
+        dailyRate: operator.dailyRate != null ? operator.dailyRate : '',
+        weeklyRate: operator.weeklyRate != null ? operator.weeklyRate : ''
+      })
+      console.log('[OperatorModal] Loaded operator rates:', {
+        hourlyRate: operator.hourlyRate,
+        dailyRate: operator.dailyRate,
+        weeklyRate: operator.weeklyRate
       })
       setCertifications(operator.certifications || [])
     } else {
@@ -216,17 +221,22 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
       const operatorData = {
         ...formData,
         certifications: processedCerts,
-        hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
-        dailyRate: formData.dailyRate ? parseFloat(formData.dailyRate) : null,
-        weeklyRate: formData.weeklyRate ? parseFloat(formData.weeklyRate) : null
+        hourlyRate: formData.hourlyRate !== '' ? parseFloat(formData.hourlyRate) : null,
+        dailyRate: formData.dailyRate !== '' ? parseFloat(formData.dailyRate) : null,
+        weeklyRate: formData.weeklyRate !== '' ? parseFloat(formData.weeklyRate) : null
       }
 
+      console.log('[OperatorModal] Saving operator data:', operatorData)
+
       if (isEditing) {
+        console.log('[OperatorModal] Updating operator:', operator.id)
         await updateOperator(operator.id, operatorData)
       } else {
+        console.log('[OperatorModal] Creating new operator')
         await createOperator(operatorData)
       }
 
+      console.log('[OperatorModal] Save successful')
       onClose()
     } catch (err) {
       setError(err.message)

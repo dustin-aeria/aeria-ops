@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Users, 
+import {
+  Plus,
+  Search,
+  Users,
   Filter,
   MoreVertical,
   Trash2,
@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  DollarSign
 } from 'lucide-react'
 import { getOperators, deleteOperator } from '../lib/firestore'
 import OperatorModal from '../components/OperatorModal'
@@ -234,8 +235,14 @@ export default function Operators() {
                         {operator.phone}
                       </span>
                     )}
+                    {operator.hourlyRate > 0 && (
+                      <span className="inline-flex items-center gap-1 text-green-600">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        ${operator.hourlyRate}/hr
+                      </span>
+                    )}
                   </div>
-                  
+
                   {/* Roles */}
                   {operator.roles?.length > 0 && (
                     <div className="flex flex-wrap gap-1">

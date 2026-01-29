@@ -819,11 +819,13 @@ export async function createOperator(data) {
 }
 
 export async function updateOperator(id, data) {
+  console.log('[Firestore] updateOperator called with:', { id, data })
   const docRef = doc(db, 'operators', id)
   await updateDoc(docRef, {
     ...data,
     updatedAt: serverTimestamp()
   })
+  console.log('[Firestore] updateOperator completed for:', id)
 }
 
 export async function deleteOperator(id) {
