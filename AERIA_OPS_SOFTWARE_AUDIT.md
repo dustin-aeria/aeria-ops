@@ -594,19 +594,15 @@ Current state:
 
 > **Note:** API integrations should be implemented after core functionality is complete.
 
-### 7.1 Weather API Integration
-**Current State:** `src/lib/weatherService.js` contains:
-- Flight category definitions (VFR, MVFR, IFR, LIFR)
-- Wind condition assessment logic
-- Precipitation type detection
-- Assessment functions ready for real data
-
-**Missing:** No external API calls
-
-**Recommended APIs:**
-- Environment Canada Weather API
-- Aviation Weather Center (AWC)
-- OpenWeather API
+### 7.1 Weather API Integration - **IMPLEMENTED (Batch 10/12)**
+**Current State:** `src/lib/weatherService.js` integrated with Open-Meteo API:
+- Current conditions (temperature, wind, humidity, visibility, precipitation)
+- 5-day forecast with daily highs/lows
+- Flight category assessment (VFR, MVFR, IFR, LIFR)
+- Drone flight assessment (Good, Marginal, Poor, No Fly)
+- Wind speed/gust analysis with direction
+- Real-time data in Tailgate using site coordinates
+- Planning checkboxes in Site Survey for expected conditions
 
 ### 7.2 NOTAM Integration
 **Current State:** References throughout codebase
@@ -1006,11 +1002,16 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] Loading states and error handling improvements *(Completed - Components already have good loading/error states; widget includes loading, error, and empty states)*
 
 ### Lower Priority - **BATCH 12 COMPLETE (Jan 28, 2026)**
-- [x] WeatherWidget moved to Tailgate *(Completed - Weather is day-of operations, not planning. Moved from Site Survey to Tailgate where it's relevant)*
+- [x] WeatherWidget moved to Tailgate *(Completed - Real-time weather from Open-Meteo API using site coordinates, with multi-site selector)*
+- [x] Site Survey weather planning *(Completed - Simple checkbox grid for expected conditions: clear, cloudy, rain, fog, wind, snow, dust, hot, cold, variable)*
 - [x] Map distance measurement tool *(Completed - DistanceMeasurement component with Haversine formula, measureDistance drawing mode)*
 - [x] "Same as boundary" flight area option *(Completed - Flight geography method option that copies operations boundary)*
+
+### Outstanding Bugs
 - [ ] Bug: Notification list creation *(Needs investigation - code looks correct, may be Firestore permissions or state issue)*
 - [ ] Bug: Spacebar in Site Access field *(Needs investigation - no blocking keyhandler found in code)*
+
+### Deferred - Mapbox Integrations
 - [ ] Mapbox airspace integration *(Deferred - requires Mapbox API configuration)*
 - [ ] Mapbox municipality borders *(Deferred - requires Mapbox API configuration)*
 - [ ] Mapbox population density *(Deferred - requires Mapbox API configuration)*
