@@ -1012,10 +1012,11 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] Bug: Spacebar in Site Access field *(Fixed - added stopPropagation to input fields)*
 
 ### Batch 13 - Map Overlay Layers (Jan 28, 2026)
-- [x] Municipal boundaries layer *(Completed - toggleable admin boundaries from Mapbox composite source)*
+- [x] Province/State borders layer *(Completed - toggleable admin boundaries from Mapbox, purple dashed lines)*
 - [x] Overlay layers UI *(Completed - "Layers" button with panel showing available overlays)*
-- [ ] Airspace integration *(Marked as "Coming Soon" - requires NAV CANADA or OpenAIP data)*
-- [ ] Population density *(Marked as "Coming Soon" - requires Statistics Canada or WorldPop data)*
+- [ ] Municipal boundaries *(Coming Soon - requires Statistics Canada census subdivision data)*
+- [ ] Airspace integration *(Coming Soon - requires NAV CANADA or OpenAIP data)*
+- [ ] Population density *(Coming Soon - requires Statistics Canada or WorldPop data)*
 
 ### Lower Priority - **BATCH 11 COMPLETE (Jan 28, 2026)**
 - [x] Pre-field "Safety" task type *(Completed - Added safety task type with ShieldAlert icon)*
@@ -1040,9 +1041,10 @@ Items considered but not yet implemented. Prioritize from this list for future b
 ### Map & Flight Planning
 - [x] **Distance Measurement Tool** - *(Completed Batch 12)* Haversine formula, displays in m/km/ft/NM
 - [x] **"Same as Boundary" for Flight Area** - *(Completed Batch 12)* Option to copy operations boundary to flight geography
-- [x] **Municipal Boundaries Layer** - *(Completed Batch 13)* Toggleable overlay showing admin boundaries (national, provincial, municipal)
-- [ ] **Airspace Integration** - Pull airspace data from NAV CANADA or OpenAIP, show controlled/restricted zones (requires external data source)
-- [ ] **Population Density Layer** - Incorporate population density data from Statistics Canada or WorldPop (requires external data source)
+- [x] **Province/State Borders Layer** - *(Completed Batch 13)* Toggleable overlay showing country and province/state boundaries
+- [ ] **Municipal Boundaries Layer** - City/town boundaries from Statistics Canada census subdivision data
+- [ ] **Airspace Integration** - Pull airspace data from NAV CANADA or OpenAIP, show controlled/restricted zones
+- [ ] **Population Density Layer** - Incorporate population density data from Statistics Canada or WorldPop
 
 ### Data & Reporting
 - [ ] **Enhanced Reporting** - Comprehensive PDF/Excel reports for projects, safety metrics, compliance status

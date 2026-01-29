@@ -184,46 +184,29 @@ export const MAP_BASEMAPS = {
 export const MAP_OVERLAY_LAYERS = {
   adminBoundaries: {
     id: 'adminBoundaries',
+    label: 'Province/State Borders',
+    description: 'Country and province/state boundaries',
+    icon: 'landmark'
+  },
+  municipalBoundaries: {
+    id: 'municipalBoundaries',
     label: 'Municipal Boundaries',
-    description: 'Administrative boundaries (provinces, municipalities)',
-    icon: 'landmark',
-    source: 'mapbox-streets',
-    sourceLayer: 'admin',
-    type: 'line',
-    filter: ['>=', ['get', 'admin_level'], 2],
-    paint: {
-      'line-color': [
-        'match',
-        ['get', 'admin_level'],
-        2, '#6366F1', // National border - indigo
-        4, '#8B5CF6', // Province/state - purple
-        '#A855F7'     // Municipal - violet
-      ],
-      'line-width': [
-        'match',
-        ['get', 'admin_level'],
-        2, 2,
-        4, 1.5,
-        1
-      ],
-      'line-opacity': 0.7,
-      'line-dasharray': [2, 2]
-    }
+    description: 'City/town boundaries - requires Statistics Canada data',
+    icon: 'building',
+    comingSoon: true
   },
   airspace: {
     id: 'airspace',
-    label: 'Airspace (Coming Soon)',
-    description: 'Controlled airspace zones - requires NAV CANADA data',
+    label: 'Airspace Zones',
+    description: 'Controlled airspace - requires NAV CANADA data',
     icon: 'plane',
-    enabled: false, // Not yet implemented
     comingSoon: true
   },
   populationDensity: {
     id: 'populationDensity',
-    label: 'Population Density (Coming Soon)',
-    description: 'Population density heatmap - requires Statistics Canada data',
+    label: 'Population Density',
+    description: 'Population heatmap - requires Statistics Canada data',
     icon: 'users',
-    enabled: false, // Not yet implemented
     comingSoon: true
   }
 }

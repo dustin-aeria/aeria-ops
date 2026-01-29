@@ -641,40 +641,14 @@ export function UnifiedProjectMap({
       const isEnabled = overlayLayers[layerId]
       const mapLayerId = `overlay-${layerId}`
 
-      console.log(`Overlay layer ${layerId}: enabled=${isEnabled}, exists=${!!map.getLayer(mapLayerId)}`)
-
       if (isEnabled) {
         // Add the layer if it doesn't exist
         if (!map.getLayer(mapLayerId)) {
           if (layerId === 'adminBoundaries') {
-            // Debug: Log available sources and layers
-            const style = map.getStyle()
-            console.log('Available sources:', Object.keys(style?.sources || {}))
-
-            // Log all layers that use composite source to find the right source-layer name
-            const compositeLayers = style.layers.filter(l => l.source === 'composite')
-            const sourceLayerNames = [...new Set(compositeLayers.map(l => l['source-layer']).filter(Boolean))]
-            console.log('Source-layers in composite:', sourceLayerNames)
-
-            // Find any admin-related layers
-            const adminLayers = compositeLayers.filter(l =>
-              l['source-layer']?.includes('admin') ||
-              l['source-layer']?.includes('boundary') ||
-              l.id?.includes('admin') ||
-              l.id?.includes('boundary')
-            )
-            console.log('Admin/boundary layers found:', adminLayers.map(l => ({ id: l.id, sourceLayer: l['source-layer'] })))
-
-            // Try to add admin boundaries layer
-            // Mapbox Streets v12 uses 'composite' source with 'admin' source-layer
             try {
-              // First check if composite source exists
-              if (!map.getSource('composite')) {
-                console.warn('Composite source not found in current style')
-                return
-              }
+              if (!map.getSource('composite')) return
 
-              // Add layer on TOP of everything (no beforeId) so it's definitely visible
+              // Province/state boundaries - purple dashed lines
               map.addLayer({
                 id: mapLayerId,
                 type: 'line',
@@ -683,14 +657,19 @@ export function UnifiedProjectMap({
                 minzoom: 0,
                 maxzoom: 22,
                 paint: {
-                  'line-color': '#FF0000', // Pure red for maximum visibility
-                  'line-width': 5, // Thick line
-                  'line-opacity': 1
+                  'line-color': '#7C3AED', // Purple
+                  'line-width': [
+                    'interpolate', ['linear'], ['zoom'],
+                    2, 1.5,
+                    6, 2,
+                    10, 2.5
+                  ],
+                  'line-opacity': 0.8,
+                  'line-dasharray': [3, 2]
                 }
-              }) // No beforeId = adds on top
-              console.log('Admin boundaries layer added on TOP of all layers')
+              })
             } catch (err) {
-              console.error('Could not add admin boundaries layer:', err)
+              console.warn('Could not add admin boundaries layer:', err.message)
             }
           }
         }
@@ -698,7 +677,6 @@ export function UnifiedProjectMap({
         // Remove the layer if it exists
         if (map.getLayer(mapLayerId)) {
           map.removeLayer(mapLayerId)
-          console.log(`Removed overlay layer: ${mapLayerId}`)
         }
       }
     })
