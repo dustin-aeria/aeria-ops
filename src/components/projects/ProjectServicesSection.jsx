@@ -151,6 +151,10 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedService, setSelectedService] = useState(null)
 
+  // Rate selection for library services
+  const [selectedRateType, setSelectedRateType] = useState(null)
+  const [quantity, setQuantity] = useState('')
+
   // Custom service form
   const [customForm, setCustomForm] = useState({
     name: '',
@@ -165,6 +169,8 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
     if (isOpen) {
       loadServices()
       setSelectedService(null)
+      setSelectedRateType(null)
+      setQuantity('')
       setCustomForm({
         name: '',
         category: 'other',
@@ -175,6 +181,24 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       })
     }
   }, [isOpen])
+
+  // When a service is selected, auto-select the first available rate
+  useEffect(() => {
+    if (selectedService) {
+      const availableRates = []
+      if (selectedService.fixedRate > 0) availableRates.push('fixed')
+      if (selectedService.hourlyRate > 0) availableRates.push('hourly')
+      if (selectedService.dailyRate > 0) availableRates.push('daily')
+      if (selectedService.weeklyRate > 0) availableRates.push('weekly')
+      if (selectedService.unitRate > 0) availableRates.push('per_unit')
+
+      setSelectedRateType(availableRates[0] || null)
+      setQuantity(availableRates[0] === 'fixed' ? '' : '1')
+    } else {
+      setSelectedRateType(null)
+      setQuantity('')
+    }
+  }, [selectedService])
 
   const loadServices = async () => {
     setLoading(true)
@@ -200,7 +224,7 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
   })
 
   const handleAddFromLibrary = () => {
-    if (!selectedService) return
+    if (!selectedService || !selectedRateType) return
 
     // Build list of available rate types based on what's defined
     const availableRates = []
@@ -209,9 +233,6 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
     if (selectedService.dailyRate > 0) availableRates.push('daily')
     if (selectedService.weeklyRate > 0) availableRates.push('weekly')
     if (selectedService.unitRate > 0) availableRates.push('per_unit')
-
-    // Default to first available rate type, or 'fixed' if none set
-    const defaultRateType = availableRates[0] || 'fixed'
 
     // Include deliverables that are marked as "included" by default
     const defaultDeliverables = (selectedService.deliverables || [])
@@ -227,9 +248,9 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       description: selectedService.description || '',
       // Available rates from library (for user to choose from)
       availableRates,
-      // Project-level selection of which rate to use
-      selectedRateType: defaultRateType,
-      quantity: '', // User enters this at project level
+      // Project-level selection of which rate to use (user selected this!)
+      selectedRateType: selectedRateType,
+      quantity: selectedRateType === 'fixed' ? '' : (quantity || '1'),
       // Copy all rates from library
       hourlyRate: selectedService.hourlyRate || 0,
       dailyRate: selectedService.dailyRate || 0,
@@ -408,17 +429,154 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
                   )}
                 </div>
 
-                {/* Selected Preview */}
+                {/* Selected Preview & Rate Selection */}
                 {selectedService && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Selected:</p>
-                    <p className="font-medium text-gray-900">{selectedService.name}</p>
-                    {selectedService.description && (
-                      <p className="text-sm text-gray-600 mt-1">{selectedService.description}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-2">
-                      You can customize all fields after adding
-                    </p>
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Selected:</p>
+                      <p className="font-medium text-gray-900">{selectedService.name}</p>
+                      {selectedService.description && (
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{selectedService.description}</p>
+                      )}
+                    </div>
+
+                    {/* Rate Type Selection */}
+                    {(() => {
+                      const availableRates = []
+                      if (selectedService.fixedRate > 0) availableRates.push('fixed')
+                      if (selectedService.hourlyRate > 0) availableRates.push('hourly')
+                      if (selectedService.dailyRate > 0) availableRates.push('daily')
+                      if (selectedService.weeklyRate > 0) availableRates.push('weekly')
+                      if (selectedService.unitRate > 0) availableRates.push('per_unit')
+                      const unitInfo = UNIT_TYPES?.find(u => u.value === selectedService.unitType)
+
+                      if (availableRates.length === 0) {
+                        return (
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm text-amber-800 flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4" />
+                              No rates defined for this service
+                            </p>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Select Pricing:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {availableRates.map(rateType => {
+                                const isSelected = selectedRateType === rateType
+                                let rateValue = 0
+                                let label = ''
+
+                                if (rateType === 'fixed') {
+                                  rateValue = selectedService.fixedRate
+                                  label = `Fixed: ${formatCurrency(rateValue)}`
+                                } else if (rateType === 'hourly') {
+                                  rateValue = selectedService.hourlyRate
+                                  label = `${formatCurrency(rateValue)}/hr`
+                                } else if (rateType === 'daily') {
+                                  rateValue = selectedService.dailyRate
+                                  label = `${formatCurrency(rateValue)}/day`
+                                } else if (rateType === 'weekly') {
+                                  rateValue = selectedService.weeklyRate
+                                  label = `${formatCurrency(rateValue)}/wk`
+                                } else if (rateType === 'per_unit') {
+                                  rateValue = selectedService.unitRate
+                                  label = `${formatCurrency(rateValue)}/${unitInfo?.plural || 'unit'}`
+                                }
+
+                                return (
+                                  <button
+                                    key={rateType}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedRateType(rateType)
+                                      if (rateType === 'fixed') {
+                                        setQuantity('')
+                                      } else if (!quantity) {
+                                        setQuantity('1')
+                                      }
+                                    }}
+                                    className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                                      isSelected
+                                        ? 'bg-aeria-navy text-white border-aeria-navy'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Quantity input for non-fixed rates */}
+                          {selectedRateType && selectedRateType !== 'fixed' && (
+                            <div className={`p-3 rounded-lg ${
+                              selectedRateType === 'per_unit' ? 'bg-purple-50' : 'bg-blue-50'
+                            }`}>
+                              <label className={`block text-xs font-medium mb-1 ${
+                                selectedRateType === 'per_unit' ? 'text-purple-800' : 'text-blue-800'
+                              }`}>
+                                {selectedRateType === 'per_unit'
+                                  ? `Quantity (${unitInfo?.plural || 'units'})`
+                                  : selectedRateType === 'hourly' ? 'Number of Hours'
+                                  : selectedRateType === 'daily' ? 'Number of Days'
+                                  : 'Number of Weeks'
+                                }
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  value={quantity}
+                                  onChange={(e) => setQuantity(e.target.value)}
+                                  min="0"
+                                  step="0.5"
+                                  className="input w-24"
+                                  placeholder="1"
+                                />
+                                <span className={`text-sm ${
+                                  selectedRateType === 'per_unit' ? 'text-purple-700' : 'text-blue-700'
+                                }`}>
+                                  × {formatCurrency(
+                                    selectedRateType === 'per_unit' ? selectedService.unitRate :
+                                    selectedRateType === 'hourly' ? selectedService.hourlyRate :
+                                    selectedRateType === 'daily' ? selectedService.dailyRate :
+                                    selectedService.weeklyRate || 0
+                                  )}
+                                  {' = '}
+                                  <strong>
+                                    {formatCurrency(
+                                      (parseFloat(quantity) || 0) * (
+                                        selectedRateType === 'per_unit' ? selectedService.unitRate :
+                                        selectedRateType === 'hourly' ? selectedService.hourlyRate :
+                                        selectedRateType === 'daily' ? selectedService.dailyRate :
+                                        selectedService.weeklyRate || 0
+                                      )
+                                    )}
+                                  </strong>
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Fixed rate confirmation */}
+                          {selectedRateType === 'fixed' && (
+                            <div className="p-3 bg-amber-50 rounded-lg">
+                              <p className="text-sm text-amber-800">
+                                <strong>Fixed price:</strong> {formatCurrency(selectedService.fixedRate)}
+                                {selectedService.baseFee > 0 && (
+                                  <span className="text-amber-600 ml-2">+ {formatCurrency(selectedService.baseFee)} base fee</span>
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
               </>
@@ -528,7 +686,7 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
             </button>
             <button
               onClick={activeTab === 'library' ? handleAddFromLibrary : handleAddCustom}
-              disabled={activeTab === 'library' ? !selectedService : !customForm.name.trim()}
+              disabled={activeTab === 'library' ? (!selectedService || !selectedRateType) : !customForm.name.trim()}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Service
