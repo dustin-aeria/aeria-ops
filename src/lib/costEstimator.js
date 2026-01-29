@@ -259,12 +259,21 @@ export function formatCurrency(amount, currency = 'CAD') {
 
 /**
  * Calculate total cost for a single task
- * @param {Object} task - Task with costItems array
- * @returns {number} Total cost of all cost items in task
+ * @param {Object} task - Task with costItems array and/or estimatedCost
+ * @returns {number} Total cost including personnel (estimatedCost) and cost items
  */
 export function calculateTaskCost(task) {
-  if (!task || !Array.isArray(task.costItems)) return 0
-  return task.costItems.reduce((sum, item) => sum + (item.total || 0), 0)
+  if (!task) return 0
+
+  // Start with estimated cost from operators × hours
+  let total = task.estimatedCost || 0
+
+  // Add any additional cost items
+  if (Array.isArray(task.costItems)) {
+    total += task.costItems.reduce((sum, item) => sum + (item.total || 0), 0)
+  }
+
+  return total
 }
 
 /**
@@ -360,6 +369,13 @@ export function getPhaseCostSummary(phase) {
   summary.completedTasks = phase.tasks.filter(t => t.status === 'completed').length
 
   phase.tasks.forEach(task => {
+    // Include estimated cost from operators × hours (personnel cost)
+    if (task.estimatedCost && task.estimatedCost > 0) {
+      summary.total += task.estimatedCost
+      summary.byType.personnel += task.estimatedCost
+    }
+
+    // Also include any additional cost items
     if (Array.isArray(task.costItems)) {
       task.costItems.forEach(item => {
         const cost = item.total || 0

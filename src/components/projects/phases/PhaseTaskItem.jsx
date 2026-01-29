@@ -16,7 +16,10 @@ import {
   Calendar,
   Trash2,
   Edit2,
-  MoreVertical
+  MoreVertical,
+  Clock,
+  Users,
+  DollarSign
 } from 'lucide-react'
 import { formatCurrency, calculateTaskCost } from '../../../lib/costEstimator'
 import { getTaskTypeConfig, getTaskStatusConfig, TASK_STATUS } from './phaseConstants'
@@ -227,7 +230,26 @@ export default function PhaseTaskItem({
             )}
           </div>
 
-          {/* Cost items */}
+          {/* Personnel cost breakdown (if operators assigned) */}
+          {task.estimatedCost > 0 && task.assignedOperators?.length > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+              <div className="flex items-center gap-2 text-sm font-medium text-blue-800 mb-2">
+                <Users className="w-4 h-4" />
+                Personnel Cost
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-700">
+                  {task.assignedOperators.length} operator{task.assignedOperators.length !== 1 ? 's' : ''} × {task.estimatedHours || 0} hours
+                </span>
+                <span className="font-medium text-blue-900 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  {formatCurrency(task.estimatedCost)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Additional cost items */}
           <TaskCostItems
             costItems={task.costItems || []}
             onRemove={readOnly ? null : (costItemId) => onRemoveCostItem(task.id, costItemId)}
