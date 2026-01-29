@@ -25,9 +25,6 @@ import {
   Layers,
   TrendingDown,
   Package,
-  Percent,
-  ChevronDown,
-  ChevronUp,
   X
 } from 'lucide-react'
 import {
@@ -162,26 +159,22 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
     category: '',
     description: '',
     status: 'active',
-    // Pricing type
-    pricingType: 'time_based',
-    // Time-based rates (legacy + enhanced)
+    // Time-based rates
     hourlyRate: '',
     dailyRate: '',
     weeklyRate: '',
+    // Fixed fee
+    fixedRate: '',
     // Per-unit pricing
     unitType: 'acre',
     unitRate: '',
-    // Fixed fee
-    fixedRate: '',
     // Base/mobilization fee
     baseFee: '',
     minimumCharge: '',
-    // Volume tiers
+    // Volume tiers (for per-unit)
     volumeTiers: [],
     // Deliverables
     deliverables: [],
-    // Modifiers
-    modifiers: [],
     notes: ''
   })
   const [loading, setLoading] = useState(false)
@@ -195,7 +188,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         category: service.category || '',
         description: service.description || '',
         status: service.status || 'active',
-        pricingType: service.pricingType || 'time_based',
         hourlyRate: service.hourlyRate || '',
         dailyRate: service.dailyRate || '',
         weeklyRate: service.weeklyRate || '',
@@ -206,7 +198,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         minimumCharge: service.minimumCharge || '',
         volumeTiers: service.volumeTiers || [],
         deliverables: service.deliverables || [],
-        modifiers: service.modifiers || [],
         notes: service.notes || ''
       })
     } else {
@@ -215,7 +206,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         category: '',
         description: '',
         status: 'active',
-        pricingType: 'time_based',
         hourlyRate: '',
         dailyRate: '',
         weeklyRate: '',
@@ -226,7 +216,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         minimumCharge: '',
         volumeTiers: [],
         deliverables: [],
-        modifiers: [],
         notes: ''
       })
     }
@@ -290,33 +279,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
     }))
   }
 
-  // Modifier management
-  const addModifier = (preset = null) => {
-    const newModifier = preset
-      ? { id: generateId(), name: preset.name, multiplier: preset.multiplier }
-      : { id: generateId(), name: '', multiplier: 1.0 }
-    setFormData(prev => ({
-      ...prev,
-      modifiers: [...prev.modifiers, newModifier]
-    }))
-  }
-
-  const updateModifier = (id, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      modifiers: prev.modifiers.map(m =>
-        m.id === id ? { ...m, [field]: value } : m
-      )
-    }))
-  }
-
-  const removeModifier = (id) => {
-    setFormData(prev => ({
-      ...prev,
-      modifiers: prev.modifiers.filter(m => m.id !== id)
-    }))
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -343,10 +305,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         deliverables: formData.deliverables.map(d => ({
           ...d,
           price: d.price ? parseFloat(d.price) : 0
-        })),
-        modifiers: formData.modifiers.map(m => ({
-          ...m,
-          multiplier: m.multiplier ? parseFloat(m.multiplier) : 1.0
         }))
       }
 
@@ -477,189 +435,49 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
           {/* Pricing Tab */}
           {activeTab === 'pricing' && (
             <>
-              {/* Pricing Type Selection */}
-              <div>
-                <label className="label">Pricing Model</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {PRICING_TYPES.map(type => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, pricingType: type.value }))}
-                      className={`p-3 rounded-lg border-2 text-left transition-all ${
-                        formData.pricingType === type.value
-                          ? 'border-aeria-navy bg-aeria-navy/5'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <p className={`text-sm font-medium ${formData.pricingType === type.value ? 'text-aeria-navy' : 'text-gray-900'}`}>
-                        {type.label}
-                      </p>
-                      <p className="text-xs text-gray-500">{type.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter all applicable rates. When adding this service to a project, you'll choose which rate to use.
+              </p>
 
               {/* Time-Based Rates */}
-              {formData.pricingType === 'time_based' && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Time-Based Rates
-                  </h4>
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="label">Hourly Rate ($)</label>
-                      <input
-                        type="number"
-                        name="hourlyRate"
-                        value={formData.hourlyRate}
-                        onChange={handleChange}
-                        className="input"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">Daily Rate ($)</label>
-                      <input
-                        type="number"
-                        name="dailyRate"
-                        value={formData.dailyRate}
-                        onChange={handleChange}
-                        className="input"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">Weekly Rate ($)</label>
-                      <input
-                        type="number"
-                        name="weeklyRate"
-                        value={formData.weeklyRate}
-                        onChange={handleChange}
-                        className="input"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Per-Unit Pricing */}
-              {formData.pricingType === 'per_unit' && (
-                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-                  <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
-                    Per-Unit Pricing
-                  </h4>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="label">Unit Type</label>
-                      <select
-                        name="unitType"
-                        value={formData.unitType}
-                        onChange={handleChange}
-                        className="input"
-                      >
-                        {UNIT_TYPES.map(u => (
-                          <option key={u.value} value={u.value}>{u.icon} {u.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label">Rate per Unit ($)</label>
-                      <input
-                        type="number"
-                        name="unitRate"
-                        value={formData.unitRate}
-                        onChange={handleChange}
-                        className="input"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Volume Tiers */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4" />
-                        Volume Tiers (Optional)
-                      </h5>
-                      <button
-                        type="button"
-                        onClick={addVolumeTier}
-                        className="text-xs text-aeria-navy hover:underline"
-                      >
-                        + Add Tier
-                      </button>
-                    </div>
-                    {formData.volumeTiers.length === 0 ? (
-                      <p className="text-xs text-gray-500">No volume tiers. Add tiers for quantity discounts.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {formData.volumeTiers.map((tier, idx) => (
-                          <div key={tier.id} className="flex items-center gap-2 bg-white p-2 rounded border border-gray-200">
-                            <span className="text-xs text-gray-500 w-16">
-                              {idx === 0 ? 'Up to' : `${formData.volumeTiers[idx - 1]?.upTo || 0}+ to`}
-                            </span>
-                            <input
-                              type="number"
-                              value={tier.upTo || ''}
-                              onChange={(e) => updateVolumeTier(tier.id, 'upTo', e.target.value)}
-                              className="input w-20 text-sm"
-                              placeholder={idx === formData.volumeTiers.length - 1 ? '∞' : '0'}
-                            />
-                            <span className="text-xs text-gray-500">units →</span>
-                            <div className="relative flex-1">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
-                              <input
-                                type="number"
-                                value={tier.rate || ''}
-                                onChange={(e) => updateVolumeTier(tier.id, 'rate', e.target.value)}
-                                className="input pl-5 text-sm"
-                                placeholder="0.00"
-                                step="0.01"
-                              />
-                            </div>
-                            <span className="text-xs text-gray-500">/unit</span>
-                            <button
-                              type="button"
-                              onClick={() => removeVolumeTier(tier.id)}
-                              className="p-1 text-gray-400 hover:text-red-500"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Fixed Fee */}
-              {formData.pricingType === 'fixed' && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Fixed Fee
-                  </h4>
-                  <div className="max-w-xs">
-                    <label className="label">Fixed Price ($)</label>
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  Time-Based Rates
+                </h4>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="label">Hourly Rate ($)</label>
                     <input
                       type="number"
-                      name="fixedRate"
-                      value={formData.fixedRate}
+                      name="hourlyRate"
+                      value={formData.hourlyRate}
+                      onChange={handleChange}
+                      className="input"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Daily Rate ($)</label>
+                    <input
+                      type="number"
+                      name="dailyRate"
+                      value={formData.dailyRate}
+                      onChange={handleChange}
+                      className="input"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Weekly Rate ($)</label>
+                    <input
+                      type="number"
+                      name="weeklyRate"
+                      value={formData.weeklyRate}
                       onChange={handleChange}
                       className="input"
                       placeholder="0.00"
@@ -668,9 +486,123 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Base Fee & Minimum (all pricing types) */}
+              {/* Fixed Fee */}
+              <div className="p-4 bg-amber-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-amber-600" />
+                  Fixed Fee
+                </h4>
+                <div className="max-w-xs">
+                  <label className="label">Fixed Price ($)</label>
+                  <input
+                    type="number"
+                    name="fixedRate"
+                    value={formData.fixedRate}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              {/* Per-Unit Pricing */}
+              <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+                <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-purple-600" />
+                  Per-Unit Pricing
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Unit Type</label>
+                    <select
+                      name="unitType"
+                      value={formData.unitType}
+                      onChange={handleChange}
+                      className="input"
+                    >
+                      {UNIT_TYPES.map(u => (
+                        <option key={u.value} value={u.value}>{u.icon} {u.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Rate per Unit ($)</label>
+                    <input
+                      type="number"
+                      name="unitRate"
+                      value={formData.unitRate}
+                      onChange={handleChange}
+                      className="input"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Volume Tiers */}
+                <div className="pt-4 border-t border-purple-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <TrendingDown className="w-4 h-4" />
+                      Volume Tiers (Optional)
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={addVolumeTier}
+                      className="text-xs text-aeria-navy hover:underline"
+                    >
+                      + Add Tier
+                    </button>
+                  </div>
+                  {formData.volumeTiers.length === 0 ? (
+                    <p className="text-xs text-gray-500">No volume tiers. Add tiers for quantity discounts.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.volumeTiers.map((tier, idx) => (
+                        <div key={tier.id} className="flex items-center gap-2 bg-white p-2 rounded border border-purple-200">
+                          <span className="text-xs text-gray-500 w-16">
+                            {idx === 0 ? 'Up to' : `${formData.volumeTiers[idx - 1]?.upTo || 0}+ to`}
+                          </span>
+                          <input
+                            type="number"
+                            value={tier.upTo || ''}
+                            onChange={(e) => updateVolumeTier(tier.id, 'upTo', e.target.value)}
+                            className="input w-20 text-sm"
+                            placeholder={idx === formData.volumeTiers.length - 1 ? '∞' : '0'}
+                          />
+                          <span className="text-xs text-gray-500">units →</span>
+                          <div className="relative flex-1">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                            <input
+                              type="number"
+                              value={tier.rate || ''}
+                              onChange={(e) => updateVolumeTier(tier.id, 'rate', e.target.value)}
+                              className="input pl-5 text-sm"
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">/unit</span>
+                          <button
+                            type="button"
+                            onClick={() => removeVolumeTier(tier.id)}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Base Fee & Minimum */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Base/Mobilization Fee ($)</label>
@@ -967,9 +899,12 @@ export default function Services() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredServices.map(service => {
             const categoryLabel = SERVICE_CATEGORIES.find(c => c.value === service.category)?.label || service.category
-            const pricingType = service.pricingType || 'time_based'
-            const pricingLabel = PRICING_TYPES.find(p => p.value === pricingType)?.label || 'Time-Based'
             const unitTypeInfo = UNIT_TYPES.find(u => u.value === service.unitType)
+
+            // Determine which rates are defined
+            const hasTimeRates = service.hourlyRate || service.dailyRate || service.weeklyRate
+            const hasFixedRate = service.fixedRate
+            const hasUnitRate = service.unitRate
 
             return (
               <div
@@ -999,18 +934,26 @@ export default function Services() {
                   </p>
                 )}
 
-                {/* Pricing Type Badge */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${
-                    pricingType === 'time_based' ? 'bg-blue-100 text-blue-700' :
-                    pricingType === 'per_unit' ? 'bg-purple-100 text-purple-700' :
-                    'bg-amber-100 text-amber-700'
-                  }`}>
-                    {pricingType === 'time_based' && <Clock className="w-3 h-3" />}
-                    {pricingType === 'per_unit' && <Layers className="w-3 h-3" />}
-                    {pricingType === 'fixed' && <DollarSign className="w-3 h-3" />}
-                    {pricingLabel}
-                  </span>
+                {/* Available Rate Types Badges */}
+                <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                  {hasTimeRates && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      <Clock className="w-3 h-3" />
+                      Time
+                    </span>
+                  )}
+                  {hasFixedRate && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">
+                      <DollarSign className="w-3 h-3" />
+                      Fixed
+                    </span>
+                  )}
+                  {hasUnitRate && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">
+                      <Layers className="w-3 h-3" />
+                      {unitTypeInfo?.label || 'Per Unit'}
+                    </span>
+                  )}
                   {service.volumeTiers?.length > 0 && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
                       <TrendingDown className="w-3 h-3" />
@@ -1019,9 +962,10 @@ export default function Services() {
                   )}
                 </div>
 
-                {/* Pricing Details */}
-                <div className="py-3 border-t border-gray-100">
-                  {pricingType === 'time_based' && (
+                {/* Pricing Details - Show all defined rates */}
+                <div className="py-3 border-t border-gray-100 space-y-3">
+                  {/* Time-Based Rates */}
+                  {hasTimeRates && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center">
                         <p className="text-xs text-gray-400">Hourly</p>
@@ -1044,12 +988,25 @@ export default function Services() {
                     </div>
                   )}
 
-                  {pricingType === 'per_unit' && (
+                  {/* Fixed Rate */}
+                  {hasFixedRate && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-400">Fixed Price</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          ${service.fixedRate}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per-Unit Rate */}
+                  {hasUnitRate && (
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-gray-400">{unitTypeInfo?.label || 'Per Unit'}</p>
                         <p className="text-lg font-semibold text-gray-900">
-                          ${service.unitRate || 0}
+                          ${service.unitRate}
                           <span className="text-xs font-normal text-gray-500">/{unitTypeInfo?.plural || 'unit'}</span>
                         </p>
                       </div>
@@ -1062,33 +1019,19 @@ export default function Services() {
                     </div>
                   )}
 
-                  {pricingType === 'fixed' && (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-gray-400">Fixed Price</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          ${service.fixedRate || 0}
-                        </p>
-                      </div>
-                    </div>
+                  {/* No rates defined */}
+                  {!hasTimeRates && !hasFixedRate && !hasUnitRate && (
+                    <p className="text-sm text-gray-400 italic">No rates defined</p>
                   )}
                 </div>
 
                 {/* Extras indicators */}
-                {(service.deliverables?.length > 0 || service.modifiers?.length > 0) && (
+                {service.deliverables?.length > 0 && (
                   <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t border-gray-100 mt-2">
-                    {service.deliverables?.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3" />
-                        {service.deliverables.length} deliverable{service.deliverables.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {service.modifiers?.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Percent className="w-3 h-3" />
-                        {service.modifiers.length} modifier{service.modifiers.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      {service.deliverables.length} deliverable{service.deliverables.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 )}
 
