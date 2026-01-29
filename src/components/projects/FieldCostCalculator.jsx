@@ -11,35 +11,40 @@ import {
   Calculator,
   Users,
   Package,
+  Plane,
   Calendar,
   DollarSign,
   ChevronDown,
   ChevronUp,
   AlertCircle
 } from 'lucide-react'
-import { getOperators, getEquipment } from '../../lib/firestore'
+import { getOperators, getEquipment, getAircraft } from '../../lib/firestore'
 import { formatCurrency } from '../../lib/costEstimator'
 
 export default function FieldCostCalculator({ project, onUpdate }) {
   const [freshOperators, setFreshOperators] = useState([])
   const [freshEquipment, setFreshEquipment] = useState([])
+  const [freshAircraft, setFreshAircraft] = useState([])
   const [loading, setLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(true)
 
   const estimatedFieldDays = parseFloat(project?.estimatedFieldDays) || 0
   const crew = project?.crew || []
   const assignedEquipment = project?.assignedEquipment || []
+  const assignedAircraft = project?.flightPlan?.aircraft || []
 
-  // Load fresh operator and equipment data
+  // Load fresh operator, equipment, and aircraft data
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [ops, equip] = await Promise.all([
+        const [ops, equip, aircraft] = await Promise.all([
           getOperators(),
-          getEquipment()
+          getEquipment(),
+          getAircraft()
         ])
         setFreshOperators(ops)
         setFreshEquipment(equip)
+        setFreshAircraft(aircraft)
       } catch (err) {
         console.error('Error loading field cost data:', err)
       } finally {
@@ -83,14 +88,33 @@ export default function FieldCostCalculator({ project, onUpdate }) {
     })
   }, [assignedEquipment, freshEquipment, estimatedFieldDays])
 
+  // Calculate aircraft costs with fresh rates
+  const aircraftCosts = useMemo(() => {
+    return assignedAircraft.map(item => {
+      const freshItem = freshAircraft.find(a => a.id === item.id)
+      const dailyRate = freshItem?.dailyRate || item.dailyRate || 0
+      const cost = dailyRate * estimatedFieldDays
+
+      return {
+        ...item,
+        name: item.nickname || freshItem?.nickname || `${item.make} ${item.model}`,
+        dailyRate,
+        cost,
+        hasRate: dailyRate > 0
+      }
+    })
+  }, [assignedAircraft, freshAircraft, estimatedFieldDays])
+
   // Calculate totals
   const totalCrewCost = crewCosts.reduce((sum, c) => sum + c.cost, 0)
   const totalEquipmentCost = equipmentCosts.reduce((sum, e) => sum + e.cost, 0)
-  const totalFieldCost = totalCrewCost + totalEquipmentCost
+  const totalAircraftCost = aircraftCosts.reduce((sum, a) => sum + a.cost, 0)
+  const totalFieldCost = totalCrewCost + totalEquipmentCost + totalAircraftCost
 
   // Check for missing rates
   const crewMissingRates = crewCosts.filter(c => !c.hasRate).length
   const equipmentMissingRates = equipmentCosts.filter(e => !e.hasRate).length
+  const aircraftMissingRates = aircraftCosts.filter(a => !a.hasRate).length
 
   if (loading) {
     return (
@@ -258,8 +282,64 @@ export default function FieldCostCalculator({ project, onUpdate }) {
             )}
           </div>
 
+          {/* Aircraft Costs */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Plane className="w-4 h-4" />
+                Aircraft ({assignedAircraft.length})
+              </h4>
+              {totalAircraftCost > 0 && (
+                <span className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(totalAircraftCost)}
+                </span>
+              )}
+            </div>
+
+            {assignedAircraft.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No aircraft assigned</p>
+            ) : (
+              <div className="space-y-1">
+                {aircraftCosts.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between py-1.5 px-2 bg-gray-50 rounded text-sm"
+                  >
+                    <div>
+                      <span className="font-medium text-gray-900">{item.name}</span>
+                      {item.make && item.model && (
+                        <span className="text-gray-500 ml-2">({item.make} {item.model})</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {item.hasRate ? (
+                        <>
+                          <span className="text-gray-500">
+                            {formatCurrency(item.dailyRate)}/day × {estimatedFieldDays}
+                          </span>
+                          <span className="ml-2 font-medium text-gray-900">
+                            = {formatCurrency(item.cost)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-amber-600 text-xs">No daily rate</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {aircraftMissingRates > 0 && (
+              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {aircraftMissingRates} aircraft missing daily rate
+              </p>
+            )}
+          </div>
+
           {/* Total */}
-          {(crew.length > 0 || assignedEquipment.length > 0) && estimatedFieldDays > 0 && (
+          {(crew.length > 0 || assignedEquipment.length > 0 || assignedAircraft.length > 0) && estimatedFieldDays > 0 && (
             <div className="pt-3 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-700">Total Field Cost</span>
@@ -268,7 +348,7 @@ export default function FieldCostCalculator({ project, onUpdate }) {
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Based on {estimatedFieldDays} field day{estimatedFieldDays !== 1 ? 's' : ''} with {crew.length} crew and {assignedEquipment.length} equipment
+                Based on {estimatedFieldDays} field day{estimatedFieldDays !== 1 ? 's' : ''} with {crew.length} crew, {assignedAircraft.length} aircraft, and {assignedEquipment.length} equipment
               </p>
             </div>
           )}

@@ -17,7 +17,7 @@ import {
   Target,
   PackageCheck
 } from 'lucide-react'
-import { getOperators, getEquipment } from '../../lib/firestore'
+import { getOperators, getEquipment, getAircraft } from '../../lib/firestore'
 import { formatCurrency, calculatePhaseCost } from '../../lib/costEstimator'
 
 // Rate type config (same as services)
@@ -31,6 +31,7 @@ const RATE_TYPE_OPTIONS = {
 export default function ProjectCostSummary({ project }) {
   const [freshOperators, setFreshOperators] = useState([])
   const [freshEquipment, setFreshEquipment] = useState([])
+  const [freshAircraft, setFreshAircraft] = useState([])
   const [loading, setLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(true)
 
@@ -38,12 +39,14 @@ export default function ProjectCostSummary({ project }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [ops, equip] = await Promise.all([
+        const [ops, equip, aircraft] = await Promise.all([
           getOperators(),
-          getEquipment()
+          getEquipment(),
+          getAircraft()
         ])
         setFreshOperators(ops)
         setFreshEquipment(equip)
+        setFreshAircraft(aircraft)
       } catch (err) {
         console.error('Error loading cost data:', err)
       } finally {
@@ -58,18 +61,37 @@ export default function ProjectCostSummary({ project }) {
     const estimatedFieldDays = parseFloat(project?.estimatedFieldDays) || 0
     const crew = project?.crew || []
     const assignedEquipment = project?.assignedEquipment || []
+    const assignedAircraft = project?.flightPlan?.aircraft || []
     const services = project?.projectServices || []
 
     // Pre-field costs
     const preFieldCost = calculatePhaseCost(project?.preFieldPhase)
 
-    // Services costs - also track incomplete
+    // Services costs - smarter rate detection
+    // If rateType is set, use that. Otherwise, auto-detect: fixed > daily > hourly > weekly
     let servicesWithCost = 0
     const servicesCost = services.reduce((sum, s) => {
       const sRateType = s.rateType || 'daily'
-      const sRateConfig = RATE_TYPE_OPTIONS[sRateType]
-      const sRate = s[sRateConfig.rateField] || 0
       const sQuantity = parseFloat(s.quantity) || 0
+
+      // First try the selected rate type
+      const sRateConfig = RATE_TYPE_OPTIONS[sRateType]
+      let sRate = s[sRateConfig.rateField] || 0
+
+      // If selected rate type has no rate, try to find any available rate
+      if (sRate === 0) {
+        // Check for fixed rate first (doesn't need quantity)
+        if (s.fixedRate > 0) {
+          servicesWithCost++
+          return sum + s.fixedRate
+        }
+        // Then check other rates with quantity
+        if (sQuantity > 0) {
+          if (s.dailyRate > 0) sRate = s.dailyRate
+          else if (s.hourlyRate > 0) sRate = s.hourlyRate
+          else if (s.weeklyRate > 0) sRate = s.weeklyRate
+        }
+      }
 
       if (sRateType === 'fixed' && sRate > 0) {
         servicesWithCost++
@@ -102,7 +124,17 @@ export default function ProjectCostSummary({ project }) {
     }, 0)
     const equipmentMissingRates = assignedEquipment.length - equipmentWithRates
 
-    const fieldCost = crewCost + equipmentCost
+    // Aircraft costs - track missing rates
+    let aircraftWithRates = 0
+    const aircraftCost = assignedAircraft.reduce((sum, item) => {
+      const freshItem = freshAircraft.find(a => a.id === item.id)
+      const dailyRate = freshItem?.dailyRate || item.dailyRate || 0
+      if (dailyRate > 0) aircraftWithRates++
+      return sum + (dailyRate * estimatedFieldDays)
+    }, 0)
+    const aircraftMissingRates = assignedAircraft.length - aircraftWithRates
+
+    const fieldCost = crewCost + equipmentCost + aircraftCost
 
     // Post-field costs
     const postFieldCost = calculatePhaseCost(project?.postFieldPhase)
@@ -112,7 +144,8 @@ export default function ProjectCostSummary({ project }) {
 
     // Check for incomplete data
     const hasIncompleteData = servicesIncomplete > 0 || crewMissingRates > 0 ||
-      equipmentMissingRates > 0 || (estimatedFieldDays === 0 && (crew.length > 0 || assignedEquipment.length > 0))
+      equipmentMissingRates > 0 || aircraftMissingRates > 0 ||
+      (estimatedFieldDays === 0 && (crew.length > 0 || assignedEquipment.length > 0 || assignedAircraft.length > 0))
 
     return {
       preField: preFieldCost,
@@ -123,17 +156,20 @@ export default function ProjectCostSummary({ project }) {
       fieldBreakdown: {
         crew: crewCost,
         equipment: equipmentCost,
+        aircraft: aircraftCost,
         crewCount: crew.length,
         crewMissingRates,
         equipmentCount: assignedEquipment.length,
-        equipmentMissingRates
+        equipmentMissingRates,
+        aircraftCount: assignedAircraft.length,
+        aircraftMissingRates
       },
       postField: postFieldCost,
       total,
       estimatedFieldDays,
       hasIncompleteData
     }
-  }, [project, freshOperators, freshEquipment])
+  }, [project, freshOperators, freshEquipment, freshAircraft])
 
   if (loading) {
     return (
@@ -222,31 +258,48 @@ export default function ProjectCostSummary({ project }) {
           </div>
 
           {/* Field breakdown (indented) */}
-          {(costs.fieldBreakdown.crewCount > 0 || costs.fieldBreakdown.equipmentCount > 0) && (
+          {(costs.fieldBreakdown.crewCount > 0 || costs.fieldBreakdown.equipmentCount > 0 || costs.fieldBreakdown.aircraftCount > 0) && (
             <div className="ml-6 space-y-1 text-white/80 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="flex items-center gap-1">
-                  Crew ({costs.fieldBreakdown.crewCount})
-                  {costs.fieldBreakdown.crewMissingRates > 0 && (
-                    <span className="text-amber-300">
-                      · {costs.fieldBreakdown.crewMissingRates} no rate
-                    </span>
-                  )}
-                </span>
-                <span>{formatCurrency(costs.fieldBreakdown.crew)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="flex items-center gap-1">
-                  Equipment ({costs.fieldBreakdown.equipmentCount})
-                  {costs.fieldBreakdown.equipmentMissingRates > 0 && (
-                    <span className="text-amber-300">
-                      · {costs.fieldBreakdown.equipmentMissingRates} no rate
-                    </span>
-                  )}
-                </span>
-                <span>{formatCurrency(costs.fieldBreakdown.equipment)}</span>
-              </div>
-              {costs.estimatedFieldDays === 0 && (costs.fieldBreakdown.crewCount > 0 || costs.fieldBreakdown.equipmentCount > 0) && (
+              {costs.fieldBreakdown.crewCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1">
+                    Crew ({costs.fieldBreakdown.crewCount})
+                    {costs.fieldBreakdown.crewMissingRates > 0 && (
+                      <span className="text-amber-300">
+                        · {costs.fieldBreakdown.crewMissingRates} no rate
+                      </span>
+                    )}
+                  </span>
+                  <span>{formatCurrency(costs.fieldBreakdown.crew)}</span>
+                </div>
+              )}
+              {costs.fieldBreakdown.aircraftCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1">
+                    Aircraft ({costs.fieldBreakdown.aircraftCount})
+                    {costs.fieldBreakdown.aircraftMissingRates > 0 && (
+                      <span className="text-amber-300">
+                        · {costs.fieldBreakdown.aircraftMissingRates} no rate
+                      </span>
+                    )}
+                  </span>
+                  <span>{formatCurrency(costs.fieldBreakdown.aircraft)}</span>
+                </div>
+              )}
+              {costs.fieldBreakdown.equipmentCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1">
+                    Equipment ({costs.fieldBreakdown.equipmentCount})
+                    {costs.fieldBreakdown.equipmentMissingRates > 0 && (
+                      <span className="text-amber-300">
+                        · {costs.fieldBreakdown.equipmentMissingRates} no rate
+                      </span>
+                    )}
+                  </span>
+                  <span>{formatCurrency(costs.fieldBreakdown.equipment)}</span>
+                </div>
+              )}
+              {costs.estimatedFieldDays === 0 && (costs.fieldBreakdown.crewCount > 0 || costs.fieldBreakdown.equipmentCount > 0 || costs.fieldBreakdown.aircraftCount > 0) && (
                 <div className="text-amber-300 mt-1">
                   Set field days in Project Details to calculate costs
                 </div>
