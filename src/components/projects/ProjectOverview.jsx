@@ -50,6 +50,8 @@ import {
   getSAIL
 } from '../../lib/soraConfig'
 import ProjectServicesSection from './ProjectServicesSection'
+import FieldCostCalculator from './FieldCostCalculator'
+import ProjectCostSummary from './ProjectCostSummary'
 
 // ============================================
 // SITE STATUS CARD
@@ -445,6 +447,28 @@ function ProjectDetails({ project, onUpdate }) {
       </h3>
 
       <div className="space-y-4">
+        {/* Estimated Field Days - Key for cost calculations */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <label className="block text-xs font-medium text-blue-800 mb-1">
+            Estimated Field Days
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={project?.estimatedFieldDays || ''}
+              onChange={(e) => handleChange('estimatedFieldDays', e.target.value ? parseFloat(e.target.value) : null)}
+              className="w-24 px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="0"
+            />
+            <span className="text-sm text-blue-700">days</span>
+            <span className="text-xs text-blue-600 ml-2">
+              (Used for field cost calculations)
+            </span>
+          </div>
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Author / Prepared By</label>
           <input
@@ -869,11 +893,14 @@ export default function ProjectOverview({
       />
       
       {/* Quick Actions */}
-      <QuickActions 
+      <QuickActions
         onNavigate={onNavigateToSection}
         onExport={onExport}
       />
-      
+
+      {/* Project Cost Summary - Aggregate all costs */}
+      <ProjectCostSummary project={project} />
+
       {/* Project Details - Author, Authorities, Deliverables, Scope */}
       <ProjectDetails
         project={project}
@@ -882,6 +909,12 @@ export default function ProjectOverview({
 
       {/* Project Services */}
       <ProjectServicesSection
+        project={project}
+        onUpdate={onUpdate}
+      />
+
+      {/* Field Cost Calculator */}
+      <FieldCostCalculator
         project={project}
         onUpdate={onUpdate}
       />

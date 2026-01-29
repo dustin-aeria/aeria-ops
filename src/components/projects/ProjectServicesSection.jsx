@@ -44,6 +44,14 @@ const SERVICE_CATEGORIES = {
   other: 'Other'
 }
 
+// Rate type options for services
+const RATE_TYPE_OPTIONS = {
+  hourly: { label: 'Hours', rateField: 'hourlyRate', unitLabel: 'hr' },
+  daily: { label: 'Days', rateField: 'dailyRate', unitLabel: 'day' },
+  weekly: { label: 'Weeks', rateField: 'weeklyRate', unitLabel: 'wk' },
+  fixed: { label: 'Fixed', rateField: 'fixedRate', unitLabel: 'fixed' }
+}
+
 // Generate unique ID
 function generateId() {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -118,9 +126,12 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       name: selectedService.name,
       category: selectedService.category,
       description: selectedService.description || '',
-      estimatedHours: '',
+      rateType: 'daily', // Default to daily for services
+      quantity: '',
       hourlyRate: selectedService.hourlyRate || 0,
       dailyRate: selectedService.dailyRate || 0,
+      weeklyRate: selectedService.weeklyRate || 0,
+      fixedRate: selectedService.fixedRate || 0,
       notes: ''
     }
 
@@ -141,9 +152,12 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       name: customForm.name.trim(),
       category: customForm.category,
       description: customForm.description.trim(),
-      estimatedHours: customForm.estimatedHours ? parseFloat(customForm.estimatedHours) : '',
+      rateType: 'daily',
+      quantity: '',
       hourlyRate: customForm.hourlyRate ? parseFloat(customForm.hourlyRate) : 0,
       dailyRate: customForm.dailyRate ? parseFloat(customForm.dailyRate) : 0,
+      weeklyRate: 0,
+      fixedRate: 0,
       notes: ''
     }
 
@@ -410,16 +424,23 @@ function ServiceCard({ service, onUpdate, onDelete, isExpanded, onToggle }) {
   const handleSave = () => {
     onUpdate(service.id, {
       ...editForm,
-      estimatedHours: editForm.estimatedHours ? parseFloat(editForm.estimatedHours) : '',
+      quantity: editForm.quantity ? parseFloat(editForm.quantity) : '',
       hourlyRate: editForm.hourlyRate ? parseFloat(editForm.hourlyRate) : 0,
-      dailyRate: editForm.dailyRate ? parseFloat(editForm.dailyRate) : 0
+      dailyRate: editForm.dailyRate ? parseFloat(editForm.dailyRate) : 0,
+      weeklyRate: editForm.weeklyRate ? parseFloat(editForm.weeklyRate) : 0,
+      fixedRate: editForm.fixedRate ? parseFloat(editForm.fixedRate) : 0
     })
     setIsEditing(false)
   }
 
-  const estimatedCost = service.estimatedHours && service.hourlyRate
-    ? service.estimatedHours * service.hourlyRate
-    : null
+  // Get rate config and calculate cost
+  const rateType = service.rateType || 'daily'
+  const rateConfig = RATE_TYPE_OPTIONS[rateType]
+  const rate = service[rateConfig.rateField] || 0
+  const quantity = parseFloat(service.quantity) || 0
+  const estimatedCost = rateType === 'fixed'
+    ? rate
+    : (quantity > 0 && rate > 0 ? quantity * rate : null)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -441,10 +462,10 @@ function ServiceCard({ service, onUpdate, onDelete, isExpanded, onToggle }) {
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {service.estimatedHours && (
+          {quantity > 0 && (
             <span className="text-sm text-gray-600 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              {service.estimatedHours}h
+              {quantity} {rateConfig.label.toLowerCase()}
             </span>
           )}
           {estimatedCost && (
@@ -499,41 +520,88 @@ function ServiceCard({ service, onUpdate, onDelete, isExpanded, onToggle }) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              {/* Rate Type and Quantity */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Est. Hours</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Rate Type</label>
+                  <select
+                    value={editForm.rateType || 'daily'}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, rateType: e.target.value }))}
+                    className="input"
+                  >
+                    {Object.entries(RATE_TYPE_OPTIONS).map(([key, config]) => (
+                      <option key={key} value={key}>{config.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {editForm.rateType === 'fixed' ? 'Quantity' : `Number of ${RATE_TYPE_OPTIONS[editForm.rateType || 'daily'].label}`}
+                  </label>
                   <input
                     type="number"
-                    value={editForm.estimatedHours}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, estimatedHours: e.target.value }))}
+                    value={editForm.quantity || ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, quantity: e.target.value }))}
                     min="0"
                     step="0.5"
                     className="input"
+                    placeholder={editForm.rateType === 'fixed' ? '1' : '0'}
+                    disabled={editForm.rateType === 'fixed'}
                   />
                 </div>
+              </div>
+
+              {/* Rates */}
+              <div className="grid grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Hourly Rate</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Hourly</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
                     <input
                       type="number"
-                      value={editForm.hourlyRate}
+                      value={editForm.hourlyRate || ''}
                       onChange={(e) => setEditForm(prev => ({ ...prev, hourlyRate: e.target.value }))}
                       min="0"
-                      className="input pl-7"
+                      className="input pl-5 text-sm"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Daily Rate</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Daily</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
                     <input
                       type="number"
-                      value={editForm.dailyRate}
+                      value={editForm.dailyRate || ''}
                       onChange={(e) => setEditForm(prev => ({ ...prev, dailyRate: e.target.value }))}
                       min="0"
-                      className="input pl-7"
+                      className="input pl-5 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Weekly</label>
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                    <input
+                      type="number"
+                      value={editForm.weeklyRate || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, weeklyRate: e.target.value }))}
+                      min="0"
+                      className="input pl-5 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fixed</label>
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                    <input
+                      type="number"
+                      value={editForm.fixedRate || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, fixedRate: e.target.value }))}
+                      min="0"
+                      className="input pl-5 text-sm"
                     />
                   </div>
                 </div>
@@ -575,22 +643,47 @@ function ServiceCard({ service, onUpdate, onDelete, isExpanded, onToggle }) {
                 <p className="text-sm text-gray-600 mb-3">{service.description}</p>
               )}
 
-              <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                <div>
-                  <span className="text-gray-500">Est. Hours:</span>
-                  <span className="ml-2 font-medium">{service.estimatedHours || '—'}</span>
+              {/* Cost Calculation Summary */}
+              {estimatedCost && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg mb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-800">
+                        {rateType === 'fixed' ? 'Fixed Price' : (
+                          <>{quantity} {rateConfig.label.toLowerCase()} × {formatCurrency(rate)}/{rateConfig.unitLabel}</>
+                        )}
+                      </span>
+                    </div>
+                    <span className="font-semibold text-green-900">{formatCurrency(estimatedCost)}</span>
+                  </div>
                 </div>
+              )}
+
+              <div className="grid grid-cols-4 gap-3 text-sm mb-3">
                 <div>
-                  <span className="text-gray-500">Hourly:</span>
-                  <span className="ml-2 font-medium">
+                  <span className="text-gray-500 text-xs">Hourly</span>
+                  <p className="font-medium">
                     {service.hourlyRate ? formatCurrency(service.hourlyRate) : '—'}
-                  </span>
+                  </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Daily:</span>
-                  <span className="ml-2 font-medium">
+                  <span className="text-gray-500 text-xs">Daily</span>
+                  <p className="font-medium">
                     {service.dailyRate ? formatCurrency(service.dailyRate) : '—'}
-                  </span>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs">Weekly</span>
+                  <p className="font-medium">
+                    {service.weeklyRate ? formatCurrency(service.weeklyRate) : '—'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs">Fixed</span>
+                  <p className="font-medium">
+                    {service.fixedRate ? formatCurrency(service.fixedRate) : '—'}
+                  </p>
                 </div>
               </div>
 
@@ -665,15 +758,26 @@ export default function ProjectServicesSection({ project, onUpdate }) {
 
   // Calculate totals
   const totalEstimatedCost = projectServices.reduce((sum, s) => {
-    if (s.estimatedHours && s.hourlyRate) {
-      return sum + (s.estimatedHours * s.hourlyRate)
+    const sRateType = s.rateType || 'daily'
+    const sRateConfig = RATE_TYPE_OPTIONS[sRateType]
+    const sRate = s[sRateConfig.rateField] || 0
+    const sQuantity = parseFloat(s.quantity) || 0
+
+    if (sRateType === 'fixed' && sRate > 0) {
+      return sum + sRate
+    } else if (sQuantity > 0 && sRate > 0) {
+      return sum + (sQuantity * sRate)
     }
     return sum
   }, 0)
 
-  const totalHours = projectServices.reduce((sum, s) => {
-    return sum + (parseFloat(s.estimatedHours) || 0)
-  }, 0)
+  const servicesWithCost = projectServices.filter(s => {
+    const sRateType = s.rateType || 'daily'
+    const sRateConfig = RATE_TYPE_OPTIONS[sRateType]
+    const sRate = s[sRateConfig.rateField] || 0
+    const sQuantity = parseFloat(s.quantity) || 0
+    return sRateType === 'fixed' ? sRate > 0 : (sQuantity > 0 && sRate > 0)
+  }).length
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -730,17 +834,16 @@ export default function ProjectServicesSection({ project, onUpdate }) {
           <div className="flex items-center justify-between text-sm">
             <div className="text-gray-600">
               <span className="font-medium">{projectServices.length}</span> service{projectServices.length !== 1 ? 's' : ''}
-              {totalHours > 0 && (
-                <span className="ml-3">
-                  <Clock className="w-3.5 h-3.5 inline mr-1" />
-                  {totalHours}h estimated
+              {servicesWithCost > 0 && (
+                <span className="ml-2 text-green-600">
+                  ({servicesWithCost} with cost)
                 </span>
               )}
             </div>
             {totalEstimatedCost > 0 && (
               <div className="text-right">
-                <span className="text-gray-500">Est. Total:</span>
-                <span className="ml-2 font-semibold text-gray-900">
+                <span className="text-gray-500">Services Total:</span>
+                <span className="ml-2 font-semibold text-green-700">
                   {formatCurrency(totalEstimatedCost)}
                 </span>
               </div>
