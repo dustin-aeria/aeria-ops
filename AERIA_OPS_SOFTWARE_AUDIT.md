@@ -1008,13 +1008,14 @@ VITE_MAPBOX_ACCESS_TOKEN=
 - [x] "Same as boundary" flight area option *(Completed - Flight geography method option that copies operations boundary)*
 
 ### Outstanding Bugs
-- [ ] Bug: Notification list creation *(Needs investigation - code looks correct, may be Firestore permissions or state issue)*
-- [ ] Bug: Spacebar in Site Access field *(Needs investigation - no blocking keyhandler found in code)*
+- [ ] Bug: Notification list creation *(Debug logging added - test and check console)*
+- [x] Bug: Spacebar in Site Access field *(Fixed - added stopPropagation to input fields)*
 
-### Deferred - Mapbox Integrations
-- [ ] Mapbox airspace integration *(Deferred - requires Mapbox API configuration)*
-- [ ] Mapbox municipality borders *(Deferred - requires Mapbox API configuration)*
-- [ ] Mapbox population density *(Deferred - requires Mapbox API configuration)*
+### Batch 13 - Map Overlay Layers (Jan 28, 2026)
+- [x] Municipal boundaries layer *(Completed - toggleable admin boundaries from Mapbox composite source)*
+- [x] Overlay layers UI *(Completed - "Layers" button with panel showing available overlays)*
+- [ ] Airspace integration *(Marked as "Coming Soon" - requires NAV CANADA or OpenAIP data)*
+- [ ] Population density *(Marked as "Coming Soon" - requires Statistics Canada or WorldPop data)*
 
 ### Lower Priority - **BATCH 11 COMPLETE (Jan 28, 2026)**
 - [x] Pre-field "Safety" task type *(Completed - Added safety task type with ShieldAlert icon)*
@@ -1039,9 +1040,9 @@ Items considered but not yet implemented. Prioritize from this list for future b
 ### Map & Flight Planning
 - [x] **Distance Measurement Tool** - *(Completed Batch 12)* Haversine formula, displays in m/km/ft/NM
 - [x] **"Same as Boundary" for Flight Area** - *(Completed Batch 12)* Option to copy operations boundary to flight geography
-- [ ] **Mapbox Airspace Integration** - Pull airspace data from Mapbox, auto-update flight airspace classification (account for altitude - flights may be under/above one airspace and in another)
-- [ ] **Mapbox Municipality Borders** - Integrate municipal boundaries for BVLOS flight planning considerations
-- [ ] **Mapbox Population Density** - Incorporate population density layers, allow users to query Mapbox for population density during flight planning
+- [x] **Municipal Boundaries Layer** - *(Completed Batch 13)* Toggleable overlay showing admin boundaries (national, provincial, municipal)
+- [ ] **Airspace Integration** - Pull airspace data from NAV CANADA or OpenAIP, show controlled/restricted zones (requires external data source)
+- [ ] **Population Density Layer** - Incorporate population density data from Statistics Canada or WorldPop (requires external data source)
 
 ### Data & Reporting
 - [ ] **Enhanced Reporting** - Comprehensive PDF/Excel reports for projects, safety metrics, compliance status
