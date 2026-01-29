@@ -119,6 +119,24 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
   const handleAddFromLibrary = () => {
     if (!selectedService) return
 
+    // Auto-detect best rate type based on what's available
+    let rateType = 'daily'
+    let quantity = ''
+
+    if (selectedService.fixedRate > 0) {
+      rateType = 'fixed'
+      quantity = '' // Fixed doesn't need quantity
+    } else if (selectedService.dailyRate > 0) {
+      rateType = 'daily'
+      quantity = '1' // Default to 1 day
+    } else if (selectedService.hourlyRate > 0) {
+      rateType = 'hourly'
+      quantity = '1' // Default to 1 hour
+    } else if (selectedService.weeklyRate > 0) {
+      rateType = 'weekly'
+      quantity = '1' // Default to 1 week
+    }
+
     const projectService = {
       id: generateId(),
       sourceId: selectedService.id,
@@ -126,8 +144,8 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       name: selectedService.name,
       category: selectedService.category,
       description: selectedService.description || '',
-      rateType: 'daily', // Default to daily for services
-      quantity: '',
+      rateType,
+      quantity,
       hourlyRate: selectedService.hourlyRate || 0,
       dailyRate: selectedService.dailyRate || 0,
       weeklyRate: selectedService.weeklyRate || 0,
@@ -145,6 +163,21 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       return
     }
 
+    const hourlyRate = customForm.hourlyRate ? parseFloat(customForm.hourlyRate) : 0
+    const dailyRate = customForm.dailyRate ? parseFloat(customForm.dailyRate) : 0
+
+    // Auto-detect best rate type
+    let rateType = 'daily'
+    let quantity = ''
+
+    if (dailyRate > 0) {
+      rateType = 'daily'
+      quantity = '1'
+    } else if (hourlyRate > 0) {
+      rateType = 'hourly'
+      quantity = customForm.estimatedHours || '1'
+    }
+
     const projectService = {
       id: generateId(),
       sourceId: null,
@@ -152,10 +185,10 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
       name: customForm.name.trim(),
       category: customForm.category,
       description: customForm.description.trim(),
-      rateType: 'daily',
-      quantity: '',
-      hourlyRate: customForm.hourlyRate ? parseFloat(customForm.hourlyRate) : 0,
-      dailyRate: customForm.dailyRate ? parseFloat(customForm.dailyRate) : 0,
+      rateType,
+      quantity,
+      hourlyRate,
+      dailyRate,
       weeklyRate: 0,
       fixedRate: 0,
       notes: ''

@@ -87,6 +87,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
     hourlyRate: '',
     dailyRate: '',
     weeklyRate: '',
+    fixedRate: '',
     minimumCharge: '',
     unit: 'hour',
     status: 'active',
@@ -104,6 +105,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         hourlyRate: service.hourlyRate || '',
         dailyRate: service.dailyRate || '',
         weeklyRate: service.weeklyRate || '',
+        fixedRate: service.fixedRate || '',
         minimumCharge: service.minimumCharge || '',
         unit: service.unit || 'hour',
         status: service.status || 'active',
@@ -117,6 +119,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         hourlyRate: '',
         dailyRate: '',
         weeklyRate: '',
+        fixedRate: '',
         minimumCharge: '',
         unit: 'hour',
         status: 'active',
@@ -145,6 +148,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
         hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
         dailyRate: formData.dailyRate ? parseFloat(formData.dailyRate) : null,
         weeklyRate: formData.weeklyRate ? parseFloat(formData.weeklyRate) : null,
+        fixedRate: formData.fixedRate ? parseFloat(formData.fixedRate) : null,
         minimumCharge: formData.minimumCharge ? parseFloat(formData.minimumCharge) : null
       }
 
@@ -238,7 +242,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
             Billing Rates
             <span className="text-xs font-normal text-gray-500">(Admin only - for cost estimation)</span>
           </h3>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-4 gap-4">
             <div>
               <label className="label">Hourly Rate ($)</label>
               <input
@@ -271,6 +275,19 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
                 type="number"
                 name="weeklyRate"
                 value={formData.weeklyRate}
+                onChange={handleChange}
+                className="input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="label">Fixed Price ($)</label>
+              <input
+                type="number"
+                name="fixedRate"
+                value={formData.fixedRate}
                 onChange={handleChange}
                 className="input"
                 placeholder="0.00"
