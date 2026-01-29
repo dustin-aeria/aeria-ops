@@ -185,12 +185,13 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
   // When a service is selected, auto-select the first available rate
   useEffect(() => {
     if (selectedService) {
+      const parseRate = (val) => parseFloat(val) || 0
       const availableRates = []
-      if (selectedService.fixedRate > 0) availableRates.push('fixed')
-      if (selectedService.hourlyRate > 0) availableRates.push('hourly')
-      if (selectedService.dailyRate > 0) availableRates.push('daily')
-      if (selectedService.weeklyRate > 0) availableRates.push('weekly')
-      if (selectedService.unitRate > 0) availableRates.push('per_unit')
+      if (parseRate(selectedService.fixedRate) > 0) availableRates.push('fixed')
+      if (parseRate(selectedService.hourlyRate) > 0) availableRates.push('hourly')
+      if (parseRate(selectedService.dailyRate) > 0) availableRates.push('daily')
+      if (parseRate(selectedService.weeklyRate) > 0) availableRates.push('weekly')
+      if (parseRate(selectedService.unitRate) > 0) availableRates.push('per_unit')
 
       setSelectedRateType(availableRates[0] || null)
       setQuantity(availableRates[0] === 'fixed' ? '' : '1')
@@ -227,12 +228,13 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
     if (!selectedService || !selectedRateType) return
 
     // Build list of available rate types based on what's defined
+    const parseRate = (val) => parseFloat(val) || 0
     const availableRates = []
-    if (selectedService.fixedRate > 0) availableRates.push('fixed')
-    if (selectedService.hourlyRate > 0) availableRates.push('hourly')
-    if (selectedService.dailyRate > 0) availableRates.push('daily')
-    if (selectedService.weeklyRate > 0) availableRates.push('weekly')
-    if (selectedService.unitRate > 0) availableRates.push('per_unit')
+    if (parseRate(selectedService.fixedRate) > 0) availableRates.push('fixed')
+    if (parseRate(selectedService.hourlyRate) > 0) availableRates.push('hourly')
+    if (parseRate(selectedService.dailyRate) > 0) availableRates.push('daily')
+    if (parseRate(selectedService.weeklyRate) > 0) availableRates.push('weekly')
+    if (parseRate(selectedService.unitRate) > 0) availableRates.push('per_unit')
 
     // Include deliverables that are marked as "included" by default
     const defaultDeliverables = (selectedService.deliverables || [])
@@ -442,12 +444,14 @@ function AddServiceModal({ isOpen, onClose, onAdd, existingServiceIds = [] }) {
 
                     {/* Rate Type Selection */}
                     {(() => {
+                      // Parse rates robustly (handle strings, nulls, undefined)
+                      const parseRate = (val) => parseFloat(val) || 0
                       const availableRates = []
-                      if (selectedService.fixedRate > 0) availableRates.push('fixed')
-                      if (selectedService.hourlyRate > 0) availableRates.push('hourly')
-                      if (selectedService.dailyRate > 0) availableRates.push('daily')
-                      if (selectedService.weeklyRate > 0) availableRates.push('weekly')
-                      if (selectedService.unitRate > 0) availableRates.push('per_unit')
+                      if (parseRate(selectedService.fixedRate) > 0) availableRates.push('fixed')
+                      if (parseRate(selectedService.hourlyRate) > 0) availableRates.push('hourly')
+                      if (parseRate(selectedService.dailyRate) > 0) availableRates.push('daily')
+                      if (parseRate(selectedService.weeklyRate) > 0) availableRates.push('weekly')
+                      if (parseRate(selectedService.unitRate) > 0) availableRates.push('per_unit')
                       const unitInfo = UNIT_TYPES?.find(u => u.value === selectedService.unitType)
 
                       if (availableRates.length === 0) {
