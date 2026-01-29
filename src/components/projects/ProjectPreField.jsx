@@ -42,7 +42,8 @@ export default function ProjectPreField({ project, onUpdate }) {
       return {
         ...crewMember,
         hourlyRate: freshOp.hourlyRate || 0,
-        dailyRate: freshOp.dailyRate || 0
+        dailyRate: freshOp.dailyRate || 0,
+        weeklyRate: freshOp.weeklyRate || 0
       }
     }
     return crewMember
