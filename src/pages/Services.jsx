@@ -107,7 +107,8 @@ export const COMMON_DELIVERABLES = [
   { name: 'Edited Video', defaultPrice: 300 }
 ]
 
-// Common modifiers
+// Common modifiers - these are PROJECT-LEVEL adjustments, not service-level
+// Available as presets when configuring a service on a project
 export const COMMON_MODIFIERS = [
   { name: 'Rush (24-48hr)', multiplier: 1.25 },
   { name: 'Same Day', multiplier: 1.50 },
@@ -367,8 +368,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
   const tabs = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'pricing', label: 'Pricing' },
-    { id: 'deliverables', label: 'Deliverables' },
-    { id: 'modifiers', label: 'Modifiers' }
+    { id: 'deliverables', label: 'Deliverables' }
   ]
 
   return (
@@ -797,95 +797,6 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId }) {
             </div>
           )}
 
-          {/* Modifiers Tab */}
-          {activeTab === 'modifiers' && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Define multipliers that can be applied to adjust pricing (e.g., rush fees, difficulty adjustments).
-              </p>
-
-              {/* Quick Add from Common Modifiers */}
-              <div>
-                <label className="label">Quick Add Common Modifiers</label>
-                <div className="flex flex-wrap gap-2">
-                  {COMMON_MODIFIERS
-                    .filter(cm => !formData.modifiers.some(m => m.name === cm.name))
-                    .map(cm => (
-                      <button
-                        key={cm.name}
-                        type="button"
-                        onClick={() => addModifier(cm)}
-                        className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
-                      >
-                        + {cm.name} ({((cm.multiplier - 1) * 100).toFixed(0)}%)
-                      </button>
-                    ))}
-                </div>
-              </div>
-
-              {/* Modifiers List */}
-              <div className="space-y-2">
-                {formData.modifiers.length === 0 ? (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <Percent className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                    <p className="text-sm text-gray-500">No modifiers defined</p>
-                    <button
-                      type="button"
-                      onClick={() => addModifier()}
-                      className="mt-2 text-sm text-aeria-navy hover:underline"
-                    >
-                      + Add Custom Modifier
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {formData.modifiers.map(m => (
-                      <div key={m.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
-                        <input
-                          type="text"
-                          value={m.name}
-                          onChange={(e) => updateModifier(m.id, 'name', e.target.value)}
-                          className="input flex-1"
-                          placeholder="Modifier name"
-                        />
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={m.multiplier || ''}
-                            onChange={(e) => updateModifier(m.id, 'multiplier', e.target.value)}
-                            className="input w-20 text-sm text-center"
-                            placeholder="1.00"
-                            step="0.05"
-                            min="0.5"
-                            max="5"
-                          />
-                          <span className="text-xs text-gray-500">×</span>
-                        </div>
-                        <span className="text-xs text-gray-500 w-16 text-right">
-                          {m.multiplier > 1 ? `+${((m.multiplier - 1) * 100).toFixed(0)}%` :
-                           m.multiplier < 1 ? `-${((1 - m.multiplier) * 100).toFixed(0)}%` : '—'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeModifier(m.id)}
-                          className="p-1 text-gray-400 hover:text-red-500"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => addModifier()}
-                      className="w-full py-2 text-sm text-aeria-navy hover:bg-aeria-navy/5 rounded-lg border border-dashed border-gray-300"
-                    >
-                      + Add Custom Modifier
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         <ModalFooter>
