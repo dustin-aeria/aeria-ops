@@ -660,31 +660,41 @@ export function UnifiedProjectMap({
                 return
               }
 
+              // Find a good layer to insert before (we want admin boundaries above base map but below our project layers)
+              // Look for the first symbol layer or use undefined to add on top
+              const layers = map.getStyle().layers
+              let firstSymbolId
+              for (const layer of layers) {
+                if (layer.type === 'symbol') {
+                  firstSymbolId = layer.id
+                  break
+                }
+              }
+
               map.addLayer({
                 id: mapLayerId,
                 type: 'line',
                 source: 'composite',
                 'source-layer': 'admin',
-                filter: ['>=', ['get', 'admin_level'], 2],
+                minzoom: 2,
+                maxzoom: 22,
+                filter: ['all',
+                  ['>=', ['get', 'admin_level'], 2],
+                  ['<=', ['get', 'admin_level'], 8]
+                ],
                 paint: {
-                  'line-color': [
-                    'match',
-                    ['get', 'admin_level'],
-                    2, '#6366F1',
-                    4, '#8B5CF6',
-                    '#A855F7'
-                  ],
+                  'line-color': '#DC2626', // Bright red for visibility
                   'line-width': [
-                    'match',
-                    ['get', 'admin_level'],
-                    2, 3,
-                    4, 2,
-                    1.5
+                    'interpolate', ['linear'], ['zoom'],
+                    2, 1,
+                    6, 2,
+                    10, 3,
+                    14, 4
                   ],
-                  'line-opacity': 0.8
+                  'line-opacity': 0.9
                 }
-              })
-              console.log('Admin boundaries layer added successfully')
+              }, firstSymbolId) // Insert before symbol layers so it's visible
+              console.log('Admin boundaries layer added successfully, before layer:', firstSymbolId)
             } catch (err) {
               console.error('Could not add admin boundaries layer:', err)
             }
