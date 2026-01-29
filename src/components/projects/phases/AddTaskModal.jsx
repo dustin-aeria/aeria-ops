@@ -218,10 +218,11 @@ export default function AddTaskModal({
                     Assigned Operators
                   </span>
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   {operators.map(op => {
                     const opId = op.id || op.operatorId
                     const isSelected = formData.assignedOperators.includes(opId)
+                    const hasRate = op.hourlyRate > 0
                     return (
                       <button
                         key={opId}
@@ -234,15 +235,24 @@ export default function AddTaskModal({
                         }`}
                       >
                         {op.name || op.operatorName || op.firstName}
-                        {op.hourlyRate > 0 && (
+                        {hasRate ? (
                           <span className="ml-1 text-xs opacity-75">
                             (${op.hourlyRate}/hr)
+                          </span>
+                        ) : (
+                          <span className="ml-1 text-xs text-amber-600">
+                            (no rate)
                           </span>
                         )}
                       </button>
                     )
                   })}
                 </div>
+                {operators.some(op => !op.hourlyRate || op.hourlyRate === 0) && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Operators showing "no rate" need hourly rates set in the Operators page, or re-add them to the crew.
+                  </p>
+                )}
               </div>
             )}
 

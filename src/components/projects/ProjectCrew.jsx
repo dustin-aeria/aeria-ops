@@ -77,7 +77,10 @@ export default function ProjectCrew({ project, onUpdate }) {
       operatorId: selectedOperator,
       operatorName: `${operator.firstName} ${operator.lastName}`,
       role: role,
-      isPrimary: !project.crew?.some(c => c.role === role)
+      isPrimary: !project.crew?.some(c => c.role === role),
+      // Include rates for cost calculations
+      hourlyRate: operator.hourlyRate || 0,
+      dailyRate: operator.dailyRate || 0
     }
 
     onUpdate({
