@@ -176,6 +176,24 @@ export default function TimeTracking() {
     }
   }, [entries])
 
+  // Check for draft entries that need submission
+  const hasDraftEntries = useMemo(() => {
+    return entries.some(e => e.status === 'draft')
+  }, [entries])
+
+  // Determine if submission is needed
+  const needsSubmission = useMemo(() => {
+    // Show submit if there are entries and either:
+    // 1. Timesheet is draft
+    // 2. Timesheet was rejected
+    // 3. There are new draft entries (added after previous submission)
+    if (entries.length === 0) return false
+    if (!weekSummary?.status || weekSummary.status === 'draft') return true
+    if (weekSummary.status === 'rejected') return true
+    if (hasDraftEntries) return true // New entries added after submission
+    return false
+  }, [entries, weekSummary, hasDraftEntries])
+
   // Handle entry creation
   const handleNewEntry = () => {
     setEditingEntry(null)
@@ -324,9 +342,17 @@ export default function TimeTracking() {
         {/* Status / Actions */}
         <Card className="p-4">
           <div className="text-sm text-gray-500 mb-1">Status</div>
-          {weekSummary?.status === 'draft' && entries.length > 0 ? (
+          {needsSubmission ? (
             <div>
-              <Badge variant="secondary" className="mb-2">Draft</Badge>
+              {hasDraftEntries && weekSummary?.status === 'approved' ? (
+                <Badge className="bg-amber-100 text-amber-700 mb-2">New Entries</Badge>
+              ) : hasDraftEntries && weekSummary?.status === 'submitted' ? (
+                <Badge className="bg-amber-100 text-amber-700 mb-2">New Entries</Badge>
+              ) : weekSummary?.status === 'rejected' ? (
+                <Badge className="bg-red-100 text-red-700 mb-2">Rejected</Badge>
+              ) : (
+                <Badge variant="secondary" className="mb-2">Draft</Badge>
+              )}
               <Button
                 size="sm"
                 onClick={handleOpenSubmitConfirm}
@@ -334,7 +360,11 @@ export default function TimeTracking() {
                 className="w-full"
               >
                 <Send className="w-4 h-4 mr-1" />
-                Submit for Approval
+                {hasDraftEntries && (weekSummary?.status === 'approved' || weekSummary?.status === 'submitted')
+                  ? 'Submit New Entries'
+                  : weekSummary?.status === 'rejected'
+                  ? 'Resubmit'
+                  : 'Submit for Approval'}
               </Button>
             </div>
           ) : weekSummary?.status === 'submitted' ? (
