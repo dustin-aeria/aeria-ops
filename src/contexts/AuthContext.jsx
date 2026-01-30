@@ -36,13 +36,25 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    let isMounted = true
+    let currentUserId = null
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clear error on auth state change
+      setError(null)
+
       if (firebaseUser) {
+        // Track current user to prevent race conditions
+        currentUserId = firebaseUser.uid
         setUser(firebaseUser)
-        
+
         // Fetch user profile from Firestore
         try {
           const userDoc = await getDoc(doc(db, 'operators', firebaseUser.uid))
+
+          // Check if this is still the current user (prevent race condition)
+          if (!isMounted || currentUserId !== firebaseUser.uid) return
+
           if (userDoc.exists()) {
             setUserProfile({ id: userDoc.id, ...userDoc.data() })
           } else {
@@ -55,17 +67,26 @@ export function AuthProvider({ children }) {
             })
           }
         } catch (err) {
+          // Check if component is still mounted and user hasn't changed
+          if (!isMounted || currentUserId !== firebaseUser.uid) return
           // User profile fetch failed - basic auth info still available
           setError(err.message || 'Failed to load user profile')
         }
       } else {
+        currentUserId = null
         setUser(null)
         setUserProfile(null)
       }
-      setLoading(false)
+
+      if (isMounted) {
+        setLoading(false)
+      }
     })
 
-    return () => unsubscribe()
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [])
 
   const signIn = async (email, password) => {

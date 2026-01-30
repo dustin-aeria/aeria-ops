@@ -819,13 +819,11 @@ export async function createOperator(data) {
 }
 
 export async function updateOperator(id, data) {
-  console.log('[Firestore] updateOperator called with:', { id, data })
   const docRef = doc(db, 'operators', id)
   await updateDoc(docRef, {
     ...data,
     updatedAt: serverTimestamp()
   })
-  console.log('[Firestore] updateOperator completed for:', id)
 }
 
 export async function deleteOperator(id) {
@@ -959,16 +957,18 @@ export const EQUIPMENT_STATUS = {
  * @returns {Promise<Array>}
  */
 export async function getEquipment(filters = {}) {
-  let q = query(equipmentRef, orderBy('name', 'asc'))
+  // Build query constraints array
+  const constraints = [orderBy('name', 'asc')]
 
   if (filters.category) {
-    q = query(equipmentRef, where('category', '==', filters.category), orderBy('name', 'asc'))
+    constraints.unshift(where('category', '==', filters.category))
   }
 
   if (filters.status) {
-    q = query(equipmentRef, where('status', '==', filters.status), orderBy('name', 'asc'))
+    constraints.unshift(where('status', '==', filters.status))
   }
 
+  const q = query(equipmentRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -1299,16 +1299,18 @@ const servicesRef = collection(db, 'services')
  * @returns {Promise<Array>}
  */
 export async function getServices(filters = {}) {
-  let q = query(servicesRef, orderBy('name', 'asc'))
+  // Build query constraints array
+  const constraints = [orderBy('name', 'asc')]
 
   if (filters.category) {
-    q = query(servicesRef, where('category', '==', filters.category), orderBy('name', 'asc'))
+    constraints.unshift(where('category', '==', filters.category))
   }
 
   if (filters.status) {
-    q = query(q, where('status', '==', filters.status))
+    constraints.unshift(where('status', '==', filters.status))
   }
 
+  const q = query(servicesRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -1480,12 +1482,14 @@ const policiesRef = collection(db, 'policies')
  * @returns {Promise<Array>}
  */
 export async function getPolicies(filters = {}) {
-  let q = query(policiesRef, orderBy('number', 'asc'))
+  // Build query constraints array
+  const constraints = [orderBy('number', 'asc')]
 
   if (filters.category) {
-    q = query(policiesRef, where('category', '==', filters.category), orderBy('number', 'asc'))
+    constraints.unshift(where('category', '==', filters.category))
   }
 
+  const q = query(policiesRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -1841,20 +1845,22 @@ export async function submitFeedback(data) {
  * @returns {Promise<Array>}
  */
 export async function getFeedback(filters = {}) {
-  let q = query(feedbackRef, orderBy('createdAt', 'desc'))
+  // Build query constraints array
+  const constraints = [orderBy('createdAt', 'desc')]
 
   if (filters.status) {
-    q = query(feedbackRef, where('status', '==', filters.status), orderBy('createdAt', 'desc'))
+    constraints.unshift(where('status', '==', filters.status))
   }
 
   if (filters.type) {
-    q = query(feedbackRef, where('type', '==', filters.type), orderBy('createdAt', 'desc'))
+    constraints.unshift(where('type', '==', filters.type))
   }
 
   if (filters.limit) {
-    q = query(q, limit(filters.limit))
+    constraints.push(limit(filters.limit))
   }
 
+  const q = query(feedbackRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }

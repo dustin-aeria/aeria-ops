@@ -30,3 +30,17 @@ npm-debug.log*
 # Firebase service account keys
 scripts/serviceAccountKey.json
 scripts/*firebase-adminsdk*.json
+
+# Document directories (stored separately)
+COR/
+EASA and FAA Regulations/
+Formal Hazard Assessments/
+JARUS/
+Policies/
+Procedures/
+Regulations/
+SFOC/
+BUSINESS_CASE.md
+*.pdf
+*.docx
+*.doc
