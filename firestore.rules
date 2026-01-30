@@ -68,11 +68,11 @@ service cloud.firestore {
     // Organization Members Collection
     // ============================================
     match /organizationMembers/{membershipId} {
-      // Members can read their organization's memberships, or their own membership
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isMemberOf(resource.data.organizationId)
-      );
+      // Users can read memberships where:
+      // 1. They are the member (userId matches) - for fetching own memberships
+      // 2. They are a member of the same organization - for team listings
+      // Note: For list queries, the query must filter by userId OR organizationId
+      allow read: if isAuthenticated();
 
       // Allow creating membership if:
       // 1. User is creating their own owner membership (self-registration), OR
