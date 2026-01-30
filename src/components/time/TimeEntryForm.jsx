@@ -64,13 +64,14 @@ export default function TimeEntryForm({
   const loadProjects = async () => {
     try {
       setLoadingProjects(true)
-      const projectList = await getProjects({ status: 'active' })
-      // Also get planning and completed projects for time entry flexibility
-      const planningProjects = await getProjects({ status: 'planning' })
-      const completedProjects = await getProjects({ status: 'completed' })
-      setProjects([...projectList, ...planningProjects, ...completedProjects])
+      // Load all projects (no status filter) for maximum flexibility
+      const allProjects = await getProjects()
+      // Filter out archived projects but allow all others
+      const availableProjects = allProjects.filter(p => p.status !== 'archived')
+      setProjects(availableProjects)
     } catch (err) {
       logger.error('Failed to load projects:', err)
+      setProjects([])
     } finally {
       setLoadingProjects(false)
     }
@@ -219,7 +220,7 @@ export default function TimeEntryForm({
         required
         description="Select the project you worked on"
       >
-        <Select
+        <NativeSelect
           value={formData.projectId}
           onChange={(val) => handleChange('projectId', val)}
           options={projectOptions}
@@ -234,7 +235,7 @@ export default function TimeEntryForm({
           label="Site"
           description="Select the specific site (optional)"
         >
-          <Select
+          <NativeSelect
             value={formData.siteId}
             onChange={(val) => handleChange('siteId', val)}
             options={[{ value: '', label: 'All sites / General' }, ...availableSites]}
@@ -302,7 +303,7 @@ export default function TimeEntryForm({
         required
         description="Categorize the type of work"
       >
-        <Select
+        <NativeSelect
           value={formData.taskType}
           onChange={(val) => handleChange('taskType', val)}
           options={taskTypeOptions}
