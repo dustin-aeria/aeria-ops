@@ -93,7 +93,7 @@ export const NOTIFICATION_TYPES = {
 export async function createNotification(notificationData) {
   const notification = {
     userId: notificationData.userId,
-    operatorId: notificationData.operatorId,
+    organizationId: notificationData.organizationId,
     type: notificationData.type || 'system',
     title: notificationData.title,
     message: notificationData.message,
@@ -120,7 +120,7 @@ export async function createBulkNotifications(userIds, notificationData) {
     const docRef = doc(collection(db, 'notifications'))
     batch.set(docRef, {
       userId,
-      operatorId: notificationData.operatorId,
+      organizationId: notificationData.organizationId,
       type: notificationData.type || 'system',
       title: notificationData.title,
       message: notificationData.message,
@@ -299,10 +299,10 @@ export async function clearAllNotifications(userId) {
 /**
  * Send a mention notification
  */
-export async function notifyMention(mentionedUserId, authorName, entityType, entityId, entityName, operatorId) {
+export async function notifyMention(mentionedUserId, authorName, entityType, entityId, entityName, organizationId) {
   return createNotification({
     userId: mentionedUserId,
-    operatorId,
+    organizationId,
     type: 'mention',
     title: 'You were mentioned',
     message: `${authorName} mentioned you in ${entityName}`,
@@ -315,10 +315,10 @@ export async function notifyMention(mentionedUserId, authorName, entityType, ent
 /**
  * Send an assignment notification
  */
-export async function notifyAssignment(assignedUserId, assignerName, entityType, entityId, entityName, operatorId) {
+export async function notifyAssignment(assignedUserId, assignerName, entityType, entityId, entityName, organizationId) {
   return createNotification({
     userId: assignedUserId,
-    operatorId,
+    organizationId,
     type: 'assignment',
     title: 'New Assignment',
     message: `${assignerName} assigned you to ${entityName}`,
@@ -331,7 +331,7 @@ export async function notifyAssignment(assignedUserId, assignerName, entityType,
 /**
  * Send a deadline reminder notification
  */
-export async function notifyDeadline(userId, entityType, entityId, entityName, daysUntil, operatorId) {
+export async function notifyDeadline(userId, entityType, entityId, entityName, daysUntil, organizationId) {
   const message = daysUntil === 0
     ? `${entityName} is due today`
     : daysUntil === 1
@@ -340,7 +340,7 @@ export async function notifyDeadline(userId, entityType, entityId, entityName, d
 
   return createNotification({
     userId,
-    operatorId,
+    organizationId,
     type: 'deadline',
     title: 'Deadline Approaching',
     message,
@@ -354,10 +354,10 @@ export async function notifyDeadline(userId, entityType, entityId, entityName, d
 /**
  * Send an approval request notification
  */
-export async function notifyApprovalRequest(approverId, requesterName, entityType, entityId, entityName, operatorId) {
+export async function notifyApprovalRequest(approverId, requesterName, entityType, entityId, entityName, organizationId) {
   return createNotification({
     userId: approverId,
-    operatorId,
+    organizationId,
     type: 'approval',
     title: 'Approval Required',
     message: `${requesterName} requested your approval for ${entityName}`,

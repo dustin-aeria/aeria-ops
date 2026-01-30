@@ -294,17 +294,17 @@ export async function deleteComplianceTemplate(id) {
 // ============================================
 
 /**
- * Get compliance applications for a user/operator
- * @param {Object} filters - Filters (operatorId, projectId, status, templateId)
+ * Get compliance applications for a user/organization
+ * @param {Object} filters - Filters (organizationId, projectId, status, templateId)
  * @returns {Promise<Array>}
  */
 export async function getComplianceApplications(filters = {}) {
   let q = query(complianceApplicationsRef, orderBy('updatedAt', 'desc'))
 
-  if (filters.operatorId) {
+  if (filters.organizationId) {
     q = query(
       complianceApplicationsRef,
-      where('operatorId', '==', filters.operatorId),
+      where('organizationId', '==', filters.organizationId),
       orderBy('updatedAt', 'desc')
     )
   }
@@ -388,8 +388,8 @@ export async function createComplianceApplication(data) {
     name: data.name || `${template.shortName || template.name} - ${new Date().toLocaleDateString()}`,
     description: data.description || '',
 
-    // Operator context
-    operatorId: data.operatorId || null,
+    // Organization context
+    organizationId: data.organizationId || null,
 
     // Linked project (optional)
     projectId: data.projectId || null,
@@ -566,16 +566,16 @@ export async function deleteComplianceApplication(id) {
 
 /**
  * Get documents from registry
- * @param {Object} filters - Filters (operatorId, sourceType, category)
+ * @param {Object} filters - Filters (organizationId, sourceType, category)
  * @returns {Promise<Array>}
  */
 export async function getDocumentRegistry(filters = {}) {
   let q = query(documentRegistryRef, orderBy('title', 'asc'))
 
-  if (filters.operatorId) {
+  if (filters.organizationId) {
     q = query(
       documentRegistryRef,
-      where('operatorId', '==', filters.operatorId),
+      where('organizationId', '==', filters.organizationId),
       orderBy('title', 'asc')
     )
   }
@@ -603,8 +603,8 @@ export async function registerDocument(data) {
     sourceType: data.sourceType, // 'policy', 'project', 'uploaded', 'external'
     sourceId: data.sourceId || null,
 
-    // Operator context
-    operatorId: data.operatorId || null,
+    // Organization context
+    organizationId: data.organizationId || null,
 
     // Metadata
     title: data.title || '',
@@ -770,22 +770,22 @@ export async function runGapAnalysis(applicationId) {
 const complianceProjectsRef = collection(db, 'complianceProjects')
 
 /**
- * Get compliance projects for an operator
- * @param {string} operatorId - Operator ID
+ * Get compliance projects for an organization
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters
  * @returns {Promise<Array>}
  */
-export async function getComplianceProjects(operatorId, filters = {}) {
+export async function getComplianceProjects(organizationId, filters = {}) {
   let q = query(
     complianceProjectsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('updatedAt', 'desc')
   )
 
   if (filters.linkedProjectId) {
     q = query(
       complianceProjectsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('linkedProjectId', '==', filters.linkedProjectId),
       orderBy('updatedAt', 'desc')
     )
@@ -826,8 +826,8 @@ export async function createComplianceProject(data) {
     name: data.name || 'New Compliance Project',
     description: data.description || '',
 
-    // Operator
-    operatorId: data.operatorId,
+    // Organization
+    organizationId: data.organizationId,
 
     // Optional link to operations project
     linkedProjectId: data.linkedProjectId || null,

@@ -18,7 +18,7 @@ export default function CORAuditModal({
   isOpen,
   onClose,
   audit,
-  operatorId,
+  organizationId,
   auditors = []
 }) {
   const [formData, setFormData] = useState({
@@ -74,7 +74,7 @@ export default function CORAuditModal({
     try {
       const auditData = {
         ...formData,
-        operatorId,
+        organizationId,
         scheduledDate: new Date(formData.scheduledDate)
       }
 

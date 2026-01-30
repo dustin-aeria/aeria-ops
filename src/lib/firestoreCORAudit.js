@@ -164,13 +164,13 @@ export const COR_REQUIREMENTS = {
 // AUDIT NUMBER GENERATION
 // ============================================
 
-export async function generateAuditNumber(operatorId) {
+export async function generateAuditNumber(organizationId) {
   const year = new Date().getFullYear()
   const yearPrefix = `COR-${year}-`
 
   const q = query(
     corAuditsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('auditNumber', '>=', yearPrefix),
     where('auditNumber', '<', `COR-${year + 1}-`),
     orderBy('auditNumber', 'desc'),
@@ -198,7 +198,7 @@ export async function generateAuditNumber(operatorId) {
  */
 export async function scheduleAudit(auditData) {
   return withErrorHandling(async () => {
-    const auditNumber = await generateAuditNumber(auditData.operatorId)
+    const auditNumber = await generateAuditNumber(auditData.organizationId)
 
     // Initialize element scores structure
     const elementScores = Object.keys(COR_ELEMENTS).map(key => ({
@@ -258,15 +258,15 @@ export async function getAudit(auditId) {
 }
 
 /**
- * Get all audits for an operator
+ * Get all audits for an organization
  */
-export async function getAudits(operatorId, options = {}) {
+export async function getAudits(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { status, auditType, limitCount = 50 } = options
 
     let q = query(
       corAuditsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('scheduledDate', 'desc'),
       limit(limitCount)
     )
@@ -407,13 +407,13 @@ export async function getCertificate(certificateId) {
 }
 
 /**
- * Get all certificates for an operator
+ * Get all certificates for an organization
  */
-export async function getCertificates(operatorId) {
+export async function getCertificates(organizationId) {
   return withErrorHandling(async () => {
     const q = query(
       corCertificatesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('issueDate', 'desc')
     )
 
@@ -427,13 +427,13 @@ export async function getCertificates(operatorId) {
 }
 
 /**
- * Get active certificate for an operator
+ * Get active certificate for an organization
  */
-export async function getActiveCertificate(operatorId, corType = 'OHS') {
+export async function getActiveCertificate(organizationId, corType = 'OHS') {
   return withErrorHandling(async () => {
     const q = query(
       corCertificatesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('corType', '==', corType),
       where('status', '==', 'active'),
       orderBy('issueDate', 'desc'),
@@ -529,15 +529,15 @@ export async function updateAuditor(auditorId, updates) {
 }
 
 /**
- * Get all auditors for an operator
+ * Get all auditors for an organization
  */
-export async function getAuditors(operatorId, options = {}) {
+export async function getAuditors(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { auditorType, activeOnly = true } = options
 
     let q = query(
       corAuditorsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('name')
     )
 
@@ -655,13 +655,13 @@ export async function getDeficienciesForAudit(auditId) {
 }
 
 /**
- * Get all open deficiencies for an operator
+ * Get all open deficiencies for an organization
  */
-export async function getOpenDeficiencies(operatorId) {
+export async function getOpenDeficiencies(organizationId) {
   return withErrorHandling(async () => {
     const q = query(
       corDeficienciesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('status', '==', 'open'),
       orderBy('dueDate')
     )
@@ -697,13 +697,13 @@ export async function closeDeficiency(deficiencyId, closureData) {
 /**
  * Calculate COR audit readiness score
  */
-export async function calculateCORReadiness(operatorId) {
+export async function calculateCORReadiness(organizationId) {
   return withErrorHandling(async () => {
     // This would integrate with other modules (JHSC, Training, Incidents, etc.)
     // For now, return a placeholder structure
 
     const readiness = {
-      operatorId,
+      organizationId,
       overallScore: 0,
       elements: {},
       recommendations: [],
@@ -736,10 +736,10 @@ export async function calculateCORReadiness(operatorId) {
 /**
  * Get audit cycle status
  */
-export async function getAuditCycleStatus(operatorId) {
+export async function getAuditCycleStatus(organizationId) {
   return withErrorHandling(async () => {
-    const certificate = await getActiveCertificate(operatorId, 'OHS')
-    const audits = await getAudits(operatorId)
+    const certificate = await getActiveCertificate(organizationId, 'OHS')
+    const audits = await getAudits(organizationId)
 
     if (!certificate) {
       return {

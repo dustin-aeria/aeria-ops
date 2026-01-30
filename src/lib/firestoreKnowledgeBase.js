@@ -2,13 +2,13 @@
  * firestoreKnowledgeBase.js
  * Knowledge Base Indexing System for Compliance Assistant
  *
- * This system indexes operator documentation into searchable chunks,
+ * This system indexes organization documentation into searchable chunks,
  * enabling intelligent compliance assistance by finding relevant
  * policies, procedures, and evidence.
  *
  * Collections:
- * - knowledgeBase/{operatorId}/chunks - Indexed document chunks
- * - knowledgeBase/{operatorId}/indexStatus - Indexing status and metadata
+ * - knowledgeBase/{organizationId}/chunks - Indexed document chunks
+ * - knowledgeBase/{organizationId}/indexStatus - Indexing status and metadata
  *
  * @location src/lib/firestoreKnowledgeBase.js
  */
@@ -79,12 +79,12 @@ export const SOURCE_TYPES = {
 
 /**
  * Create a knowledge base chunk
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} chunkData - Chunk data
  * @returns {Promise<Object>}
  */
-export async function createChunk(operatorId, chunkData) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function createChunk(organizationId, chunkData) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
 
   const chunk = {
     // Source identification
@@ -122,13 +122,13 @@ export async function createChunk(operatorId, chunkData) {
 
 /**
  * Create multiple chunks in a batch
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Array} chunks - Array of chunk data
  * @returns {Promise<Object>} Result with counts
  */
-export async function createChunksBatch(operatorId, chunks) {
+export async function createChunksBatch(organizationId, chunks) {
   const batch = writeBatch(db)
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const results = { created: 0, errors: [] }
 
   for (const chunkData of chunks) {
@@ -183,13 +183,13 @@ function buildSearchText(chunkData) {
 }
 
 /**
- * Get all chunks for an operator
- * @param {string} operatorId - Operator ID
+ * Get all chunks for an organization
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters
  * @returns {Promise<Array>}
  */
-export async function getChunks(operatorId, filters = {}) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function getChunks(organizationId, filters = {}) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   let q = query(chunksRef, orderBy('sourceTitle', 'asc'))
 
   if (filters.sourceType) {
@@ -210,12 +210,12 @@ export async function getChunks(operatorId, filters = {}) {
 
 /**
  * Delete all chunks for a source
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {string} sourceType - Source type
  * @param {string} sourceId - Source ID
  */
-export async function deleteChunksBySource(operatorId, sourceType, sourceId) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function deleteChunksBySource(organizationId, sourceType, sourceId) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const q = query(
     chunksRef,
     where('sourceType', '==', sourceType),
@@ -234,11 +234,11 @@ export async function deleteChunksBySource(operatorId, sourceType, sourceId) {
 }
 
 /**
- * Clear all chunks for an operator
- * @param {string} operatorId - Operator ID
+ * Clear all chunks for an organization
+ * @param {string} organizationId - Organization ID
  */
-export async function clearAllChunks(operatorId) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function clearAllChunks(organizationId) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const snapshot = await getDocs(chunksRef)
 
   // Delete in batches of 500 (Firestore limit)
@@ -274,12 +274,12 @@ export async function clearAllChunks(operatorId) {
 
 /**
  * Search knowledge base chunks
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {string} searchQuery - Search query
  * @param {Object} options - Search options
  * @returns {Promise<Array>} Search results with relevance scoring
  */
-export async function searchKnowledgeBase(operatorId, searchQuery, options = {}) {
+export async function searchKnowledgeBase(organizationId, searchQuery, options = {}) {
   const {
     sourceTypes = null,
     categories = null,
@@ -288,7 +288,7 @@ export async function searchKnowledgeBase(operatorId, searchQuery, options = {})
   } = options
 
   // Get all chunks (in production, this would use a search index like Algolia or Typesense)
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   let q = chunksRef
 
   if (sourceTypes && sourceTypes.length > 0) {
@@ -398,12 +398,12 @@ function calculateRelevanceScore(chunk, queryTerms, originalQuery) {
 
 /**
  * Find chunks related to a regulatory reference
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {string} regulatoryRef - Regulatory reference (e.g., "CAR 903.02")
  * @returns {Promise<Array>}
  */
-export async function findByRegulatoryRef(operatorId, regulatoryRef) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function findByRegulatoryRef(organizationId, regulatoryRef) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const q = query(chunksRef, where('regulatoryRefs', 'array-contains', regulatoryRef))
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -411,12 +411,12 @@ export async function findByRegulatoryRef(operatorId, regulatoryRef) {
 
 /**
  * Find chunks by keyword
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {string} keyword - Keyword to search
  * @returns {Promise<Array>}
  */
-export async function findByKeyword(operatorId, keyword) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function findByKeyword(organizationId, keyword) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const q = query(chunksRef, where('keywords', 'array-contains', keyword.toLowerCase()))
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -427,12 +427,12 @@ export async function findByKeyword(operatorId, keyword) {
 // ============================================
 
 /**
- * Get indexing status for an operator
- * @param {string} operatorId - Operator ID
+ * Get indexing status for an organization
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>}
  */
-export async function getIndexStatus(operatorId) {
-  const statusRef = doc(db, 'knowledgeBase', operatorId, 'meta', 'indexStatus')
+export async function getIndexStatus(organizationId) {
+  const statusRef = doc(db, 'knowledgeBase', organizationId, 'meta', 'indexStatus')
   const snapshot = await getDoc(statusRef)
 
   if (!snapshot.exists()) {
@@ -449,11 +449,11 @@ export async function getIndexStatus(operatorId) {
 
 /**
  * Update indexing status
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} status - Status data
  */
-export async function updateIndexStatus(operatorId, status) {
-  const statusRef = doc(db, 'knowledgeBase', operatorId, 'meta', 'indexStatus')
+export async function updateIndexStatus(organizationId, status) {
+  const statusRef = doc(db, 'knowledgeBase', organizationId, 'meta', 'indexStatus')
   await setDoc(statusRef, {
     ...status,
     lastUpdated: serverTimestamp()
@@ -462,11 +462,11 @@ export async function updateIndexStatus(operatorId, status) {
 
 /**
  * Calculate and update index statistics
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>} Updated statistics
  */
-export async function refreshIndexStats(operatorId) {
-  const chunksRef = collection(db, 'knowledgeBase', operatorId, 'chunks')
+export async function refreshIndexStats(organizationId) {
+  const chunksRef = collection(db, 'knowledgeBase', organizationId, 'chunks')
   const snapshot = await getDocs(chunksRef)
 
   const stats = {
@@ -508,7 +508,7 @@ export async function refreshIndexStats(operatorId) {
     regulatoryRefs: [...stats.regulatoryRefs]
   }
 
-  await updateIndexStatus(operatorId, status)
+  await updateIndexStatus(organizationId, status)
   return status
 }
 
@@ -518,11 +518,11 @@ export async function refreshIndexStats(operatorId) {
 
 /**
  * Find relevant documentation for a compliance requirement
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} requirement - Compliance requirement object
  * @returns {Promise<Object>} Suggestions with ranked results
  */
-export async function findRelevantDocs(operatorId, requirement) {
+export async function findRelevantDocs(organizationId, requirement) {
   const suggestions = {
     directMatches: [],
     relatedMatches: [],
@@ -532,13 +532,13 @@ export async function findRelevantDocs(operatorId, requirement) {
 
   // Search by regulatory reference if present
   if (requirement.regulatoryRef) {
-    const regMatches = await findByRegulatoryRef(operatorId, requirement.regulatoryRef)
+    const regMatches = await findByRegulatoryRef(organizationId, requirement.regulatoryRef)
     suggestions.directMatches.push(...regMatches.slice(0, 5))
   }
 
   // Search by requirement text
   const textMatches = await searchKnowledgeBase(
-    operatorId,
+    organizationId,
     requirement.shortText || requirement.text,
     { maxResults: 10 }
   )
@@ -550,7 +550,7 @@ export async function findRelevantDocs(operatorId, requirement) {
   if (requirement.suggestedPolicies && requirement.suggestedPolicies.length > 0) {
     for (const policyNumber of requirement.suggestedPolicies) {
       const policyChunks = await searchKnowledgeBase(
-        operatorId,
+        organizationId,
         policyNumber,
         { sourceTypes: ['policy'], maxResults: 3 }
       )
@@ -575,7 +575,7 @@ export async function findRelevantDocs(operatorId, requirement) {
   if (requirement.guidance) {
     const keywords = extractKeywords(requirement.guidance)
     for (const keyword of keywords.slice(0, 3)) {
-      const keywordMatches = await findByKeyword(operatorId, keyword)
+      const keywordMatches = await findByKeyword(organizationId, keyword)
       suggestions.relatedMatches.push(...keywordMatches.filter(
         m => !suggestions.directMatches.some(d => d.id === m.id) &&
           !suggestions.relatedMatches.some(r => r.id === m.id)

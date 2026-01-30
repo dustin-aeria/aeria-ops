@@ -173,7 +173,7 @@ export async function createAttachment(attachmentData, file = null) {
   if (file) {
     const timestamp = Date.now()
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const path = `attachments/${attachmentData.operatorId}/${attachmentData.entityType}/${attachmentData.entityId}/${timestamp}_${safeName}`
+    const path = `attachments/${attachmentData.organizationId}/${attachmentData.entityType}/${attachmentData.entityId}/${timestamp}_${safeName}`
 
     fileData = await uploadFile(file, path, {
       uploadedBy: attachmentData.uploadedBy,
@@ -183,7 +183,7 @@ export async function createAttachment(attachmentData, file = null) {
   }
 
   const attachment = {
-    operatorId: attachmentData.operatorId,
+    organizationId: attachmentData.organizationId,
     entityType: attachmentData.entityType, // project, equipment, aircraft, incident, etc.
     entityId: attachmentData.entityId,
     name: attachmentData.name || file?.name || 'Untitled',
@@ -230,10 +230,10 @@ export async function getEntityAttachments(entityType, entityId) {
 /**
  * Get attachments by category
  */
-export async function getAttachmentsByCategory(operatorId, category) {
+export async function getAttachmentsByCategory(organizationId, category) {
   const q = query(
     collection(db, 'attachments'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('category', '==', category),
     orderBy('createdAt', 'desc')
   )
@@ -250,10 +250,10 @@ export async function getAttachmentsByCategory(operatorId, category) {
 /**
  * Search attachments
  */
-export async function searchAttachments(operatorId, searchQuery) {
+export async function searchAttachments(organizationId, searchQuery) {
   const q = query(
     collection(db, 'attachments'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('createdAt', 'desc')
   )
 
@@ -325,12 +325,12 @@ export async function deleteAttachment(attachmentId) {
 // ============================================
 
 /**
- * Get total storage used by operator
+ * Get total storage used by organization
  */
-export async function getStorageUsage(operatorId) {
+export async function getStorageUsage(organizationId) {
   const q = query(
     collection(db, 'attachments'),
-    where('operatorId', '==', operatorId)
+    where('organizationId', '==', organizationId)
   )
 
   const snapshot = await getDocs(q)

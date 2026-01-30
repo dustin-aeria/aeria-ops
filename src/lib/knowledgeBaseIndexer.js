@@ -1,6 +1,6 @@
 /**
  * knowledgeBaseIndexer.js
- * Utilities for indexing operator documentation into the Knowledge Base
+ * Utilities for indexing organization documentation into the Knowledge Base
  *
  * This module provides functions to:
  * - Parse policies from policyContent.js into searchable chunks
@@ -201,12 +201,12 @@ export function policyToChunks(policy) {
 }
 
 /**
- * Index all policies for an operator
- * @param {string} operatorId - Operator ID
+ * Index all policies for an organization
+ * @param {string} organizationId - Organization ID
  * @param {Object} options - Indexing options
  * @returns {Promise<Object>} Result with counts
  */
-export async function indexAllPolicies(operatorId, options = {}) {
+export async function indexAllPolicies(organizationId, options = {}) {
   const { clearExisting = false } = options
   const results = {
     success: true,
@@ -220,7 +220,7 @@ export async function indexAllPolicies(operatorId, options = {}) {
     // Optionally clear existing policy chunks
     if (clearExisting) {
       // Get all policy chunks and delete them
-      const existingChunks = await deleteAllPolicyChunks(operatorId)
+      const existingChunks = await deleteAllPolicyChunks(organizationId)
       logger.debug(`Cleared ${existingChunks.deleted} existing policy chunks`)
     }
 
@@ -254,7 +254,7 @@ export async function indexAllPolicies(operatorId, options = {}) {
 
     // Batch create chunks
     if (allChunks.length > 0) {
-      const batchResult = await createChunksBatch(operatorId, allChunks)
+      const batchResult = await createChunksBatch(organizationId, allChunks)
       results.chunks = batchResult.created
       results.errors.push(...batchResult.errors)
     }
@@ -263,7 +263,7 @@ export async function indexAllPolicies(operatorId, options = {}) {
     results.success = results.errors.length === 0
 
     // Update index stats
-    await refreshIndexStats(operatorId)
+    await refreshIndexStats(organizationId)
 
     return results
   } catch (error) {
@@ -275,17 +275,17 @@ export async function indexAllPolicies(operatorId, options = {}) {
 
 /**
  * Delete all policy chunks
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  */
-async function deleteAllPolicyChunks(operatorId) {
+async function deleteAllPolicyChunks(organizationId) {
   const { getChunks } = await import('./firestoreKnowledgeBase')
-  const chunks = await getChunks(operatorId, { sourceType: 'policy' })
+  const chunks = await getChunks(organizationId, { sourceType: 'policy' })
 
   const sourceIds = [...new Set(chunks.map(c => c.sourceId))]
   let totalDeleted = 0
 
   for (const sourceId of sourceIds) {
-    const result = await deleteChunksBySource(operatorId, 'policy', sourceId)
+    const result = await deleteChunksBySource(organizationId, 'policy', sourceId)
     totalDeleted += result.deleted
   }
 
@@ -294,19 +294,19 @@ async function deleteAllPolicyChunks(operatorId) {
 
 /**
  * Index a single policy (for updates)
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} policy - Policy data
  */
-export async function indexSinglePolicy(operatorId, policy) {
+export async function indexSinglePolicy(organizationId, policy) {
   // Delete existing chunks for this policy
-  await deleteChunksBySource(operatorId, 'policy', policy.id || `pol-${policy.number}`)
+  await deleteChunksBySource(organizationId, 'policy', policy.id || `pol-${policy.number}`)
 
   // Create new chunks
   const chunks = policyToChunks(policy)
-  const result = await createChunksBatch(operatorId, chunks)
+  const result = await createChunksBatch(organizationId, chunks)
 
   // Update stats
-  await refreshIndexStats(operatorId)
+  await refreshIndexStats(organizationId)
 
   return result
 }
@@ -454,19 +454,19 @@ export function projectToChunks(project) {
 
 /**
  * Index a project
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} project - Project data
  */
-export async function indexProject(operatorId, project) {
+export async function indexProject(organizationId, project) {
   // Delete existing chunks
-  await deleteChunksBySource(operatorId, 'project', project.id)
+  await deleteChunksBySource(organizationId, 'project', project.id)
 
   // Create new chunks
   const chunks = projectToChunks(project)
-  const result = await createChunksBatch(operatorId, chunks)
+  const result = await createChunksBatch(organizationId, chunks)
 
   // Update stats
-  await refreshIndexStats(operatorId)
+  await refreshIndexStats(organizationId)
 
   return result
 }
@@ -510,14 +510,14 @@ export function equipmentToChunks(equipment) {
 
 /**
  * Index equipment/aircraft
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} equipment - Equipment data
  */
-export async function indexEquipment(operatorId, equipment) {
-  await deleteChunksBySource(operatorId, 'equipment', equipment.id)
+export async function indexEquipment(organizationId, equipment) {
+  await deleteChunksBySource(organizationId, 'equipment', equipment.id)
   const chunks = equipmentToChunks(equipment)
-  const result = await createChunksBatch(operatorId, chunks)
-  await refreshIndexStats(operatorId)
+  const result = await createChunksBatch(organizationId, chunks)
+  await refreshIndexStats(organizationId)
   return result
 }
 
@@ -558,14 +558,14 @@ export function crewToChunks(crew) {
 
 /**
  * Index crew member
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} crew - Crew data
  */
-export async function indexCrew(operatorId, crew) {
-  await deleteChunksBySource(operatorId, 'crew', crew.id)
+export async function indexCrew(organizationId, crew) {
+  await deleteChunksBySource(organizationId, 'crew', crew.id)
   const chunks = crewToChunks(crew)
-  const result = await createChunksBatch(operatorId, chunks)
-  await refreshIndexStats(operatorId)
+  const result = await createChunksBatch(organizationId, chunks)
+  await refreshIndexStats(organizationId)
   return result
 }
 
@@ -574,12 +574,12 @@ export async function indexCrew(operatorId, crew) {
 // ============================================
 
 /**
- * Perform full reindex of all operator documentation
- * @param {string} operatorId - Operator ID
+ * Perform full reindex of all organization documentation
+ * @param {string} organizationId - Organization ID
  * @param {Object} options - Options
  * @returns {Promise<Object>} Results
  */
-export async function fullReindex(operatorId, options = {}) {
+export async function fullReindex(organizationId, options = {}) {
   const results = {
     success: true,
     policies: { indexed: 0, chunks: 0 },
@@ -591,10 +591,10 @@ export async function fullReindex(operatorId, options = {}) {
 
   try {
     // Clear all existing chunks
-    await clearAllChunks(operatorId)
+    await clearAllChunks(organizationId)
 
     // Index policies
-    const policyResult = await indexAllPolicies(operatorId, { clearExisting: false })
+    const policyResult = await indexAllPolicies(organizationId, { clearExisting: false })
     results.policies = {
       indexed: policyResult.indexed,
       chunks: policyResult.chunks
@@ -605,7 +605,7 @@ export async function fullReindex(operatorId, options = {}) {
     // They would be called from their respective components/pages
 
     // Update final stats
-    await refreshIndexStats(operatorId)
+    await refreshIndexStats(organizationId)
 
     return results
   } catch (error) {

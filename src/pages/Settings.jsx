@@ -1,14 +1,14 @@
 /**
  * Settings.jsx
  * Account, Company, and Branding Settings with save functionality
- * 
+ *
  * @location src/pages/Settings.jsx
- * @action REPLACE
  */
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Building, Shield, Bell, Palette, Check, Loader2, Database, AlertCircle, CheckCircle2, Globe, Phone, FolderOpen } from 'lucide-react'
+import { useOrganization } from '../hooks/useOrganization'
+import { User, Building, Shield, Bell, Palette, Check, Loader2, Database, AlertCircle, CheckCircle2, Globe, Phone, FolderOpen, Users } from 'lucide-react'
 import { updateOperator } from '../lib/firestore'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -19,13 +19,16 @@ import InsuranceManager from '../components/insurance/InsuranceManager'
 import RegulatoryFrameworkSelector from '../components/settings/RegulatoryFrameworkSelector'
 import EmergencyContactsManager from '../components/settings/EmergencyContactsManager'
 import CategoryManager from '../components/policies/CategoryManager'
+import OrganizationSettings from './settings/OrganizationSettings'
+import TeamMembers from './settings/TeamMembers'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
 import { logger } from '../lib/logger'
 
 export default function Settings() {
   const { userProfile, user } = useAuth()
+  const { organizationId } = useOrganization()
   const [activeTab, setActiveTab] = useState('profile')
-  
+
   // Profile state
   const [profileData, setProfileData] = useState({
     firstName: '',
@@ -35,7 +38,7 @@ export default function Settings() {
   })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
-  
+
   // Company state
   const [companyData, setCompanyData] = useState({
     name: '',
@@ -47,7 +50,7 @@ export default function Settings() {
   })
   const [companySaving, setCompanySaving] = useState(false)
   const [companySaved, setCompanySaved] = useState(false)
-  
+
   // Notification state
   const [notificationData, setNotificationData] = useState({
     projectUpdates: true,
@@ -57,7 +60,7 @@ export default function Settings() {
   })
   const [notificationSaving, setNotificationSaving] = useState(false)
   const [notificationSaved, setNotificationSaved] = useState(false)
-  
+
   // Security state
   const [passwordData, setPasswordData] = useState({
     current: '',
@@ -201,26 +204,26 @@ export default function Settings() {
   const handleUpdatePassword = async () => {
     setPasswordError('')
     setPasswordSuccess(false)
-    
+
     if (passwordData.new !== passwordData.confirm) {
       setPasswordError('New passwords do not match')
       return
     }
-    
+
     if (passwordData.new.length < 6) {
       setPasswordError('Password must be at least 6 characters')
       return
     }
-    
+
     setPasswordSaving(true)
     try {
       // Re-authenticate user first
       const credential = EmailAuthProvider.credential(user.email, passwordData.current)
       await reauthenticateWithCredential(auth.currentUser, credential)
-      
+
       // Update password
       await updatePassword(auth.currentUser, passwordData.new)
-      
+
       setPasswordSuccess(true)
       setPasswordData({ current: '', new: '', confirm: '' })
       setTimeout(() => setPasswordSuccess(false), 3000)
@@ -241,7 +244,9 @@ export default function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Your personal information' },
-    { id: 'company', label: 'Company', icon: Building, description: 'Organization settings' },
+    { id: 'organization', label: 'Organization', icon: Building, description: 'Organization settings' },
+    { id: 'team', label: 'Team', icon: Users, description: 'Team members & roles' },
+    { id: 'company', label: 'Company', icon: Building, description: 'Company details' },
     { id: 'regulatory', label: 'Regulatory', icon: Globe, description: 'Aviation authority & regulations' },
     { id: 'emergency', label: 'Emergency', icon: Phone, description: 'Emergency contacts' },
     { id: 'policies', label: 'Policy Categories', icon: FolderOpen, description: 'Manage policy categories' },
@@ -253,8 +258,8 @@ export default function Settings() {
   ]
 
   const SaveButton = ({ saving, saved, onClick, label = 'Save Changes' }) => (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       disabled={saving}
       className="btn-primary inline-flex items-center gap-2"
     >
@@ -321,9 +326,9 @@ export default function Settings() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">First Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
+                  <input
+                    type="text"
+                    className="input"
                     value={profileData.firstName}
                     onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
                     placeholder="First name"
@@ -331,9 +336,9 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className="label">Last Name</label>
-                  <input 
-                    type="text" 
-                    className="input" 
+                  <input
+                    type="text"
+                    className="input"
                     value={profileData.lastName}
                     onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
                     placeholder="Last name"
@@ -342,19 +347,19 @@ export default function Settings() {
               </div>
               <div>
                 <label className="label">Email</label>
-                <input 
-                  type="email" 
-                  className="input bg-gray-50" 
-                  value={userProfile?.email || ''} 
-                  disabled 
+                <input
+                  type="email"
+                  className="input bg-gray-50"
+                  value={userProfile?.email || ''}
+                  disabled
                 />
                 <p className="text-xs text-gray-500 mt-1">Contact administrator to change email</p>
               </div>
               <div>
                 <label className="label">Phone</label>
-                <input 
-                  type="tel" 
-                  className="input" 
+                <input
+                  type="tel"
+                  className="input"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="+1 (555) 123-4567"
@@ -362,23 +367,33 @@ export default function Settings() {
               </div>
               <div>
                 <label className="label">Certifications</label>
-                <input 
-                  type="text" 
-                  className="input" 
+                <input
+                  type="text"
+                  className="input"
                   value={profileData.certifications}
                   onChange={(e) => setProfileData({ ...profileData, certifications: e.target.value })}
                   placeholder="Advanced RPAS, etc."
                 />
               </div>
               <div className="pt-4">
-                <SaveButton 
-                  saving={profileSaving} 
-                  saved={profileSaved} 
-                  onClick={handleSaveProfile} 
+                <SaveButton
+                  saving={profileSaving}
+                  saved={profileSaved}
+                  onClick={handleSaveProfile}
                 />
               </div>
             </div>
           </div>
+        )}
+
+        {/* Organization Tab */}
+        {activeTab === 'organization' && (
+          <OrganizationSettings />
+        )}
+
+        {/* Team Tab */}
+        {activeTab === 'team' && (
+          <TeamMembers />
         )}
 
         {/* Company Tab */}
@@ -390,24 +405,24 @@ export default function Settings() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Company</h2>
-                <p className="text-sm text-gray-500">Organization settings</p>
+                <p className="text-sm text-gray-500">Company details</p>
               </div>
             </div>
             <div className="space-y-4">
               <div>
                 <label className="label">Company Name</label>
-                <input 
-                  type="text" 
-                  className="input" 
+                <input
+                  type="text"
+                  className="input"
                   value={companyData.name}
                   onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                 />
               </div>
               <div>
                 <label className="label">Transport Canada Operator Number</label>
-                <input 
-                  type="text" 
-                  className="input" 
+                <input
+                  type="text"
+                  className="input"
                   value={companyData.operatorNumber}
                   onChange={(e) => setCompanyData({ ...companyData, operatorNumber: e.target.value })}
                 />
@@ -415,18 +430,18 @@ export default function Settings() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Primary Contact Email</label>
-                  <input 
-                    type="email" 
-                    className="input" 
+                  <input
+                    type="email"
+                    className="input"
                     value={companyData.email}
                     onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="label">Primary Contact Phone</label>
-                  <input 
-                    type="tel" 
-                    className="input" 
+                  <input
+                    type="tel"
+                    className="input"
                     value={companyData.phone}
                     onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
@@ -435,28 +450,21 @@ export default function Settings() {
               </div>
               <div>
                 <label className="label">Address</label>
-                <textarea 
-                  className="input min-h-[80px]" 
+                <textarea
+                  className="input min-h-[80px]"
                   value={companyData.address}
                   onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })}
                   placeholder="Street Address, City, Province, Postal Code"
                 />
               </div>
               <div className="pt-4">
-                <SaveButton 
-                  saving={companySaving} 
-                  saved={companySaved} 
-                  onClick={handleSaveCompany} 
+                <SaveButton
+                  saving={companySaving}
+                  saved={companySaved}
+                  onClick={() => handleSaveCompany()}
                 />
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Insurance Tab */}
-        {activeTab === 'insurance' && (
-          <div className="card">
-            <InsuranceManager operatorId={user?.uid} />
           </div>
         )}
 
@@ -489,6 +497,13 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Insurance Tab */}
+        {activeTab === 'insurance' && (
+          <div className="card">
+            <InsuranceManager organizationId={organizationId} />
+          </div>
+        )}
+
         {/* Branding Tab */}
         {activeTab === 'branding' && (
           <BrandingSettings />
@@ -512,11 +527,11 @@ export default function Settings() {
                   <p className="font-medium text-gray-900">Project Updates</p>
                   <p className="text-sm text-gray-500">Get notified when projects are updated</p>
                 </div>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={notificationData.projectUpdates}
                   onChange={(e) => setNotificationData({ ...notificationData, projectUpdates: e.target.checked })}
-                  className="w-5 h-5 text-aeria-navy rounded" 
+                  className="w-5 h-5 text-aeria-navy rounded"
                 />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
@@ -524,11 +539,11 @@ export default function Settings() {
                   <p className="font-medium text-gray-900">Approval Requests</p>
                   <p className="text-sm text-gray-500">Get notified when approval is needed</p>
                 </div>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={notificationData.approvalRequests}
                   onChange={(e) => setNotificationData({ ...notificationData, approvalRequests: e.target.checked })}
-                  className="w-5 h-5 text-aeria-navy rounded" 
+                  className="w-5 h-5 text-aeria-navy rounded"
                 />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
@@ -536,11 +551,11 @@ export default function Settings() {
                   <p className="font-medium text-gray-900">Maintenance Reminders</p>
                   <p className="text-sm text-gray-500">Get reminders for aircraft maintenance</p>
                 </div>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={notificationData.maintenanceReminders}
                   onChange={(e) => setNotificationData({ ...notificationData, maintenanceReminders: e.target.checked })}
-                  className="w-5 h-5 text-aeria-navy rounded" 
+                  className="w-5 h-5 text-aeria-navy rounded"
                 />
               </label>
               <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer">
@@ -548,19 +563,19 @@ export default function Settings() {
                   <p className="font-medium text-gray-900">Weekly Summary</p>
                   <p className="text-sm text-gray-500">Receive weekly activity summary</p>
                 </div>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={notificationData.weeklySummary}
                   onChange={(e) => setNotificationData({ ...notificationData, weeklySummary: e.target.checked })}
-                  className="w-5 h-5 text-aeria-navy rounded" 
+                  className="w-5 h-5 text-aeria-navy rounded"
                 />
               </label>
               <div className="pt-4">
-                <SaveButton 
-                  saving={notificationSaving} 
-                  saved={notificationSaved} 
+                <SaveButton
+                  saving={notificationSaving}
+                  saved={notificationSaved}
                   onClick={handleSaveNotifications}
-                  label="Save Preferences" 
+                  label="Save Preferences"
                 />
               </div>
             </div>

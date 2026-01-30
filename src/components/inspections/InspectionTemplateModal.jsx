@@ -17,7 +17,7 @@ export default function InspectionTemplateModal({
   isOpen,
   onClose,
   template,
-  operatorId
+  organizationId
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -104,7 +104,7 @@ export default function InspectionTemplateModal({
     try {
       const templateData = {
         ...formData,
-        operatorId,
+        organizationId,
         checklistItems
       }
 

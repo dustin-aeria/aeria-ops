@@ -1,7 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ============================================
+    // Helper Functions
+    // ============================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -10,69 +13,614 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Projects collection
-    match /projects/{projectId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated();
+    // Check if user is a member of the organization
+    function isMemberOf(orgId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/organizationMembers/$(request.auth.uid + '_' + orgId));
     }
 
-    // Distribution Lists collection
-    match /distributionLists/{listId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated();
+    // Get user's membership document for an organization
+    function getMembership(orgId) {
+      return get(/databases/$(database)/documents/organizationMembers/$(request.auth.uid + '_' + orgId));
     }
 
-    // Notifications collection
-    match /notifications/{notificationId} {
-      // Users can read their own notifications
+    // Check if user has a specific role or higher in the organization
+    function hasRole(orgId, allowedRoles) {
+      let membership = getMembership(orgId);
+      return membership != null &&
+        membership.data.status == 'active' &&
+        membership.data.role in allowedRoles;
+    }
+
+    // Check if user can manage team (owner or admin)
+    function canManageTeam(orgId) {
+      return hasRole(orgId, ['owner', 'admin']);
+    }
+
+    // Check if user can delete content (owner, admin, or manager)
+    function canDelete(orgId) {
+      return hasRole(orgId, ['owner', 'admin', 'manager']);
+    }
+
+    // Check if user can create/edit content (all except viewer)
+    function canEdit(orgId) {
+      return hasRole(orgId, ['owner', 'admin', 'manager', 'operator']);
+    }
+
+    // ============================================
+    // Organizations Collection
+    // ============================================
+    match /organizations/{orgId} {
+      // Members can read their organization
+      allow read: if isMemberOf(orgId);
+
+      // Only authenticated users can create (will be validated by app logic)
+      allow create: if isAuthenticated();
+
+      // Only owners and admins can update organization settings
+      allow update: if canManageTeam(orgId);
+
+      // Only owners can delete the organization
+      allow delete: if hasRole(orgId, ['owner']);
+    }
+
+    // ============================================
+    // Organization Members Collection
+    // ============================================
+    match /organizationMembers/{membershipId} {
+      // Members can read their organization's memberships
       allow read: if isAuthenticated() &&
-        (resource.data.userId == request.auth.uid ||
-         request.auth.uid in resource.data.recipientIds);
+        isMemberOf(resource.data.organizationId);
 
-      // Authenticated users can create notifications
-      allow create: if isAuthenticated();
+      // Owners and admins can create new memberships (invites)
+      allow create: if isAuthenticated() &&
+        canManageTeam(request.resource.data.organizationId);
 
-      // Allow updates (for marking as read, delivery status)
-      allow update: if isAuthenticated();
+      // Owners and admins can update roles, users can accept their own invite
+      allow update: if isAuthenticated() && (
+        canManageTeam(resource.data.organizationId) ||
+        (resource.data.userId == request.auth.uid && resource.data.status == 'invited')
+      );
+
+      // Owners and admins can remove members, users can remove themselves
+      allow delete: if isAuthenticated() && (
+        canManageTeam(resource.data.organizationId) ||
+        resource.data.userId == request.auth.uid
+      );
     }
 
-    // Operators collection
+    // ============================================
+    // Projects Collection
+    // ============================================
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Clients Collection
+    // ============================================
+    match /clients/{clientId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Equipment Collection
+    // ============================================
+    match /equipment/{equipmentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Aircraft Collection
+    // ============================================
+    match /aircraft/{aircraftId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Incidents Collection
+    // ============================================
+    match /incidents/{incidentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // CAPAs Collection
+    // ============================================
+    match /capas/{capaId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Training Collections
+    // ============================================
+    match /trainingModules/{moduleId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /trainingRecords/{recordId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Compliance Collection
+    // ============================================
+    match /complianceApplications/{appId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Inspections Collections
+    // ============================================
+    match /inspections/{inspectionId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /inspectionTemplates/{templateId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /inspectionFindings/{findingId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // COR Audit Collections
+    // ============================================
+    match /corAudits/{auditId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /corAuditors/{auditorId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /corCertificates/{certId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // JHSC Collections
+    // ============================================
+    match /jhscMeetings/{meetingId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /jhscMembers/{memberId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /jhscRecommendations/{recId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Policies & Procedures Collections
+    // ============================================
+    match /policies/{policyId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /procedures/{procedureId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Hazard Assessments Collection
+    // ============================================
+    match /hazardAssessments/{assessmentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Maintenance Collection
+    // ============================================
+    match /maintenanceLogs/{logId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Permits Collection
+    // ============================================
+    match /permits/{permitId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Checklists Collections
+    // ============================================
+    match /checklists/{checklistId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    match /checklistTemplates/{templateId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Flight Logs Collection
+    // ============================================
+    match /flightLogs/{logId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Attachments Collection
+    // ============================================
+    match /attachments/{attachmentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Comments Collection
+    // ============================================
+    match /comments/{commentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      // Users can update/delete their own comments, or managers+ can delete any
+      allow update: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        canEdit(resource.data.organizationId)
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        canDelete(resource.data.organizationId)
+      );
+    }
+
+    // ============================================
+    // Notifications Collection
+    // ============================================
+    match /notifications/{notificationId} {
+      // Users can read notifications for their organization
+      allow read: if isAuthenticated() && (
+        isMemberOf(resource.data.organizationId) ||
+        resource.data.userId == request.auth.uid ||
+        request.auth.uid in resource.data.recipientIds
+      );
+      // Authenticated users in the org can create notifications
+      allow create: if isAuthenticated() &&
+        isMemberOf(request.resource.data.organizationId);
+      // Allow updates for marking as read, delivery status
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isMemberOf(resource.data.organizationId)
+      );
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================
+    // Distribution Lists Collection
+    // ============================================
+    match /distributionLists/{listId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Insurance Collection
+    // ============================================
+    match /insurancePolicies/{policyId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Templates Collection
+    // ============================================
+    match /templates/{templateId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Knowledge Base Collection
+    // ============================================
+    match /knowledgeBase/{articleId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Equipment Assignments Collection
+    // ============================================
+    match /equipmentAssignments/{assignmentId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Time Entries Collection
+    // ============================================
+    match /timeEntries/{entryId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Services Collection
+    // ============================================
+    match /services/{serviceId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Safety Metrics Collection
+    // ============================================
+    match /safetyMetrics/{metricId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Operators Collection (User Profiles)
+    // ============================================
     match /operators/{operatorId} {
+      // Users can read operators in their organization or their own profile
       allow read: if isAuthenticated();
+
+      // Users can create/update their own profile
       allow create, update: if isOwner(operatorId) || isAuthenticated();
+
+      // Only the user can delete their profile
       allow delete: if isOwner(operatorId);
     }
 
-    // Equipment collection
-    match /equipment/{equipmentId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated();
+    // ============================================
+    // User Preferences Collection
+    // ============================================
+    match /userPreferences/{userId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // Clients collection
-    match /clients/{clientId} {
+    // ============================================
+    // Settings Collection (Global app settings)
+    // ============================================
+    match /settings/{settingId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated();
-    }
-
-    // Incidents collection
-    match /incidents/{incidentId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated();
-    }
-
-    // CAPAs collection
-    match /capas/{capaId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated();
-    }
-
-    // Safety metrics collection
-    match /safetyMetrics/{metricId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated();
+      allow write: if isAuthenticated(); // Consider restricting to admins
     }
   }
 }

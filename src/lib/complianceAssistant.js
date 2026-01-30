@@ -652,7 +652,7 @@ export function findRelatedRequirements(requirement, allRequirements, responses)
  * Get comprehensive suggestions for a requirement
  * Combines all sources: Knowledge Base, Project Data, Templates, Pattern Analysis
  */
-export async function getComprehensiveSuggestions(operatorId, requirement, project = null, allRequirements = [], responses = {}) {
+export async function getComprehensiveSuggestions(organizationId, requirement, project = null, allRequirements = [], responses = {}) {
   const suggestions = {
     fromKnowledgeBase: null,
     fromProject: [],
@@ -674,7 +674,7 @@ export async function getComprehensiveSuggestions(operatorId, requirement, proje
   try {
     // Use pattern analysis to enhance KB search
     const searchTerms = suggestions.patternAnalysis?.searchTerms || []
-    suggestions.fromKnowledgeBase = await findRelevantDocs(operatorId, {
+    suggestions.fromKnowledgeBase = await findRelevantDocs(organizationId, {
       ...requirement,
       // Add pattern-detected keywords to improve search
       keywords: [...(requirement.keywords || []), ...searchTerms]

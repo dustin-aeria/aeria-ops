@@ -20,7 +20,7 @@ export default function InspectionFindingModal({
   onClose,
   finding,
   inspection,
-  operatorId
+  organizationId
 }) {
   const [formData, setFormData] = useState({
     description: '',
@@ -97,7 +97,7 @@ export default function InspectionFindingModal({
     try {
       const findingData = {
         ...formData,
-        operatorId,
+        organizationId,
         inspectionId: inspection?.id,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : null
       }

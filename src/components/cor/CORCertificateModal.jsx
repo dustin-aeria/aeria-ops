@@ -16,7 +16,7 @@ export default function CORCertificateModal({
   isOpen,
   onClose,
   certificate,
-  operatorId,
+  organizationId,
   audits = []
 }) {
   const [formData, setFormData] = useState({
@@ -62,7 +62,7 @@ export default function CORCertificateModal({
     try {
       const certData = {
         ...formData,
-        operatorId,
+        organizationId,
         issueDate: new Date(formData.issueDate),
         workSitesIncluded: formData.workSitesIncluded.split(',').map(s => s.trim()).filter(Boolean),
         classificationUnits: formData.classificationUnits.split(',').map(s => s.trim()).filter(Boolean)

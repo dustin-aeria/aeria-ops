@@ -85,6 +85,7 @@ import ProjectCosts from '../components/projects/ProjectCosts'
 import ProjectTimeEntries from '../components/projects/ProjectTimeEntries'
 import PhaseNavigator, { PHASES, getPhaseForTab, getTabsForPhase } from '../components/projects/PhaseNavigator'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import { logger } from '../lib/logger'
 
 const tabs = [
@@ -139,6 +140,7 @@ export default function ProjectView() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -686,7 +688,7 @@ export default function ProjectView() {
           <ProjectEquipment project={project} onUpdate={handleUpdate} />
         )}
         {activeTab === 'team' && (
-          <ProjectComments project={project} operatorId={user?.uid} />
+          <ProjectComments project={project} organizationId={organizationId} />
         )}
         {activeTab === 'notifications' && (
           <ProjectTeam project={project} onUpdate={handleUpdate} />

@@ -277,7 +277,7 @@ export async function createMaintenanceRecord(data) {
     // Legacy fields for backward compatibility
     equipmentId: data.equipmentId || data.itemId || null,
     equipmentName: data.equipmentName || data.itemName || '',
-    operatorId: data.operatorId || null,
+    organizationId: data.organizationId || null,
     type: data.type || data.serviceType || 'scheduled',
     scheduledDate: data.scheduledDate || data.serviceDate || null,
 

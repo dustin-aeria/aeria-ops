@@ -53,7 +53,7 @@ export async function createComment(commentData) {
   const comment = {
     entityType: commentData.entityType || 'project', // project, incident, capa, etc.
     entityId: commentData.entityId,
-    operatorId: commentData.operatorId,
+    organizationId: commentData.organizationId,
     type: commentData.type || 'comment',
     content: commentData.content,
     authorId: commentData.authorId,
@@ -74,7 +74,7 @@ export async function createComment(commentData) {
   await logActivity({
     entityType: comment.entityType,
     entityId: comment.entityId,
-    operatorId: comment.operatorId,
+    organizationId: comment.organizationId,
     type: 'commented',
     actorId: comment.authorId,
     actorName: comment.authorName,
@@ -191,7 +191,7 @@ export async function logActivity(activityData) {
   const activity = {
     entityType: activityData.entityType,
     entityId: activityData.entityId,
-    operatorId: activityData.operatorId,
+    organizationId: activityData.organizationId,
     type: activityData.type,
     actorId: activityData.actorId,
     actorName: activityData.actorName,
@@ -245,12 +245,12 @@ export function subscribeToActivityLog(entityType, entityId, callback, limit = 5
 }
 
 /**
- * Get all recent activity for an operator (across all entities)
+ * Get all recent activity for an organization (across all entities)
  */
-export async function getRecentOperatorActivity(operatorId, limit = 100) {
+export async function getRecentOrganizationActivity(organizationId, limit = 100) {
   const q = query(
     collection(db, 'activities'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('createdAt', 'desc')
   )
 
@@ -269,12 +269,12 @@ export async function getRecentOperatorActivity(operatorId, limit = 100) {
 /**
  * Get comments where user is mentioned
  */
-export async function getMentions(userId, operatorId, options = {}) {
+export async function getMentions(userId, organizationId, options = {}) {
   const { unreadOnly = false } = options
 
   const q = query(
     collection(db, 'comments'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('mentions', 'array-contains', userId),
     orderBy('createdAt', 'desc')
   )
@@ -322,7 +322,7 @@ export default {
   logActivity,
   getActivityLog,
   subscribeToActivityLog,
-  getRecentOperatorActivity,
+  getRecentOrganizationActivity,
   getMentions,
   getCommentCount
 }

@@ -301,7 +301,7 @@ export async function sendManualNotification(projectId, {
       recipients = [...recipients, ...individualRecipients]
     }
 
-    // Deduplicate by operatorId or email
+    // Deduplicate by organizationId or email
     const uniqueRecipients = deduplicateRecipients(recipients)
 
     // Filter to only use specified channels
@@ -367,12 +367,12 @@ async function collectRecipientsFromLists(listIds) {
 }
 
 /**
- * Deduplicate recipients by operatorId or email
+ * Deduplicate recipients by organizationId or email
  */
 function deduplicateRecipients(recipients) {
   const seen = new Set()
   return recipients.filter(recipient => {
-    const key = recipient.operatorId || recipient.email
+    const key = recipient.organizationId || recipient.email
     if (!key || seen.has(key)) {
       return false
     }
@@ -405,8 +405,8 @@ async function sendToRecipients(notification, recipients, options = {}) {
 
     const notificationDoc = {
       ...notification,
-      recipientIds: [recipient.operatorId].filter(Boolean),
-      userId: recipient.operatorId || null,
+      recipientIds: [recipient.organizationId].filter(Boolean),
+      userId: recipient.organizationId || null,
       deliveryStatus: {
         inApp: recipient.channels.includes('inApp') && recipient.type === 'operator' ? 'sent' : null,
         email: recipient.channels.includes('email') && recipient.email ? 'pending' : null,

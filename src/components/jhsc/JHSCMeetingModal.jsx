@@ -32,7 +32,7 @@ export default function JHSCMeetingModal({
   isOpen,
   onClose,
   meeting,
-  operatorId,
+  organizationId,
   committeeId,
   members = []
 }) {
@@ -202,7 +202,7 @@ export default function JHSCMeetingModal({
 
     try {
       const meetingData = {
-        operatorId,
+        organizationId,
         committeeId,
         scheduledDate: new Date(formData.scheduledDate),
         location: formData.location,
@@ -242,7 +242,7 @@ export default function JHSCMeetingModal({
       // Create minutes
       const minutesData = {
         meetingId: meeting.id,
-        operatorId,
+        organizationId,
         ...minutes,
         nextMeetingDate: minutes.nextMeetingDate ? new Date(minutes.nextMeetingDate) : null
       }
@@ -253,7 +253,7 @@ export default function JHSCMeetingModal({
         if (rec.description) {
           await createRecommendation({
             ...rec,
-            operatorId,
+            organizationId,
             meetingId: meeting.id
           })
         }

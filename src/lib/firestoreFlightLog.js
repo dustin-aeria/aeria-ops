@@ -59,8 +59,8 @@ export const WEATHER_CONDITIONS = {
  */
 export async function createFlightLog(logData) {
   const log = {
-    // Project and operator info
-    operatorId: logData.operatorId,
+    // Project and organization info
+    organizationId: logData.organizationId,
     projectId: logData.projectId || null,
     projectName: logData.projectName || null,
 
@@ -211,14 +211,14 @@ export async function getPilotFlightLogs(pilotId, options = {}) {
 }
 
 /**
- * Get all flight logs for an operator
+ * Get all flight logs for an organization
  */
-export async function getOperatorFlightLogs(operatorId, options = {}) {
+export async function getOrganizationFlightLogs(organizationId, options = {}) {
   const { startDate = null, endDate = null, limit = 500 } = options
 
   let q = query(
     collection(db, 'flightLogs'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('flightDate', 'desc')
   )
 
@@ -356,11 +356,11 @@ export async function getPilotFlightStats(pilotId) {
 }
 
 /**
- * Get operator flight statistics
+ * Get organization flight statistics
  */
-export async function getOperatorFlightStats(operatorId, options = {}) {
+export async function getOrganizationFlightStats(organizationId, options = {}) {
   const { startDate = null, endDate = null } = options
-  const logs = await getOperatorFlightLogs(operatorId, { startDate, endDate, limit: 10000 })
+  const logs = await getOrganizationFlightLogs(organizationId, { startDate, endDate, limit: 10000 })
   const completedLogs = logs.filter(log => log.status === 'completed')
 
   const totalFlightTime = completedLogs.reduce((sum, log) => sum + (log.flightDuration || 0), 0)
@@ -428,12 +428,12 @@ export default {
   getProjectFlightLogs,
   getAircraftFlightLogs,
   getPilotFlightLogs,
-  getOperatorFlightLogs,
+  getOrganizationFlightLogs,
   getFlightLog,
   updateFlightLog,
   completeFlightLog,
   deleteFlightLog,
   getAircraftFlightStats,
   getPilotFlightStats,
-  getOperatorFlightStats
+  getOrganizationFlightStats
 }

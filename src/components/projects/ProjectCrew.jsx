@@ -74,7 +74,7 @@ export default function ProjectCrew({ project, onUpdate }) {
     if (!operator) return
 
     const newCrewMember = {
-      operatorId: selectedOperator,
+      organizationId: selectedOperator,
       operatorName: `${operator.firstName} ${operator.lastName}`,
       role: role,
       isPrimary: !project.crew?.some(c => c.role === role),
@@ -131,8 +131,8 @@ export default function ProjectCrew({ project, onUpdate }) {
   }
 
   // Get operators not yet assigned
-  const availableOperators = operators.filter(op => 
-    !project.crew?.some(c => c.operatorId === op.id)
+  const availableOperators = operators.filter(op =>
+    !project.crew?.some(c => c.organizationId === op.id)
   )
 
   // Check for required roles
@@ -200,7 +200,7 @@ export default function ProjectCrew({ project, onUpdate }) {
         ) : (
           <div className="space-y-3">
             {project.crew.map((member, index) => {
-              const operator = getOperatorById(member.operatorId)
+              const operator = getOperatorById(member.organizationId)
               const certStatus = getCertStatus(operator)
               const CertIcon = certStatus?.icon
               
@@ -384,7 +384,7 @@ export default function ProjectCrew({ project, onUpdate }) {
           <h3 className="font-medium text-gray-900 mb-3">Emergency Contacts (from crew)</h3>
           <div className="space-y-3">
             {project.crew.map((member, index) => {
-              const operator = getOperatorById(member.operatorId)
+              const operator = getOperatorById(member.organizationId)
               if (!operator?.emergencyContact?.name) return null
               
               return (
@@ -429,7 +429,7 @@ export default function ProjectCrew({ project, onUpdate }) {
 ProjectCrew.propTypes = {
   project: PropTypes.shape({
     crew: PropTypes.arrayOf(PropTypes.shape({
-      operatorId: PropTypes.string,
+      organizationId: PropTypes.string,
       operatorName: PropTypes.string,
       role: PropTypes.string,
       responsibilities: PropTypes.string

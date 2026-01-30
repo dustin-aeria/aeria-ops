@@ -73,7 +73,7 @@ export const getDefaultDistributionListStructure = () => ({
  */
 export const getDefaultMemberStructure = () => ({
   type: 'operator', // 'operator' | 'external'
-  operatorId: null, // If type === 'operator'
+  organizationId: null, // If type === 'operator'
   name: '',
   email: '',
   phone: '',
@@ -178,7 +178,7 @@ export async function addMemberToList(listId, member) {
 
   // Check for duplicates
   const isDuplicate = list.members.some(m =>
-    (m.operatorId && m.operatorId === newMember.operatorId) ||
+    (m.organizationId && m.organizationId === newMember.organizationId) ||
     (m.email && m.email === newMember.email)
   )
 
@@ -200,7 +200,7 @@ export async function removeMemberFromList(listId, memberIdentifier) {
   const list = await getDistributionList(listId)
 
   const updatedMembers = list.members.filter(m =>
-    m.operatorId !== memberIdentifier && m.email !== memberIdentifier
+    m.organizationId !== memberIdentifier && m.email !== memberIdentifier
   )
 
   await updateDistributionList(listId, {
@@ -215,7 +215,7 @@ export async function updateMemberChannels(listId, memberIdentifier, channels) {
   const list = await getDistributionList(listId)
 
   const updatedMembers = list.members.map(m => {
-    if (m.operatorId === memberIdentifier || m.email === memberIdentifier) {
+    if (m.organizationId === memberIdentifier || m.email === memberIdentifier) {
       return { ...m, channels }
     }
     return m
@@ -243,7 +243,7 @@ export async function createDefaultListsForProject(projectId, projectCrew = []) 
     .filter(c => ['PIC', 'Remote Pilot', 'VO'].includes(c.role))
     .map(c => ({
       type: 'operator',
-      operatorId: c.operatorId,
+      organizationId: c.organizationId,
       name: c.operatorName || c.name,
       email: c.email || '',
       phone: c.phone || '',
@@ -280,7 +280,7 @@ export async function createDefaultListsForProject(projectId, projectCrew = []) 
     .filter(c => ['Ground Support', 'Spotter', 'Site Supervisor'].includes(c.role))
     .map(c => ({
       type: 'operator',
-      operatorId: c.operatorId,
+      organizationId: c.organizationId,
       name: c.operatorName || c.name,
       email: c.email || '',
       phone: c.phone || '',
@@ -343,7 +343,7 @@ export async function getAllProjectMembers(projectId) {
 
   lists.forEach(list => {
     list.members.forEach(member => {
-      const key = member.operatorId || member.email
+      const key = member.organizationId || member.email
       if (key && !memberMap.has(key)) {
         memberMap.set(key, {
           ...member,
@@ -367,7 +367,7 @@ export async function getListsContainingMember(projectId, memberIdentifier) {
 
   return lists.filter(list =>
     list.members.some(m =>
-      m.operatorId === memberIdentifier || m.email === memberIdentifier
+      m.organizationId === memberIdentifier || m.email === memberIdentifier
     )
   )
 }
@@ -394,8 +394,8 @@ export function validateMember(member) {
     errors.push('Name is required')
   }
 
-  if (member.type === 'operator' && !member.operatorId) {
-    errors.push('Operator ID is required for operator members')
+  if (member.type === 'operator' && !member.organizationId) {
+    errors.push('Organization ID is required for operator members')
   }
 
   if (member.type === 'external') {

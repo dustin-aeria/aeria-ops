@@ -30,7 +30,7 @@ import {
 } from '../../lib/costEstimator'
 import { getEquipment, getOperators } from '../../lib/firestore'
 
-export default function ProjectCostEstimate({ project, operatorId, onSave }) {
+export default function ProjectCostEstimate({ project, organizationId, onSave }) {
   const [loading, setLoading] = useState(true)
   const [equipment, setEquipment] = useState([])
   const [crew, setCrew] = useState([])
@@ -75,7 +75,7 @@ export default function ProjectCostEstimate({ project, operatorId, onSave }) {
       // Map project crew assignments to full operator objects with rates
       const projectCrew = project?.crew || []
       const crewWithRates = projectCrew.map(assignment => {
-        const operator = operatorsData.find(op => op.id === assignment.operatorId || op.id === assignment.crewMemberId)
+        const operator = operatorsData.find(op => op.id === assignment.organizationId || op.id === assignment.crewMemberId)
         if (operator) {
           return {
             ...assignment,

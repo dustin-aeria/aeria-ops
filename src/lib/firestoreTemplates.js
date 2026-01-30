@@ -67,7 +67,7 @@ export async function createTemplateFromProject(project, templateData) {
     name: templateData.name,
     description: templateData.description || '',
     category: templateData.category || 'other',
-    operatorId: templateData.operatorId,
+    organizationId: templateData.organizationId,
     createdBy: templateData.createdBy,
     createdByName: templateData.createdByName,
     isPublic: templateData.isPublic || false,
@@ -92,7 +92,7 @@ export async function createTemplate(templateData) {
     name: templateData.name,
     description: templateData.description || '',
     category: templateData.category || 'other',
-    operatorId: templateData.operatorId,
+    organizationId: templateData.organizationId,
     createdBy: templateData.createdBy,
     createdByName: templateData.createdByName,
     isPublic: templateData.isPublic || false,
@@ -114,15 +114,15 @@ export async function createTemplate(templateData) {
 // ============================================
 
 /**
- * Get all templates for an operator
+ * Get all templates for an organization
  */
-export async function getTemplates(operatorId, options = {}) {
+export async function getTemplates(organizationId, options = {}) {
   const { category = null, includePublic = true } = options
 
-  // Get operator's templates
+  // Get organization's templates
   let q = query(
     collection(db, 'projectTemplates'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('updatedAt', 'desc')
   )
 
@@ -134,7 +134,7 @@ export async function getTemplates(operatorId, options = {}) {
     updatedAt: doc.data().updatedAt?.toDate()
   }))
 
-  // Optionally include public templates from other operators
+  // Optionally include public templates from other organizations
   if (includePublic) {
     const publicQ = query(
       collection(db, 'projectTemplates'),
@@ -149,7 +149,7 @@ export async function getTemplates(operatorId, options = {}) {
         createdAt: doc.data().createdAt?.toDate(),
         updatedAt: doc.data().updatedAt?.toDate()
       }))
-      .filter(t => t.operatorId !== operatorId) // Exclude own templates
+      .filter(t => t.organizationId !== organizationId) // Exclude own templates
 
     templates = [...templates, ...publicTemplates]
   }

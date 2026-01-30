@@ -37,7 +37,7 @@ import {
   calculateInsuranceStatus
 } from '../../lib/firestoreInsurance'
 
-export default function InsuranceManager({ operatorId }) {
+export default function InsuranceManager({ organizationId }) {
   const [policies, setPolicies] = useState([])
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -64,17 +64,17 @@ export default function InsuranceManager({ operatorId }) {
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    if (operatorId) {
+    if (organizationId) {
       loadData()
     }
-  }, [operatorId])
+  }, [organizationId])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const [policiesData, metricsData] = await Promise.all([
-        getInsurancePolicies(operatorId),
-        getInsuranceMetrics(operatorId)
+        getInsurancePolicies(organizationId),
+        getInsuranceMetrics(organizationId)
       ])
       setPolicies(policiesData)
       setMetrics(metricsData)
@@ -128,7 +128,7 @@ export default function InsuranceManager({ operatorId }) {
     try {
       const policyData = {
         ...formData,
-        operatorId,
+        organizationId,
         effectiveDate: formData.effectiveDate ? new Date(formData.effectiveDate) : null,
         expiryDate: formData.expiryDate ? new Date(formData.expiryDate) : null
       }

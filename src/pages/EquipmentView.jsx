@@ -41,6 +41,7 @@ import EquipmentModal from '../components/EquipmentModal'
 import { generateEquipmentSpecPDF } from '../components/EquipmentSpecSheet'
 import { useBranding } from '../components/BrandingSettings'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import { logger } from '../lib/logger'
 
 // Category icons mapping
@@ -84,7 +85,7 @@ const statusConfig = {
 export default function EquipmentView() {
   const { equipmentId } = useParams()
   const navigate = useNavigate()
-  const { operatorData } = useAuth()
+  const { organizationId } = useOrganization()
   const { branding } = useBranding()
 
   const [equipment, setEquipment] = useState(null)
@@ -424,7 +425,7 @@ export default function EquipmentView() {
       {activeTab === 'maintenance' && (
         <MaintenanceTracker
           equipment={equipment}
-          operatorId={operatorData?.id}
+          organizationId={organizationId}
         />
       )}
 

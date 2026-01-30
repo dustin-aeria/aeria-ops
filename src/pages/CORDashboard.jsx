@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import { Link } from 'react-router-dom'
 import {
   Award,
@@ -46,7 +47,7 @@ const COR_ELEMENTS = [
 
 export default function CORDashboard() {
   const { user, userProfile } = useAuth()
-  const operatorId = userProfile?.operatorId || user?.uid
+  const { organizationId } = useOrganization()
 
   // Data state
   const [loading, setLoading] = useState(true)
@@ -60,12 +61,12 @@ export default function CORDashboard() {
   const [recommendations, setRecommendations] = useState([])
 
   useEffect(() => {
-    if (operatorId) {
+    if (organizationId) {
       loadDashboardData()
     } else {
       setLoading(false)
     }
-  }, [operatorId])
+  }, [organizationId])
 
   const loadDashboardData = async () => {
     setLoading(true)
@@ -83,14 +84,14 @@ export default function CORDashboard() {
         training,
         inspections
       ] = await Promise.all([
-        calculateJHSCMetrics(operatorId).catch(() => null),
-        getCORTrainingMetrics(operatorId).catch(() => null),
-        calculateCORInspectionMetrics(operatorId).catch(() => null),
-        calculateCORReadiness(operatorId).catch(() => ({ score: 0, elementScores: {} })),
-        getCertificates(operatorId).catch(() => []),
-        getAudits(operatorId, { status: 'scheduled' }).catch(() => []),
-        getTrainingSummary(operatorId).catch(() => null),
-        getInspectionSummary(operatorId).catch(() => null)
+        calculateJHSCMetrics(organizationId).catch(() => null),
+        getCORTrainingMetrics(organizationId).catch(() => null),
+        calculateCORInspectionMetrics(organizationId).catch(() => null),
+        calculateCORReadiness(organizationId).catch(() => ({ score: 0, elementScores: {} })),
+        getCertificates(organizationId).catch(() => []),
+        getAudits(organizationId, { status: 'scheduled' }).catch(() => []),
+        getTrainingSummary(organizationId).catch(() => null),
+        getInspectionSummary(organizationId).catch(() => null)
       ])
 
       // Calculate element scores from various sources
@@ -176,12 +177,12 @@ export default function CORDashboard() {
     )
   }
 
-  if (!operatorId) {
+  if (!organizationId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center text-gray-500">
           <Award className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>No operator profile found.</p>
+          <p>No organization found.</p>
           <p className="text-sm mt-2">Please contact your administrator.</p>
         </div>
       </div>

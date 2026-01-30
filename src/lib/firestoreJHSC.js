@@ -106,13 +106,13 @@ export const COR_REQUIREMENTS = {
 /**
  * Generate a unique meeting number in format JHSC-YYYY-NNN
  */
-export async function generateMeetingNumber(operatorId) {
+export async function generateMeetingNumber(organizationId) {
   const year = new Date().getFullYear()
   const yearPrefix = `JHSC-${year}-`
 
   const q = query(
     jhscMeetingsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('meetingNumber', '>=', yearPrefix),
     where('meetingNumber', '<', `JHSC-${year + 1}-`),
     orderBy('meetingNumber', 'desc'),
@@ -134,13 +134,13 @@ export async function generateMeetingNumber(operatorId) {
 /**
  * Generate a unique recommendation number in format JHSC-REC-YYYY-NNN
  */
-export async function generateRecommendationNumber(operatorId) {
+export async function generateRecommendationNumber(organizationId) {
   const year = new Date().getFullYear()
   const yearPrefix = `JHSC-REC-${year}-`
 
   const q = query(
     jhscRecommendationsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('recommendationNumber', '>=', yearPrefix),
     where('recommendationNumber', '<', `JHSC-REC-${year + 1}-`),
     orderBy('recommendationNumber', 'desc'),
@@ -166,12 +166,12 @@ export async function generateRecommendationNumber(operatorId) {
 /**
  * Get or create the JHSC committee for an operator
  */
-export async function getOrCreateCommittee(operatorId, committeeData = {}) {
+export async function getOrCreateCommittee(organizationId, committeeData = {}) {
   return withErrorHandling(async () => {
     // Check if committee exists
     const q = query(
       jhscCommitteesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       limit(1)
     )
     const snapshot = await getDocs(q)
@@ -183,7 +183,7 @@ export async function getOrCreateCommittee(operatorId, committeeData = {}) {
 
     // Create new committee with defaults
     const newCommittee = {
-      operatorId,
+      organizationId,
       name: committeeData.name || 'Joint Health & Safety Committee',
       meetingFrequency: committeeData.meetingFrequency || 'monthly',
       minimumWorkerReps: committeeData.minimumWorkerReps || 2,
@@ -278,18 +278,18 @@ export async function updateMember(memberId, updates) {
 /**
  * Get all members for a committee
  */
-export async function getCommitteeMembers(operatorId, includeInactive = false) {
+export async function getCommitteeMembers(organizationId, includeInactive = false) {
   return withErrorHandling(async () => {
     let q = query(
       jhscMembersRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('role')
     )
 
     if (!includeInactive) {
       q = query(
         jhscMembersRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         where('status', '==', 'active'),
         orderBy('role')
       )
@@ -317,9 +317,9 @@ export async function deactivateMember(memberId) {
 /**
  * Check if committee has required composition
  */
-export async function checkCommitteeComposition(operatorId) {
+export async function checkCommitteeComposition(organizationId) {
   return withErrorHandling(async () => {
-    const members = await getCommitteeMembers(operatorId)
+    const members = await getCommitteeMembers(organizationId)
 
     const workerReps = members.filter(m =>
       MEMBER_ROLES[m.role]?.type === 'worker'
@@ -353,7 +353,7 @@ export async function checkCommitteeComposition(operatorId) {
  */
 export async function scheduleMeeting(meetingData) {
   return withErrorHandling(async () => {
-    const meetingNumber = await generateMeetingNumber(meetingData.operatorId)
+    const meetingNumber = await generateMeetingNumber(meetingData.organizationId)
 
     const newMeeting = {
       ...meetingData,
@@ -402,13 +402,13 @@ export async function getMeeting(meetingId) {
 /**
  * Get all meetings for an operator
  */
-export async function getMeetings(operatorId, options = {}) {
+export async function getMeetings(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { status, limitCount = 50, year } = options
 
     let q = query(
       jhscMeetingsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('scheduledDate', 'desc'),
       limit(limitCount)
     )
@@ -416,7 +416,7 @@ export async function getMeetings(operatorId, options = {}) {
     if (status) {
       q = query(
         jhscMeetingsRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         where('status', '==', status),
         orderBy('scheduledDate', 'desc'),
         limit(limitCount)
@@ -592,7 +592,7 @@ export async function approveAndDistributeMinutes(minutesId, approvalData) {
  */
 export async function createRecommendation(recData) {
   return withErrorHandling(async () => {
-    const recommendationNumber = await generateRecommendationNumber(recData.operatorId)
+    const recommendationNumber = await generateRecommendationNumber(recData.organizationId)
 
     // Calculate target date based on priority
     const priorityConfig = RECOMMENDATION_PRIORITY[recData.priority] || RECOMMENDATION_PRIORITY.medium
@@ -650,7 +650,7 @@ export async function getRecommendation(recId) {
 /**
  * Get all recommendations for an operator
  */
-export async function getRecommendations(operatorId, options = {}) {
+export async function getRecommendations(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { status, meetingId, limitCount = 100 } = options
 
@@ -658,14 +658,14 @@ export async function getRecommendations(operatorId, options = {}) {
     if (meetingId) {
       q = query(
         jhscRecommendationsRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         where('meetingId', '==', meetingId),
         orderBy('createdAt', 'desc')
       )
     } else if (status) {
       q = query(
         jhscRecommendationsRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         where('status', '==', status),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
@@ -673,7 +673,7 @@ export async function getRecommendations(operatorId, options = {}) {
     } else {
       q = query(
         jhscRecommendationsRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
       )
@@ -751,16 +751,16 @@ export async function verifyRecommendation(recId, verificationData) {
 /**
  * Calculate JHSC compliance metrics for COR audits
  */
-export async function calculateJHSCMetrics(operatorId, year = new Date().getFullYear()) {
+export async function calculateJHSCMetrics(organizationId, year = new Date().getFullYear()) {
   return withErrorHandling(async () => {
     const [committee, members, meetings, recommendations] = await Promise.all([
-      getOrCreateCommittee(operatorId),
-      getCommitteeMembers(operatorId),
-      getMeetings(operatorId, { year }),
-      getRecommendations(operatorId)
+      getOrCreateCommittee(organizationId),
+      getCommitteeMembers(organizationId),
+      getMeetings(organizationId, { year }),
+      getRecommendations(organizationId)
     ])
 
-    const composition = await checkCommitteeComposition(operatorId)
+    const composition = await checkCommitteeComposition(organizationId)
 
     // Calculate meeting compliance
     const completedMeetings = meetings.filter(m => m.status === 'completed')

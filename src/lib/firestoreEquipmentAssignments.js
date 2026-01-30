@@ -43,7 +43,7 @@ export async function createEquipmentAssignment(assignmentData) {
     equipmentName: assignmentData.equipmentName,
     projectId: assignmentData.projectId,
     projectName: assignmentData.projectName,
-    operatorId: assignmentData.operatorId,
+    organizationId: assignmentData.organizationId,
     assignedBy: assignmentData.assignedBy,
     assignedByName: assignmentData.assignedByName,
     status: assignmentData.status || 'reserved',
@@ -109,12 +109,12 @@ export async function getEquipmentAssignments(equipmentId) {
 }
 
 /**
- * Get all active assignments for an operator
+ * Get all active assignments for an organization
  */
-export async function getActiveAssignments(operatorId) {
+export async function getActiveAssignments(organizationId) {
   const q = query(
     collection(db, 'equipmentAssignments'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('status', 'in', ['reserved', 'deployed']),
     orderBy('startDate', 'asc')
   )

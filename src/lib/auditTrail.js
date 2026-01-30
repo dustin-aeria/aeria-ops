@@ -91,7 +91,7 @@ export const ENTITY_TYPES = {
  */
 export async function logAuditEvent(eventData) {
   const event = {
-    operatorId: eventData.operatorId,
+    organizationId: eventData.organizationId,
     userId: eventData.userId,
     userName: eventData.userName,
     userEmail: eventData.userEmail,
@@ -126,9 +126,9 @@ export async function logBulkAuditEvents(events) {
 // ============================================
 
 /**
- * Get audit logs for an operator
+ * Get audit logs for an organization
  */
-export async function getOperatorAuditLogs(operatorId, options = {}) {
+export async function getOrganizationAuditLogs(organizationId, options = {}) {
   const {
     action = null,
     entityType = null,
@@ -140,7 +140,7 @@ export async function getOperatorAuditLogs(operatorId, options = {}) {
 
   let q = query(
     collection(db, 'auditLogs'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('timestamp', 'desc'),
     limit(maxResults)
   )
@@ -218,12 +218,12 @@ export async function getUserAuditLogs(userId, options = {}) {
 }
 
 /**
- * Get recent activity across operator
+ * Get recent activity across organization
  */
-export async function getRecentActivity(operatorId, maxResults = 20) {
+export async function getRecentActivity(organizationId, maxResults = 20) {
   const q = query(
     collection(db, 'auditLogs'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('timestamp', 'desc'),
     limit(maxResults)
   )
@@ -243,8 +243,8 @@ export async function getRecentActivity(operatorId, maxResults = 20) {
 /**
  * Get activity summary for a period
  */
-export async function getActivitySummary(operatorId, startDate, endDate) {
-  const logs = await getOperatorAuditLogs(operatorId, {
+export async function getActivitySummary(organizationId, startDate, endDate) {
+  const logs = await getOrganizationAuditLogs(organizationId, {
     startDate,
     endDate,
     maxResults: 10000
@@ -292,7 +292,7 @@ export async function getActivitySummary(operatorId, startDate, endDate) {
 /**
  * Get user activity statistics
  */
-export async function getUserActivityStats(operatorId, userId) {
+export async function getUserActivityStats(organizationId, userId) {
   const logs = await getUserAuditLogs(userId, { maxResults: 1000 })
 
   const stats = {
@@ -377,7 +377,7 @@ export default {
   ENTITY_TYPES,
   logAuditEvent,
   logBulkAuditEvents,
-  getOperatorAuditLogs,
+  getOrganizationAuditLogs,
   getEntityAuditLogs,
   getUserAuditLogs,
   getRecentActivity,

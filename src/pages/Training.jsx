@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   GraduationCap,
   BookOpen,
@@ -46,7 +47,7 @@ import TrainingRecordModal from '../components/training/TrainingRecordModal'
 
 export default function Training() {
   const { user } = useAuth()
-  const operatorId = user?.uid
+  const { organizationId } = useOrganization()
 
   // State
   const [loading, setLoading] = useState(true)
@@ -68,24 +69,24 @@ export default function Training() {
 
   // Load data
   const loadData = useCallback(async () => {
-    if (!operatorId) {
+    if (!organizationId) {
       setLoading(false)
       return
     }
 
     setLoading(true)
     try {
-      let coursesData = await getCourses(operatorId)
+      let coursesData = await getCourses(organizationId)
 
       // If no courses exist, seed defaults
       if (coursesData.length === 0) {
-        await seedDefaultCourses(operatorId)
-        coursesData = await getCourses(operatorId)
+        await seedDefaultCourses(organizationId)
+        coursesData = await getCourses(organizationId)
       }
 
       const [recordsData, metricsData] = await Promise.all([
-        getAllTrainingRecords(operatorId),
-        getTrainingMetrics(operatorId)
+        getAllTrainingRecords(organizationId),
+        getTrainingMetrics(organizationId)
       ])
 
       setCourses(coursesData)
@@ -96,7 +97,7 @@ export default function Training() {
     } finally {
       setLoading(false)
     }
-  }, [operatorId])
+  }, [organizationId])
 
   useEffect(() => {
     loadData()
@@ -184,7 +185,7 @@ export default function Training() {
     )
   }
 
-  if (!operatorId) {
+  if (!organizationId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center text-gray-500">
@@ -678,7 +679,7 @@ export default function Training() {
           isOpen={courseModalOpen}
           onClose={handleModalClose}
           course={selectedCourse}
-          operatorId={operatorId}
+          organizationId={organizationId}
         />
       )}
 
@@ -688,7 +689,7 @@ export default function Training() {
           onClose={handleModalClose}
           record={selectedRecord}
           course={selectedCourse}
-          operatorId={operatorId}
+          organizationId={organizationId}
           courses={courses}
         />
       )}

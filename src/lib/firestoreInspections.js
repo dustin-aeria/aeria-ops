@@ -123,13 +123,13 @@ export const COR_INSPECTION_REQUIREMENTS = {
 // ============================================================================
 
 /**
- * Get all inspection templates for an operator
+ * Get all inspection templates for an organization
  */
-export const getInspectionTemplates = async (operatorId) => {
+export const getInspectionTemplates = async (organizationId) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionTemplatesRef,
-      where('operatorId', '==', operatorId)
+      where('organizationId', '==', organizationId)
     )
     const snapshot = await getDocs(q)
     const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -142,11 +142,11 @@ export const getInspectionTemplates = async (operatorId) => {
 /**
  * Get active templates by type
  */
-export const getActiveTemplatesByType = async (operatorId, type) => {
+export const getActiveTemplatesByType = async (organizationId, type) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionTemplatesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('type', '==', type),
       where('isActive', '==', true)
     )
@@ -228,11 +228,11 @@ export const deleteInspectionTemplate = async (templateId) => {
 /**
  * Generate inspection number
  */
-const generateInspectionNumber = async (operatorId) => {
+const generateInspectionNumber = async (organizationId) => {
   const year = new Date().getFullYear()
   const q = query(
     inspectionsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('inspectionNumber', '>=', `INS-${year}-`),
     where('inspectionNumber', '<', `INS-${year + 1}-`)
   )
@@ -242,13 +242,13 @@ const generateInspectionNumber = async (operatorId) => {
 }
 
 /**
- * Get all inspections for an operator
+ * Get all inspections for an organization
  */
-export const getInspections = async (operatorId, filters = {}) => {
+export const getInspections = async (organizationId, filters = {}) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionsRef,
-      where('operatorId', '==', operatorId)
+      where('organizationId', '==', organizationId)
     )
 
     const snapshot = await getDocs(q)
@@ -292,7 +292,7 @@ export const getInspections = async (operatorId, filters = {}) => {
 /**
  * Get upcoming inspections
  */
-export const getUpcomingInspections = async (operatorId, days = 7) => {
+export const getUpcomingInspections = async (organizationId, days = 7) => {
   return withErrorHandling(async () => {
     const now = new Date()
     const futureDate = new Date()
@@ -300,7 +300,7 @@ export const getUpcomingInspections = async (operatorId, days = 7) => {
 
     const q = query(
       inspectionsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('status', '==', 'scheduled')
     )
 
@@ -324,13 +324,13 @@ export const getUpcomingInspections = async (operatorId, days = 7) => {
 /**
  * Get overdue inspections
  */
-export const getOverdueInspections = async (operatorId) => {
+export const getOverdueInspections = async (organizationId) => {
   return withErrorHandling(async () => {
     const now = new Date()
 
     const q = query(
       inspectionsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('status', '==', 'scheduled')
     )
 
@@ -367,7 +367,7 @@ export const getInspection = async (inspectionId) => {
  */
 export const scheduleInspection = async (inspectionData) => {
   return withErrorHandling(async () => {
-    const inspectionNumber = await generateInspectionNumber(inspectionData.operatorId)
+    const inspectionNumber = await generateInspectionNumber(inspectionData.organizationId)
 
     // Get template details if templateId provided
     let templateDetails = {}
@@ -513,10 +513,10 @@ export const updateInspection = async (inspectionId, updates) => {
 /**
  * Generate finding number
  */
-const generateFindingNumber = async (operatorId, inspectionNumber) => {
+const generateFindingNumber = async (organizationId, inspectionNumber) => {
   const q = query(
     inspectionFindingsRef,
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     where('inspectionNumber', '==', inspectionNumber)
   )
   const snapshot = await getDocs(q)
@@ -525,13 +525,13 @@ const generateFindingNumber = async (operatorId, inspectionNumber) => {
 }
 
 /**
- * Get all findings for an operator
+ * Get all findings for an organization
  */
-export const getFindings = async (operatorId, filters = {}) => {
+export const getFindings = async (organizationId, filters = {}) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionFindingsRef,
-      where('operatorId', '==', operatorId)
+      where('organizationId', '==', organizationId)
     )
 
     const snapshot = await getDocs(q)
@@ -573,11 +573,11 @@ export const getFindings = async (operatorId, filters = {}) => {
 /**
  * Get open findings
  */
-export const getOpenFindings = async (operatorId) => {
+export const getOpenFindings = async (organizationId) => {
   return withErrorHandling(async () => {
     const q = query(
       inspectionFindingsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('status', 'in', ['open', 'in_progress'])
     )
     const snapshot = await getDocs(q)
@@ -630,7 +630,7 @@ export const getFinding = async (findingId) => {
 export const createFinding = async (findingData) => {
   return withErrorHandling(async () => {
     const inspection = await getInspection(findingData.inspectionId)
-    const findingNumber = await generateFindingNumber(findingData.operatorId, inspection.inspectionNumber)
+    const findingNumber = await generateFindingNumber(findingData.organizationId, inspection.inspectionNumber)
 
     // Calculate due date based on risk level
     const daysToCorrect = {
@@ -710,7 +710,7 @@ export const linkFindingToCapa = async (findingId, capaId) => {
 /**
  * Schedule next recurring inspection based on template frequency
  */
-export const scheduleNextRecurringInspection = async (operatorId, templateId, baseDate = new Date()) => {
+export const scheduleNextRecurringInspection = async (organizationId, templateId, baseDate = new Date()) => {
   return withErrorHandling(async () => {
     const template = await getInspectionTemplate(templateId)
     if (!template.isActive) {
@@ -726,7 +726,7 @@ export const scheduleNextRecurringInspection = async (operatorId, templateId, ba
     scheduledDate.setDate(scheduledDate.getDate() + frequency.days)
 
     return scheduleInspection({
-      operatorId,
+      organizationId,
       templateId,
       scheduledDate,
       isRecurring: true,
@@ -738,7 +738,7 @@ export const scheduleNextRecurringInspection = async (operatorId, templateId, ba
 /**
  * Get inspection schedule compliance
  */
-export const getInspectionScheduleCompliance = async (operatorId, templateId, lookbackDays = 90) => {
+export const getInspectionScheduleCompliance = async (organizationId, templateId, lookbackDays = 90) => {
   return withErrorHandling(async () => {
     const template = await getInspectionTemplate(templateId)
     const frequency = INSPECTION_FREQUENCY[template.frequency]
@@ -752,7 +752,7 @@ export const getInspectionScheduleCompliance = async (operatorId, templateId, lo
 
     const q = query(
       inspectionsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('templateId', '==', templateId),
       where('status', '==', 'completed')
     )
@@ -793,12 +793,12 @@ export const getInspectionScheduleCompliance = async (operatorId, templateId, lo
 /**
  * Calculate COR Element 5 (Inspections) readiness score
  */
-export const calculateCORInspectionMetrics = async (operatorId) => {
+export const calculateCORInspectionMetrics = async (organizationId) => {
   return withErrorHandling(async () => {
     const [templates, inspections, findings] = await Promise.all([
-      getInspectionTemplates(operatorId),
-      getInspections(operatorId),
-      getFindings(operatorId)
+      getInspectionTemplates(organizationId),
+      getInspections(organizationId),
+      getFindings(organizationId)
     ])
 
     // COR Criteria:
@@ -910,11 +910,11 @@ const generateInspectionRecommendations = (scores, metrics) => {
 /**
  * Get inspection summary for dashboard
  */
-export const getInspectionSummary = async (operatorId) => {
+export const getInspectionSummary = async (organizationId) => {
   return withErrorHandling(async () => {
     const [inspections, findings] = await Promise.all([
-      getInspections(operatorId),
-      getFindings(operatorId)
+      getInspections(organizationId),
+      getFindings(organizationId)
     ])
 
     const now = new Date()
@@ -954,9 +954,9 @@ export const getInspectionSummary = async (operatorId) => {
 // ============================================================================
 
 /**
- * Create default inspection templates for a new operator
+ * Create default inspection templates for a new organization
  */
-export const createDefaultTemplates = async (operatorId) => {
+export const createDefaultTemplates = async (organizationId) => {
   return withErrorHandling(async () => {
     const batch = writeBatch(db)
     const now = serverTimestamp()
@@ -1029,7 +1029,7 @@ export const createDefaultTemplates = async (operatorId) => {
       const docRef = doc(inspectionTemplatesRef)
       batch.set(docRef, {
         ...template,
-        operatorId,
+        organizationId,
         isActive: true,
         usageCount: 0,
         createdAt: now,

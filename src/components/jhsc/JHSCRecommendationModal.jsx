@@ -28,7 +28,7 @@ export default function JHSCRecommendationModal({
   isOpen,
   onClose,
   recommendation,
-  operatorId,
+  organizationId,
   meetings = []
 }) {
   const [formData, setFormData] = useState({
@@ -103,7 +103,7 @@ export default function JHSCRecommendationModal({
     try {
       await createRecommendation({
         ...formData,
-        operatorId
+        organizationId
       })
       onClose()
     } catch (err) {

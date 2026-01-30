@@ -101,7 +101,7 @@ export default function ProjectTemplates({ project, onApplyTemplate, mode = 'sel
         category: newTemplate.category,
         isPublic: newTemplate.isPublic,
         tags: newTemplate.tags.split(',').map(t => t.trim()).filter(Boolean),
-        operatorId: user.uid,
+        organizationId: user.uid,
         createdBy: user.uid,
         createdByName: userProfile?.firstName
           ? `${userProfile.firstName} ${userProfile.lastName}`
@@ -154,8 +154,8 @@ export default function ProjectTemplates({ project, onApplyTemplate, mode = 'sel
   })
 
   // Separate own vs public templates
-  const ownTemplates = filteredTemplates.filter(t => t.operatorId === user?.uid)
-  const publicTemplates = filteredTemplates.filter(t => t.operatorId !== user?.uid)
+  const ownTemplates = filteredTemplates.filter(t => t.organizationId === user?.uid)
+  const publicTemplates = filteredTemplates.filter(t => t.organizationId !== user?.uid)
 
   if (loading) {
     return (

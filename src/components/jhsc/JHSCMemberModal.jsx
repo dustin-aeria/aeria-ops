@@ -16,7 +16,7 @@ export default function JHSCMemberModal({
   isOpen,
   onClose,
   member,
-  operatorId,
+  organizationId,
   committeeId
 }) {
   const [formData, setFormData] = useState({
@@ -71,7 +71,7 @@ export default function JHSCMemberModal({
     try {
       const memberData = {
         ...formData,
-        operatorId,
+        organizationId,
         committeeId,
         appointedDate: formData.appointedDate ? new Date(formData.appointedDate) : null,
         termExpiry: formData.termExpiry ? new Date(formData.termExpiry) : null,

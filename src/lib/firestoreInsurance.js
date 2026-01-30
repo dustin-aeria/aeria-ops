@@ -173,13 +173,13 @@ export async function getInsurancePolicy(policyId) {
 }
 
 /**
- * Get all insurance policies for an operator
+ * Get all insurance policies for an organization
  */
-export async function getInsurancePolicies(operatorId) {
+export async function getInsurancePolicies(organizationId) {
   try {
     const q = query(
       insuranceRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('expiryDate', 'asc')
     )
 
@@ -283,9 +283,9 @@ export async function removePolicyDocument(policyId, documentPath) {
 /**
  * Get insurance metrics
  */
-export async function getInsuranceMetrics(operatorId) {
+export async function getInsuranceMetrics(organizationId) {
   try {
-    const policies = await getInsurancePolicies(operatorId)
+    const policies = await getInsurancePolicies(organizationId)
 
     const now = new Date()
     let active = 0
@@ -338,9 +338,9 @@ export async function getInsuranceMetrics(operatorId) {
 /**
  * Get insurance summary for compliance reports
  */
-export async function getInsuranceSummary(operatorId) {
+export async function getInsuranceSummary(organizationId) {
   try {
-    const policies = await getInsurancePolicies(operatorId)
+    const policies = await getInsurancePolicies(organizationId)
 
     return policies.map(policy => ({
       id: policy.id,

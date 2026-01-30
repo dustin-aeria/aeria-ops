@@ -16,7 +16,7 @@ export default function TrainingCourseModal({
   isOpen,
   onClose,
   course,
-  operatorId
+  organizationId
 }) {
   const [formData, setFormData] = useState({
     courseCode: '',
@@ -67,7 +67,7 @@ export default function TrainingCourseModal({
     try {
       const courseData = {
         ...formData,
-        operatorId
+        organizationId
       }
 
       if (isEditing) {

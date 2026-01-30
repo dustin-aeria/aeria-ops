@@ -1,12 +1,6 @@
 /**
- * firestorePermits.js
- * Firestore operations for permits and certificates management
- *
- * Features:
- * - CRUD operations for permits (SFOCs, CORs, airspace authorizations, etc.)
- * - Status calculation based on expiry dates
- * - Document management integration
- * - Calendar event generation for expiries
+ * Permits & Certificates Data Operations
+ * Store and track regulatory permits (SFOCs, CORs, airspace authorizations, etc.)
  *
  * @location src/lib/firestorePermits.js
  */
@@ -14,212 +8,172 @@
 import {
   collection,
   doc,
+  getDoc,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
-  getDoc,
-  getDocs,
   query,
   where,
   orderBy,
-  Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  Timestamp
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { logger } from './logger'
+import { uploadPermitDocument, deletePermitDocument } from './storageHelpers'
 
 // ============================================
-// CONSTANTS
+// COLLECTION REFERENCES
+// ============================================
+
+const permitsRef = collection(db, 'permits')
+
+// ============================================
+// CONSTANTS & ENUMS
 // ============================================
 
 export const PERMIT_TYPES = {
   sfoc: {
-    id: 'sfoc',
-    name: 'Special Flight Operations Certificate',
-    shortName: 'SFOC',
+    label: 'Special Flight Operations Certificate',
+    shortLabel: 'SFOC',
     authority: 'Transport Canada',
-    icon: 'FileCheck',
-    color: 'blue'
+    icon: 'FileCheck'
   },
   cor: {
-    id: 'cor',
-    name: 'Certificate of Registration',
-    shortName: 'COR',
+    label: 'Certificate of Registration',
+    shortLabel: 'COR',
     authority: 'Transport Canada',
-    icon: 'Award',
-    color: 'purple'
+    icon: 'Award'
   },
   land_access: {
-    id: 'land_access',
-    name: 'Land Access Permit',
-    shortName: 'Land Access',
+    label: 'Land Access Permit',
+    shortLabel: 'Land Access',
     authority: 'Various',
-    icon: 'MapPin',
-    color: 'green'
+    icon: 'MapPin'
   },
   airspace_auth: {
-    id: 'airspace_auth',
-    name: 'Airspace Authorization',
-    shortName: 'Airspace Auth',
+    label: 'Airspace Authorization',
+    shortLabel: 'Airspace Auth',
     authority: 'NAV CANADA',
-    icon: 'Radio',
-    color: 'cyan'
+    icon: 'Navigation'
   },
   client_approval: {
-    id: 'client_approval',
-    name: 'Client Approval',
-    shortName: 'Client Approval',
+    label: 'Client Approval',
+    shortLabel: 'Client Approval',
     authority: 'Client',
-    icon: 'UserCheck',
-    color: 'amber'
+    icon: 'UserCheck'
   },
   other: {
-    id: 'other',
-    name: 'Other Permit/Certificate',
-    shortName: 'Other',
+    label: 'Other Permit/Certificate',
+    shortLabel: 'Other',
     authority: 'Various',
-    icon: 'FileText',
-    color: 'gray'
+    icon: 'FileText'
   }
 }
 
 export const PERMIT_STATUS = {
-  active: {
-    id: 'active',
-    label: 'Active',
-    color: 'green',
-    bgClass: 'bg-green-100 text-green-800',
-    borderClass: 'border-green-200'
-  },
-  expiring_soon: {
-    id: 'expiring_soon',
-    label: 'Expiring Soon',
-    color: 'amber',
-    bgClass: 'bg-amber-100 text-amber-800',
-    borderClass: 'border-amber-200'
-  },
-  expired: {
-    id: 'expired',
-    label: 'Expired',
-    color: 'red',
-    bgClass: 'bg-red-100 text-red-800',
-    borderClass: 'border-red-200'
-  },
-  suspended: {
-    id: 'suspended',
-    label: 'Suspended',
-    color: 'gray',
-    bgClass: 'bg-gray-100 text-gray-800',
-    borderClass: 'border-gray-200'
-  }
+  active: { label: 'Active', color: 'bg-green-100 text-green-800', borderColor: 'border-green-500' },
+  expiring_soon: { label: 'Expiring Soon', color: 'bg-yellow-100 text-yellow-800', borderColor: 'border-yellow-500' },
+  expired: { label: 'Expired', color: 'bg-red-100 text-red-800', borderColor: 'border-red-500' },
+  suspended: { label: 'Suspended', color: 'bg-gray-100 text-gray-800', borderColor: 'border-gray-500' }
 }
 
-export const OPERATION_TYPES = [
-  { id: 'vlos', label: 'VLOS Operations' },
-  { id: 'bvlos', label: 'BVLOS Operations' },
-  { id: 'night', label: 'Night Operations' },
-  { id: 'over_people', label: 'Operations Over People' },
-  { id: 'controlled_airspace', label: 'Controlled Airspace' },
-  { id: 'altitude_above_400', label: 'Above 400ft AGL' },
-  { id: 'urban', label: 'Urban/Built-up Areas' },
-  { id: 'industrial', label: 'Industrial Sites' },
-  { id: 'pipeline', label: 'Pipeline Inspection' },
-  { id: 'powerline', label: 'Powerline Inspection' },
-  { id: 'survey', label: 'Aerial Survey/Mapping' },
-  { id: 'photography', label: 'Photography/Videography' },
-  { id: 'lidar', label: 'LiDAR Operations' },
-  { id: 'thermal', label: 'Thermal Imaging' }
-]
+export const OPERATION_TYPES = {
+  bvlos: { label: 'BVLOS', description: 'Beyond Visual Line of Sight' },
+  night: { label: 'Night Operations', description: 'Operations during night hours' },
+  over_people: { label: 'Over People', description: 'Operations over people' },
+  controlled_airspace: { label: 'Controlled Airspace', description: 'Operations in controlled airspace' },
+  dangerous_goods: { label: 'Dangerous Goods', description: 'Transport of dangerous goods' },
+  urban: { label: 'Urban Operations', description: 'Operations in urban environments' },
+  swarm: { label: 'Swarm Operations', description: 'Multi-RPAS operations' }
+}
 
-export const CONDITION_CATEGORIES = [
-  { id: 'operational', label: 'Operational' },
-  { id: 'notification', label: 'Notification' },
-  { id: 'equipment', label: 'Equipment' },
-  { id: 'personnel', label: 'Personnel' },
-  { id: 'reporting', label: 'Reporting' }
-]
+export const CONDITION_CATEGORIES = {
+  operational: { label: 'Operational', color: 'text-blue-600' },
+  notification: { label: 'Notification', color: 'text-purple-600' },
+  equipment: { label: 'Equipment', color: 'text-orange-600' },
+  personnel: { label: 'Personnel', color: 'text-green-600' },
+  reporting: { label: 'Reporting', color: 'text-cyan-600' }
+}
 
-// Warning threshold in days
-const EXPIRY_WARNING_DAYS = 30
+export const EXPIRY_WARNING_DAYS = 30 // Warn 30 days before expiry
 
 // ============================================
-// STATUS CALCULATION
+// HELPER FUNCTIONS
 // ============================================
 
 /**
  * Calculate permit status based on expiry date
- * @param {Object} permit - Permit object with expiryDate
- * @returns {string} Status ID
  */
 export function calculatePermitStatus(permit) {
   // If manually suspended, keep that status
-  if (permit.status === 'suspended') {
-    return 'suspended'
-  }
+  if (permit.status === 'suspended') return 'suspended'
 
-  // No expiry date = always active
-  if (!permit.expiryDate) {
-    return 'active'
-  }
+  // If no expiry date, it's active
+  if (!permit.expiryDate) return 'active'
 
   const now = new Date()
-  const expiryDate = permit.expiryDate instanceof Timestamp
-    ? permit.expiryDate.toDate()
-    : new Date(permit.expiryDate)
-
-  // Check if expired
-  if (expiryDate < now) {
-    return 'expired'
-  }
-
-  // Check if expiring soon (within warning threshold)
+  const expiryDate = permit.expiryDate?.toDate?.() || new Date(permit.expiryDate)
   const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
-  if (daysUntilExpiry <= EXPIRY_WARNING_DAYS) {
-    return 'expiring_soon'
-  }
 
+  if (daysUntilExpiry < 0) return 'expired'
+  if (daysUntilExpiry <= EXPIRY_WARNING_DAYS) return 'expiring_soon'
   return 'active'
 }
 
 /**
  * Get days until expiry (or days since expired if negative)
- * @param {Object} permit - Permit object with expiryDate
- * @returns {number|null} Days until expiry, null if no expiry
  */
 export function getDaysUntilExpiry(permit) {
   if (!permit.expiryDate) return null
 
   const now = new Date()
-  const expiryDate = permit.expiryDate instanceof Timestamp
-    ? permit.expiryDate.toDate()
-    : new Date(permit.expiryDate)
-
+  const expiryDate = permit.expiryDate?.toDate?.() || new Date(permit.expiryDate)
   return Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * Generate a unique ID for nested objects
+ */
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 // ============================================
 // CRUD OPERATIONS
 // ============================================
 
-const COLLECTION = 'permits'
-
 /**
  * Create a new permit
- * @param {Object} permitData - Permit data
- * @returns {Promise<Object>} Created permit with ID
  */
 export async function createPermit(permitData) {
   try {
-    const docData = {
+    // Ensure nested arrays have IDs
+    const privileges = (permitData.privileges || []).map(p => ({
+      ...p,
+      id: p.id || generateId()
+    }))
+
+    const conditions = (permitData.conditions || []).map(c => ({
+      ...c,
+      id: c.id || generateId()
+    }))
+
+    const notificationRequirements = (permitData.notificationRequirements || []).map(n => ({
+      ...n,
+      id: n.id || generateId()
+    }))
+
+    const newPermit = {
       ...permitData,
-      privileges: permitData.privileges || [],
-      conditions: permitData.conditions || [],
-      notificationRequirements: permitData.notificationRequirements || [],
+      privileges,
+      conditions,
+      notificationRequirements,
       documents: permitData.documents || [],
-      operationTypes: permitData.operationTypes || [],
       aircraftRegistrations: permitData.aircraftRegistrations || [],
+      operationTypes: permitData.operationTypes || [],
       tags: permitData.tags || [],
-      status: 'active',
+      status: calculatePermitStatus(permitData),
       renewalInfo: permitData.renewalInfo || {
         isRenewalRequired: true,
         renewalLeadDays: 60,
@@ -229,128 +183,125 @@ export async function createPermit(permitData) {
       updatedAt: serverTimestamp()
     }
 
-    // Calculate initial status
-    docData.status = calculatePermitStatus(docData)
-
-    const docRef = await addDoc(collection(db, COLLECTION), docData)
-    logger.info('Permit created:', docRef.id)
-
-    return { id: docRef.id, ...docData }
+    const docRef = await addDoc(permitsRef, newPermit)
+    return { id: docRef.id, ...newPermit }
   } catch (error) {
-    logger.error('Error creating permit:', error)
+    console.error('Error creating permit:', error)
     throw error
   }
 }
 
 /**
- * Update an existing permit
- * @param {string} permitId - Permit ID
- * @param {Object} updates - Fields to update
- * @returns {Promise<void>}
+ * Update a permit
  */
 export async function updatePermit(permitId, updates) {
   try {
-    const docRef = doc(db, COLLECTION, permitId)
+    const docRef = doc(permitsRef, permitId)
 
-    const updateData = {
+    // Recalculate status if expiry date changed
+    if (updates.expiryDate !== undefined || updates.status === 'suspended') {
+      updates.status = calculatePermitStatus({ ...updates, status: updates.status })
+    }
+
+    await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp()
-    }
-
-    // Recalculate status if expiry changed
-    if (updates.expiryDate !== undefined) {
-      updateData.status = calculatePermitStatus({ ...updates })
-    }
-
-    await updateDoc(docRef, updateData)
-    logger.info('Permit updated:', permitId)
+    })
+    return { id: permitId, ...updates }
   } catch (error) {
-    logger.error('Error updating permit:', error)
+    console.error('Error updating permit:', error)
     throw error
   }
 }
 
 /**
- * Get a single permit by ID
- * @param {string} permitId - Permit ID
- * @returns {Promise<Object|null>} Permit object or null
+ * Get a permit by ID
  */
 export async function getPermit(permitId) {
   try {
-    const docRef = doc(db, COLLECTION, permitId)
+    const docRef = doc(permitsRef, permitId)
     const snapshot = await getDoc(docRef)
 
-    if (!snapshot.exists()) {
-      return null
+    if (!snapshot.exists()) return null
+
+    const data = snapshot.data()
+    return {
+      id: snapshot.id,
+      ...data,
+      status: calculatePermitStatus(data)
     }
-
-    const data = { id: snapshot.id, ...snapshot.data() }
-    // Update status in case it changed
-    data.status = calculatePermitStatus(data)
-
-    return data
   } catch (error) {
-    logger.error('Error getting permit:', error)
+    console.error('Error getting permit:', error)
     throw error
   }
 }
 
 /**
- * Get all permits with optional filters
- * @param {Object} filters - Optional filters { type, status, operatorId }
- * @returns {Promise<Array>} Array of permits
+ * Get all permits for an organization
  */
-export async function getPermits(filters = {}) {
+export async function getPermits(organizationId, options = {}) {
   try {
-    let q = collection(db, COLLECTION)
-    const constraints = []
+    let q = query(
+      permitsRef,
+      where('organizationId', '==', organizationId)
+    )
 
-    if (filters.operatorId) {
-      constraints.push(where('operatorId', '==', filters.operatorId))
-    }
-
-    if (filters.type) {
-      constraints.push(where('type', '==', filters.type))
-    }
-
-    constraints.push(orderBy('createdAt', 'desc'))
-
-    if (constraints.length > 0) {
-      q = query(q, ...constraints)
+    // Add type filter if specified
+    if (options.type) {
+      q = query(q, where('type', '==', options.type))
     }
 
     const snapshot = await getDocs(q)
-    const permits = snapshot.docs.map(doc => {
-      const data = { id: doc.id, ...doc.data() }
-      // Update status in case it changed
-      data.status = calculatePermitStatus(data)
-      return data
-    })
+    let permits = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      status: calculatePermitStatus(doc.data())
+    }))
 
-    // Filter by status client-side (since status is calculated)
-    if (filters.status) {
-      return permits.filter(p => p.status === filters.status)
+    // Apply status filter (must be done client-side since status is calculated)
+    if (options.status) {
+      permits = permits.filter(p => p.status === options.status)
     }
+
+    // Sort by expiry date (soonest first)
+    permits.sort((a, b) => {
+      const aDate = a.expiryDate?.toDate?.() || new Date(a.expiryDate) || new Date('9999-12-31')
+      const bDate = b.expiryDate?.toDate?.() || new Date(b.expiryDate) || new Date('9999-12-31')
+      return aDate - bDate
+    })
 
     return permits
   } catch (error) {
-    logger.error('Error getting permits:', error)
+    console.error('Error getting permits:', error)
     throw error
   }
 }
 
 /**
  * Delete a permit
- * @param {string} permitId - Permit ID
- * @returns {Promise<void>}
  */
 export async function deletePermit(permitId) {
   try {
-    const docRef = doc(db, COLLECTION, permitId)
+    // Get permit to find documents to delete
+    const permit = await getPermit(permitId)
+
+    // Delete associated documents from storage
+    if (permit?.documents?.length > 0) {
+      for (const doc of permit.documents) {
+        if (doc.path) {
+          try {
+            await deletePermitDocument(doc.path)
+          } catch (e) {
+            console.warn('Failed to delete permit document:', e)
+          }
+        }
+      }
+    }
+
+    const docRef = doc(permitsRef, permitId)
     await deleteDoc(docRef)
-    logger.info('Permit deleted:', permitId)
   } catch (error) {
-    logger.error('Error deleting permit:', error)
+    console.error('Error deleting permit:', error)
     throw error
   }
 }
@@ -360,96 +311,177 @@ export async function deletePermit(permitId) {
 // ============================================
 
 /**
- * Add a document reference to a permit
- * @param {string} permitId - Permit ID
- * @param {Object} document - Document metadata
- * @returns {Promise<void>}
+ * Add a document to a permit
  */
-export async function addPermitDocument(permitId, document) {
+export async function addPermitDocument(permitId, file) {
   try {
+    // Get current permit to get organizationId
     const permit = await getPermit(permitId)
     if (!permit) throw new Error('Permit not found')
 
-    const documents = [...(permit.documents || []), {
-      ...document,
-      id: `doc_${Date.now()}`,
-      uploadedAt: Timestamp.now()
-    }]
+    // Upload file to storage
+    const uploadResult = await uploadPermitDocument(file, permit.organizationId, permitId)
 
+    // Get current documents
+    const documents = permit.documents || []
+
+    // Add new document
+    documents.push({
+      id: generateId(),
+      ...uploadResult,
+      uploadedAt: new Date().toISOString()
+    })
+
+    // Update permit
     await updatePermit(permitId, { documents })
-    logger.info('Document added to permit:', permitId)
+
+    return uploadResult
   } catch (error) {
-    logger.error('Error adding permit document:', error)
+    console.error('Error adding permit document:', error)
     throw error
   }
 }
 
 /**
  * Remove a document from a permit
- * @param {string} permitId - Permit ID
- * @param {string} documentId - Document ID to remove
- * @returns {Promise<void>}
  */
-export async function removePermitDocument(permitId, documentId) {
+export async function removePermitDocument(permitId, documentPath) {
   try {
-    const permit = await getPermit(permitId)
-    if (!permit) throw new Error('Permit not found')
+    // Delete from storage
+    await deletePermitDocument(documentPath)
 
-    const documents = (permit.documents || []).filter(d => d.id !== documentId)
+    // Get current permit
+    const permit = await getPermit(permitId)
+    const documents = (permit.documents || []).filter(d => d.path !== documentPath)
+
+    // Update permit
     await updatePermit(permitId, { documents })
-    logger.info('Document removed from permit:', permitId)
   } catch (error) {
-    logger.error('Error removing permit document:', error)
+    console.error('Error removing permit document:', error)
     throw error
   }
 }
 
 // ============================================
-// PRIVILEGES & CONDITIONS
+// PRIVILEGES & CONDITIONS MANAGEMENT
 // ============================================
 
 /**
  * Add a privilege to a permit
- * @param {string} permitId - Permit ID
- * @param {Object} privilege - Privilege data
- * @returns {Promise<void>}
  */
-export async function addPrivilege(permitId, privilege) {
+export async function addPermitPrivilege(permitId, privilege) {
   try {
     const permit = await getPermit(permitId)
     if (!permit) throw new Error('Permit not found')
 
-    const privileges = [...(permit.privileges || []), {
-      ...privilege,
-      id: `priv_${Date.now()}`
-    }]
+    const privileges = permit.privileges || []
+    privileges.push({
+      id: generateId(),
+      ...privilege
+    })
 
     await updatePermit(permitId, { privileges })
+    return privileges
   } catch (error) {
-    logger.error('Error adding privilege:', error)
+    console.error('Error adding permit privilege:', error)
+    throw error
+  }
+}
+
+/**
+ * Update a privilege
+ */
+export async function updatePermitPrivilege(permitId, privilegeId, updates) {
+  try {
+    const permit = await getPermit(permitId)
+    if (!permit) throw new Error('Permit not found')
+
+    const privileges = (permit.privileges || []).map(p =>
+      p.id === privilegeId ? { ...p, ...updates } : p
+    )
+
+    await updatePermit(permitId, { privileges })
+    return privileges
+  } catch (error) {
+    console.error('Error updating permit privilege:', error)
+    throw error
+  }
+}
+
+/**
+ * Remove a privilege
+ */
+export async function removePermitPrivilege(permitId, privilegeId) {
+  try {
+    const permit = await getPermit(permitId)
+    if (!permit) throw new Error('Permit not found')
+
+    const privileges = (permit.privileges || []).filter(p => p.id !== privilegeId)
+
+    await updatePermit(permitId, { privileges })
+    return privileges
+  } catch (error) {
+    console.error('Error removing permit privilege:', error)
     throw error
   }
 }
 
 /**
  * Add a condition to a permit
- * @param {string} permitId - Permit ID
- * @param {Object} condition - Condition data
- * @returns {Promise<void>}
  */
-export async function addCondition(permitId, condition) {
+export async function addPermitCondition(permitId, condition) {
   try {
     const permit = await getPermit(permitId)
     if (!permit) throw new Error('Permit not found')
 
-    const conditions = [...(permit.conditions || []), {
-      ...condition,
-      id: `cond_${Date.now()}`
-    }]
+    const conditions = permit.conditions || []
+    conditions.push({
+      id: generateId(),
+      ...condition
+    })
 
     await updatePermit(permitId, { conditions })
+    return conditions
   } catch (error) {
-    logger.error('Error adding condition:', error)
+    console.error('Error adding permit condition:', error)
+    throw error
+  }
+}
+
+/**
+ * Update a condition
+ */
+export async function updatePermitCondition(permitId, conditionId, updates) {
+  try {
+    const permit = await getPermit(permitId)
+    if (!permit) throw new Error('Permit not found')
+
+    const conditions = (permit.conditions || []).map(c =>
+      c.id === conditionId ? { ...c, ...updates } : c
+    )
+
+    await updatePermit(permitId, { conditions })
+    return conditions
+  } catch (error) {
+    console.error('Error updating permit condition:', error)
+    throw error
+  }
+}
+
+/**
+ * Remove a condition
+ */
+export async function removePermitCondition(permitId, conditionId) {
+  try {
+    const permit = await getPermit(permitId)
+    if (!permit) throw new Error('Permit not found')
+
+    const conditions = (permit.conditions || []).filter(c => c.id !== conditionId)
+
+    await updatePermit(permitId, { conditions })
+    return conditions
+  } catch (error) {
+    console.error('Error removing permit condition:', error)
     throw error
   }
 }
@@ -459,144 +491,192 @@ export async function addCondition(permitId, condition) {
 // ============================================
 
 /**
- * Get permit metrics (counts by status)
- * @param {string} operatorId - Optional operator ID filter
- * @returns {Promise<Object>} Metrics object
+ * Get permit metrics for dashboard
  */
-export async function getPermitMetrics(operatorId = null) {
+export async function getPermitMetrics(organizationId) {
   try {
-    const permits = await getPermits(operatorId ? { operatorId } : {})
+    const permits = await getPermits(organizationId)
 
-    const metrics = {
-      total: permits.length,
-      active: 0,
-      expiring_soon: 0,
-      expired: 0,
-      suspended: 0,
-      byType: {}
-    }
+    let active = 0
+    let expiringSoon = 0
+    let expired = 0
+    let suspended = 0
+    const byType = {}
 
-    permits.forEach(permit => {
-      // Count by status
-      if (metrics[permit.status] !== undefined) {
-        metrics[permit.status]++
-      }
+    for (const permit of permits) {
+      const status = calculatePermitStatus(permit)
+
+      if (status === 'active') active++
+      else if (status === 'expiring_soon') expiringSoon++
+      else if (status === 'expired') expired++
+      else if (status === 'suspended') suspended++
 
       // Count by type
-      if (!metrics.byType[permit.type]) {
-        metrics.byType[permit.type] = 0
-      }
-      metrics.byType[permit.type]++
-    })
+      byType[permit.type] = (byType[permit.type] || 0) + 1
+    }
 
-    return metrics
+    // Get permits expiring soon (sorted by expiry date)
+    const expiringPermits = permits
+      .filter(p => calculatePermitStatus(p) === 'expiring_soon')
+      .sort((a, b) => {
+        const aDate = a.expiryDate?.toDate?.() || new Date(a.expiryDate)
+        const bDate = b.expiryDate?.toDate?.() || new Date(b.expiryDate)
+        return aDate - bDate
+      })
+
+    // Get expired permits
+    const expiredPermits = permits
+      .filter(p => calculatePermitStatus(p) === 'expired')
+
+    return {
+      totalPermits: permits.length,
+      active,
+      expiringSoon,
+      expired,
+      suspended,
+      byType,
+      expiringPermits,
+      expiredPermits,
+      complianceRate: permits.length > 0
+        ? Math.round(((active + expiringSoon) / permits.length) * 100)
+        : 100
+    }
   } catch (error) {
-    logger.error('Error getting permit metrics:', error)
+    console.error('Error getting permit metrics:', error)
     throw error
   }
 }
 
 /**
- * Get permit expiry events for calendar integration
- * @param {string} operatorId - Operator ID (optional, for filtering)
- * @param {number} daysAhead - Number of days ahead to look (default 365)
- * @returns {Promise<Array>} Array of calendar events
+ * Get permit expiry events for calendar
  */
-export async function getPermitExpiryEvents(operatorId = null, daysAhead = 365) {
+export async function getPermitExpiryEvents(organizationId, daysAhead = 365) {
   try {
-    const filters = operatorId ? { operatorId } : {}
-    const permits = await getPermits(filters)
-
+    const permits = await getPermits(organizationId)
+    const events = []
     const now = new Date()
-    const futureDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000)
+    const futureLimit = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000)
 
-    const events = permits
-      .filter(permit => {
-        if (!permit.expiryDate) return false
+    for (const permit of permits) {
+      if (!permit.expiryDate) continue
 
-        const expiryDate = permit.expiryDate instanceof Timestamp
-          ? permit.expiryDate.toDate()
-          : new Date(permit.expiryDate)
+      const expiryDate = permit.expiryDate?.toDate?.() || new Date(permit.expiryDate)
 
-        // Include events within the range (past month to daysAhead)
-        const pastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        return expiryDate >= pastMonth && expiryDate <= futureDate
-      })
-      .map(permit => {
-        const expiryDate = permit.expiryDate instanceof Timestamp
-          ? permit.expiryDate.toDate()
-          : new Date(permit.expiryDate)
+      // Include if expiry is in the future (or recently past for showing expired)
+      if (expiryDate <= futureLimit) {
+        const status = calculatePermitStatus(permit)
+        const daysUntil = getDaysUntilExpiry(permit)
 
-        const permitType = PERMIT_TYPES[permit.type] || PERMIT_TYPES.other
-
-        return {
-          id: `permit_expiry_${permit.id}`,
-          title: `${permitType.shortName} Expires: ${permit.name}`,
+        events.push({
+          id: `permit-expiry-${permit.id}`,
+          title: `${permit.name} expires`,
+          subtitle: PERMIT_TYPES[permit.type]?.shortLabel || permit.type,
           date: expiryDate,
           type: 'permit_expiry',
           source: 'permit',
           sourceId: permit.id,
-          permitId: permit.id,
-          permitType: permit.type,
-          status: permit.status,
-          subtitle: permit.permitNumber || permitType.authority,
+          status,
           details: {
+            permitType: permit.type,
             permitNumber: permit.permitNumber,
-            issuingAuthority: permit.issuingAuthority
+            issuingAuthority: permit.issuingAuthority,
+            daysUntil
           }
-        }
-      })
+        })
+      }
+    }
 
     return events
   } catch (error) {
-    logger.error('Error getting permit expiry events:', error)
+    console.error('Error getting permit expiry events:', error)
     throw error
   }
 }
 
 /**
- * Get permits expiring within a date range
- * @param {number} days - Number of days to look ahead
- * @returns {Promise<Array>} Array of expiring permits
+ * Get permit summary for compliance reports
  */
-export async function getExpiringPermits(days = 30) {
+export async function getPermitSummary(organizationId) {
   try {
-    const permits = await getPermits()
-    const now = new Date()
-    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
+    const permits = await getPermits(organizationId)
 
-    return permits.filter(permit => {
-      if (!permit.expiryDate) return false
-
-      const expiryDate = permit.expiryDate instanceof Timestamp
-        ? permit.expiryDate.toDate()
-        : new Date(permit.expiryDate)
-
-      return expiryDate >= now && expiryDate <= futureDate
-    })
+    return permits.map(permit => ({
+      id: permit.id,
+      name: permit.name,
+      type: permit.type,
+      typeLabel: PERMIT_TYPES[permit.type]?.label || permit.type,
+      permitNumber: permit.permitNumber,
+      issuingAuthority: permit.issuingAuthority,
+      effectiveDate: permit.effectiveDate,
+      expiryDate: permit.expiryDate,
+      status: calculatePermitStatus(permit),
+      daysUntilExpiry: getDaysUntilExpiry(permit),
+      privilegeCount: permit.privileges?.length || 0,
+      conditionCount: permit.conditions?.length || 0,
+      hasDocuments: (permit.documents?.length || 0) > 0
+    }))
   } catch (error) {
-    logger.error('Error getting expiring permits:', error)
+    console.error('Error getting permit summary:', error)
+    throw error
+  }
+}
+
+/**
+ * Search permits by text
+ */
+export async function searchPermits(organizationId, searchQuery) {
+  try {
+    const permits = await getPermits(organizationId)
+    const query = searchQuery.toLowerCase()
+
+    return permits.filter(permit =>
+      permit.name?.toLowerCase().includes(query) ||
+      permit.permitNumber?.toLowerCase().includes(query) ||
+      permit.issuingAuthority?.toLowerCase().includes(query) ||
+      permit.geographicArea?.toLowerCase().includes(query) ||
+      permit.notes?.toLowerCase().includes(query) ||
+      permit.tags?.some(tag => tag.toLowerCase().includes(query))
+    )
+  } catch (error) {
+    console.error('Error searching permits:', error)
     throw error
   }
 }
 
 export default {
-  PERMIT_TYPES,
-  PERMIT_STATUS,
-  OPERATION_TYPES,
-  CONDITION_CATEGORIES,
-  calculatePermitStatus,
-  getDaysUntilExpiry,
+  // CRUD
   createPermit,
   updatePermit,
   getPermit,
   getPermits,
   deletePermit,
+
+  // Documents
   addPermitDocument,
   removePermitDocument,
-  addPrivilege,
-  addCondition,
+
+  // Privileges & Conditions
+  addPermitPrivilege,
+  updatePermitPrivilege,
+  removePermitPrivilege,
+  addPermitCondition,
+  updatePermitCondition,
+  removePermitCondition,
+
+  // Metrics
   getPermitMetrics,
   getPermitExpiryEvents,
-  getExpiringPermits
+  getPermitSummary,
+  searchPermits,
+
+  // Helpers
+  calculatePermitStatus,
+  getDaysUntilExpiry,
+
+  // Constants
+  PERMIT_TYPES,
+  PERMIT_STATUS,
+  OPERATION_TYPES,
+  CONDITION_CATEGORIES,
+  EXPIRY_WARNING_DAYS
 }

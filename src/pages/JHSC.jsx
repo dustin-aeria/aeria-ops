@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   Users,
   Calendar,
@@ -49,6 +50,7 @@ import JHSCRecommendationModal from '../components/jhsc/JHSCRecommendationModal'
 
 export default function JHSC() {
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const navigate = useNavigate()
 
   // State
@@ -66,11 +68,9 @@ export default function JHSC() {
   const [recommendationModalOpen, setRecommendationModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const operatorId = user?.uid
-
   // Load data
   const loadData = useCallback(async () => {
-    if (!operatorId) {
+    if (!organizationId) {
       setLoading(false)
       return
     }
@@ -78,11 +78,11 @@ export default function JHSC() {
     setLoading(true)
     try {
       const [committeeData, membersData, meetingsData, recsData, metricsData] = await Promise.all([
-        getOrCreateCommittee(operatorId),
-        getCommitteeMembers(operatorId),
-        getMeetings(operatorId, { limitCount: 20 }),
-        getRecommendations(operatorId, { limitCount: 50 }),
-        calculateJHSCMetrics(operatorId)
+        getOrCreateCommittee(organizationId),
+        getCommitteeMembers(organizationId),
+        getMeetings(organizationId, { limitCount: 20 }),
+        getRecommendations(organizationId, { limitCount: 50 }),
+        calculateJHSCMetrics(organizationId)
       ])
 
       setCommittee(committeeData)
@@ -95,7 +95,7 @@ export default function JHSC() {
     } finally {
       setLoading(false)
     }
-  }, [operatorId])
+  }, [organizationId])
 
   useEffect(() => {
     loadData()
@@ -163,7 +163,7 @@ export default function JHSC() {
     )
   }
 
-  if (!operatorId) {
+  if (!organizationId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center text-gray-500">
@@ -679,7 +679,7 @@ export default function JHSC() {
           isOpen={memberModalOpen}
           onClose={handleModalClose}
           member={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
           committeeId={committee?.id}
         />
       )}
@@ -689,7 +689,7 @@ export default function JHSC() {
           isOpen={meetingModalOpen}
           onClose={handleModalClose}
           meeting={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
           committeeId={committee?.id}
           members={members}
         />
@@ -700,7 +700,7 @@ export default function JHSC() {
           isOpen={recommendationModalOpen}
           onClose={handleModalClose}
           recommendation={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
           meetings={meetings}
         />
       )}

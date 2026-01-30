@@ -24,7 +24,7 @@ export default function InspectionModal({
   onClose,
   inspection,
   templates,
-  operatorId,
+  organizationId,
   onCreateFinding
 }) {
   const [formData, setFormData] = useState({
@@ -98,7 +98,7 @@ export default function InspectionModal({
 
     try {
       await scheduleInspection({
-        operatorId,
+        organizationId,
         templateId: formData.templateId,
         scheduledDate: new Date(formData.scheduledDate),
         location: formData.location,
@@ -122,7 +122,7 @@ export default function InspectionModal({
     setSaving(true)
     try {
       await startInspection(currentInspection.id, {
-        inspectorId: operatorId, // Could be actual user ID
+        inspectorId: organizationId, // Could be actual user ID
         inspectorName: formData.inspectorName
       })
       const updated = await getInspection(currentInspection.id)

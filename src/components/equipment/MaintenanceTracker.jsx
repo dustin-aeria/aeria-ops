@@ -47,7 +47,7 @@ const TYPE_ICONS = {
   firmware: Download
 }
 
-export default function MaintenanceTracker({ equipment, operatorId }) {
+export default function MaintenanceTracker({ equipment, organizationId }) {
   const { user, userProfile } = useAuth()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
@@ -99,7 +99,7 @@ export default function MaintenanceTracker({ equipment, operatorId }) {
       await createMaintenanceRecord({
         equipmentId: equipment.id,
         equipmentName: equipment.name,
-        operatorId,
+        organizationId,
         type: newRecord.type,
         description: newRecord.description.trim(),
         scheduledDate: newRecord.scheduledDate ? new Date(newRecord.scheduledDate) : null,

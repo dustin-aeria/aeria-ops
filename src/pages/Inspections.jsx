@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   ClipboardCheck,
   Plus,
@@ -38,7 +39,7 @@ import InspectionFindingModal from '../components/inspections/InspectionFindingM
 
 export default function Inspections() {
   const { user, userProfile } = useAuth()
-  const operatorId = userProfile?.operatorId || user?.uid
+  const { organizationId } = useOrganization()
 
   // Data state
   const [inspections, setInspections] = useState([])
@@ -65,24 +66,24 @@ export default function Inspections() {
 
   // Load data
   useEffect(() => {
-    if (operatorId) {
+    if (organizationId) {
       loadData()
     } else {
-      // If no operatorId, stop loading to show appropriate message
+      // If no organizationId, stop loading to show appropriate message
       setLoading(false)
     }
-  }, [operatorId])
+  }, [organizationId])
 
   const loadData = async () => {
     setLoading(true)
     setError(null)
     try {
       const [inspectionsData, templatesData, findingsData, summaryData, metricsData] = await Promise.all([
-        getInspections(operatorId),
-        getInspectionTemplates(operatorId),
-        getFindings(operatorId),
-        getInspectionSummary(operatorId),
-        calculateCORInspectionMetrics(operatorId)
+        getInspections(organizationId),
+        getInspectionTemplates(organizationId),
+        getFindings(organizationId),
+        getInspectionSummary(organizationId),
+        calculateCORInspectionMetrics(organizationId)
       ])
 
       setInspections(inspectionsData)
@@ -93,8 +94,8 @@ export default function Inspections() {
 
       // Create default templates if none exist
       if (templatesData.length === 0) {
-        await createDefaultTemplates(operatorId)
-        const newTemplates = await getInspectionTemplates(operatorId)
+        await createDefaultTemplates(organizationId)
+        const newTemplates = await getInspectionTemplates(organizationId)
         setTemplates(newTemplates)
       }
     } catch (err) {
@@ -169,12 +170,12 @@ export default function Inspections() {
     )
   }
 
-  if (!operatorId) {
+  if (!organizationId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center text-gray-500">
           <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>No operator profile found.</p>
+          <p>No organization found.</p>
           <p className="text-sm mt-2">Please contact your administrator.</p>
         </div>
       </div>
@@ -596,7 +597,7 @@ export default function Inspections() {
         }}
         inspection={selectedInspection}
         templates={templates.filter(t => t.isActive)}
-        operatorId={operatorId}
+        organizationId={organizationId}
         onCreateFinding={(inspection) => {
           setShowInspectionModal(false)
           handleNewFinding(inspection)
@@ -611,7 +612,7 @@ export default function Inspections() {
           loadData()
         }}
         template={selectedTemplate}
-        operatorId={operatorId}
+        organizationId={organizationId}
       />
 
       <InspectionFindingModal
@@ -624,7 +625,7 @@ export default function Inspections() {
         }}
         finding={selectedFinding}
         inspection={selectedInspection}
-        operatorId={operatorId}
+        organizationId={organizationId}
       />
     </div>
   )

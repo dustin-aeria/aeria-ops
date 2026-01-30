@@ -719,13 +719,13 @@ export async function deleteInsuranceDocument(storagePath) {
 /**
  * Upload a permit document (PDF, Word doc, images, etc.)
  * @param {File} file - The file to upload
- * @param {string} operatorId - Operator ID for organizing files
+ * @param {string} organizationId - Organization ID for organizing files
  * @param {string} permitId - Permit ID for organizing files
  * @returns {Promise<{url: string, path: string, name: string, size: number, type: string}>}
  */
-export async function uploadPermitDocument(file, operatorId, permitId) {
+export async function uploadPermitDocument(file, organizationId, permitId) {
   if (!file) throw new Error('No file provided')
-  if (!operatorId) throw new Error('Operator ID required')
+  if (!organizationId) throw new Error('Organization ID required')
   if (!permitId) throw new Error('Permit ID required')
 
   // Validate file type
@@ -756,8 +756,8 @@ export async function uploadPermitDocument(file, operatorId, permitId) {
   const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
   const filename = `${timestamp}_${safeName}`
 
-  // Create storage path: permits/{operatorId}/{permitId}/{filename}
-  const storagePath = `permits/${operatorId}/${permitId}/${filename}`
+  // Create storage path: permits/{organizationId}/{permitId}/{filename}
+  const storagePath = `permits/${organizationId}/${permitId}/${filename}`
   const storageRef = ref(storage, storagePath)
 
   // Upload file
@@ -766,7 +766,7 @@ export async function uploadPermitDocument(file, operatorId, permitId) {
     customMetadata: {
       originalName: file.name,
       uploadedAt: new Date().toISOString(),
-      operatorId,
+      organizationId,
       permitId
     }
   })
@@ -798,12 +798,12 @@ export async function deletePermitDocument(storagePath) {
 /**
  * Upload multiple permit documents
  * @param {FileList|File[]} files - Files to upload
- * @param {string} operatorId - Operator ID
+ * @param {string} organizationId - Organization ID
  * @param {string} permitId - Permit ID
  * @param {function} onProgress - Progress callback (index, total)
  * @returns {Promise<Array<{url: string, path: string, name: string}>>}
  */
-export async function uploadMultiplePermitDocuments(files, operatorId, permitId, onProgress) {
+export async function uploadMultiplePermitDocuments(files, organizationId, permitId, onProgress) {
   const results = []
   const fileArray = Array.from(files)
 
@@ -812,7 +812,7 @@ export async function uploadMultiplePermitDocuments(files, operatorId, permitId,
     if (onProgress) onProgress(i + 1, fileArray.length)
 
     try {
-      const result = await uploadPermitDocument(file, operatorId, permitId)
+      const result = await uploadPermitDocument(file, organizationId, permitId)
       results.push(result)
     } catch (error) {
       results.push({ error: error.message, name: file.name })

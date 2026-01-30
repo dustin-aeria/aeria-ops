@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   LayoutDashboard,
   FolderKanban,
@@ -83,6 +84,7 @@ const libraries = [
 
 function Sidebar({ mobile, onClose }) {
   const { userProfile, signOut } = useAuth()
+  const { organization, membership } = useOrganization()
   const navigate = useNavigate()
   const [librariesOpen, setLibrariesOpen] = useState(true)
   const [safetyOpen, setSafetyOpen] = useState(true)
@@ -120,7 +122,14 @@ function Sidebar({ mobile, onClose }) {
           <div className="w-8 h-8 bg-aeria-navy rounded-lg flex items-center justify-center" aria-hidden="true">
             <span className="text-white font-bold text-sm">A</span>
           </div>
-          <span className="font-semibold text-aeria-navy">Aeria Ops</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-aeria-navy leading-tight">Aeria Ops</span>
+            {organization && (
+              <span className="text-xs text-gray-500 truncate max-w-[140px]" title={organization.name}>
+                {organization.name}
+              </span>
+            )}
+          </div>
         </div>
         {mobile && (
           <button
@@ -311,6 +320,7 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { organization } = useOrganization()
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -432,7 +442,14 @@ export default function Layout() {
         </div>
 
         {/* Desktop header bar */}
-        <div className="hidden lg:flex items-center justify-end h-14 px-8 bg-white border-b border-gray-200">
+        <div className="hidden lg:flex items-center justify-between h-14 px-8 bg-white border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            {organization && (
+              <span className="text-sm font-medium text-gray-600">
+                {organization.name}
+              </span>
+            )}
+          </div>
           <NotificationBell />
         </div>
 

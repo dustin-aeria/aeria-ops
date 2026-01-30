@@ -82,21 +82,21 @@ export default function DistributionListEditor({ list, projectCrew, onSave, onCl
         return
       }
 
-      const operator = projectCrew.find(c => c.operatorId === selectedOperator || c.id === selectedOperator)
+      const operator = projectCrew.find(c => c.organizationId === selectedOperator || c.id === selectedOperator)
       if (!operator) {
         setErrors(['Operator not found'])
         return
       }
 
       // Check for duplicates
-      if (members.some(m => m.operatorId === (operator.operatorId || operator.id))) {
+      if (members.some(m => m.organizationId === (operator.organizationId || operator.id))) {
         setErrors(['This operator is already in the list'])
         return
       }
 
       newMember = {
         type: 'operator',
-        operatorId: operator.operatorId || operator.id,
+        organizationId: operator.organizationId || operator.id,
         name: operator.operatorName || operator.name,
         email: operator.email || '',
         phone: operator.phone || '',
@@ -129,7 +129,7 @@ export default function DistributionListEditor({ list, projectCrew, onSave, onCl
 
       newMember = {
         type: 'external',
-        operatorId: null,
+        organizationId: null,
         name: newMemberName.trim(),
         email: newMemberEmail.trim(),
         phone: newMemberPhone.trim(),
@@ -203,7 +203,7 @@ export default function DistributionListEditor({ list, projectCrew, onSave, onCl
 
   // Get operators not already in the list
   const availableOperators = projectCrew.filter(c =>
-    !members.some(m => m.operatorId === (c.operatorId || c.id))
+    !members.some(m => m.organizationId === (c.organizationId || c.id))
   )
 
   return (
@@ -329,7 +329,7 @@ export default function DistributionListEditor({ list, projectCrew, onSave, onCl
                     >
                       <option value="">Select an operator...</option>
                       {availableOperators.map((op) => (
-                        <option key={op.operatorId || op.id} value={op.operatorId || op.id}>
+                        <option key={op.organizationId || op.id} value={op.organizationId || op.id}>
                           {op.operatorName || op.name} ({op.role})
                         </option>
                       ))}

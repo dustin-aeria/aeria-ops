@@ -46,6 +46,7 @@ import {
   Shield
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   getComplianceApplications,
   getComplianceTemplates,
@@ -722,6 +723,7 @@ function EmptyState({ onCreateNew, onCreateQA, hasTemplates }) {
 export default function ComplianceHub() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
 
   // Tab state
   const [activeTab, setActiveTab] = useState('applications') // 'applications' or 'permits'
@@ -759,13 +761,12 @@ export default function ComplianceHub() {
   const loadData = async () => {
     try {
       setError('')
-      const operatorId = user?.operatorId || user?.uid
       const [appsData, templatesData, qaData, permitsData, metricsData] = await Promise.all([
         getComplianceApplications(),
         getComplianceTemplates(),
-        getComplianceProjects(operatorId),
-        getPermits(operatorId),
-        getPermitMetrics(operatorId)
+        getComplianceProjects(organizationId),
+        getPermits(organizationId),
+        getPermitMetrics(organizationId)
       ])
       setApplications(appsData)
       setTemplates(templatesData)
@@ -783,10 +784,9 @@ export default function ComplianceHub() {
   // Load permits only
   const loadPermits = async () => {
     try {
-      const operatorId = user?.operatorId || user?.uid
       const [permitsData, metricsData] = await Promise.all([
-        getPermits(operatorId),
-        getPermitMetrics(operatorId)
+        getPermits(organizationId),
+        getPermitMetrics(organizationId)
       ])
       setPermits(permitsData || [])
       setPermitMetrics(metricsData)
@@ -845,7 +845,7 @@ export default function ComplianceHub() {
   const handleCreateQAProject = async (data) => {
     const project = await createComplianceProject({
       ...data,
-      operatorId: user?.operatorId || user?.uid,
+      organizationId,
       createdBy: user?.uid
     })
     await loadData()
@@ -1684,7 +1684,7 @@ export default function ComplianceHub() {
         isOpen={showAddPermitModal}
         onClose={() => { setShowAddPermitModal(false); setEditingPermit(null); }}
         onSave={handlePermitSave}
-        operatorId={user?.operatorId || user?.uid}
+        organizationId={organizationId}
         editPermit={editingPermit}
       />
 

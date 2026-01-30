@@ -21,7 +21,7 @@ export default function TrainingRecordModal({
   onClose,
   record,
   course,
-  operatorId,
+  organizationId,
   courses = []
 }) {
   const [formData, setFormData] = useState({
@@ -134,7 +134,7 @@ export default function TrainingRecordModal({
 
       const recordData = {
         ...formData,
-        operatorId,
+        organizationId,
         completionDate: new Date(formData.completionDate)
       }
 

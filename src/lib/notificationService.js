@@ -98,7 +98,7 @@ export const NOTIFICATION_CATEGORIES = {
  */
 export async function createNotification(notificationData) {
   const notification = {
-    operatorId: notificationData.operatorId,
+    organizationId: notificationData.organizationId,
     userId: notificationData.userId,
     type: notificationData.type || 'info',
     category: notificationData.category || 'general',
@@ -146,13 +146,13 @@ export async function createBulkNotifications(userIds, notificationData) {
 }
 
 /**
- * Create notification for all operator users
+ * Create notification for all organization users
  */
-export async function notifyAllOperatorUsers(operatorId, notificationData, excludeUserId = null) {
-  // Get all users for operator
+export async function notifyAllOrganizationUsers(organizationId, notificationData, excludeUserId = null) {
+  // Get all users for organization
   const usersQuery = query(
     collection(db, 'users'),
-    where('operatorId', '==', operatorId)
+    where('organizationId', '==', organizationId)
   )
 
   const snapshot = await getDocs(usersQuery)
@@ -164,7 +164,7 @@ export async function notifyAllOperatorUsers(operatorId, notificationData, exclu
 
   return createBulkNotifications(userIds, {
     ...notificationData,
-    operatorId
+    organizationId
   })
 }
 
@@ -392,7 +392,7 @@ export async function cleanupOldNotifications(userId, daysOld = 30) {
 /**
  * Create project notification
  */
-export function notifyProjectUpdate(operatorId, userId, project, action, createdBy) {
+export function notifyProjectUpdate(organizationId, userId, project, action, createdBy) {
   const messages = {
     created: `New project "${project.name}" has been created`,
     updated: `Project "${project.name}" has been updated`,
@@ -402,7 +402,7 @@ export function notifyProjectUpdate(operatorId, userId, project, action, created
   }
 
   return createNotification({
-    operatorId,
+    organizationId,
     userId,
     type: action === 'assigned' ? 'task' : 'info',
     category: 'project',
@@ -419,12 +419,12 @@ export function notifyProjectUpdate(operatorId, userId, project, action, created
 /**
  * Create incident notification
  */
-export function notifyIncident(operatorId, userId, incident, action, createdBy) {
+export function notifyIncident(organizationId, userId, incident, action, createdBy) {
   const severity = incident.severity || 'unknown'
   const priority = severity === 'critical' || severity === 'high' ? 'urgent' : 'normal'
 
   return createNotification({
-    operatorId,
+    organizationId,
     userId,
     type: 'warning',
     category: 'incident',
@@ -443,9 +443,9 @@ export function notifyIncident(operatorId, userId, incident, action, createdBy) 
 /**
  * Create CAPA notification
  */
-export function notifyCapa(operatorId, userId, capa, action, createdBy) {
+export function notifyCapa(organizationId, userId, capa, action, createdBy) {
   return createNotification({
-    operatorId,
+    organizationId,
     userId,
     type: action === 'overdue' ? 'error' : 'task',
     category: 'capa',
@@ -464,11 +464,11 @@ export function notifyCapa(operatorId, userId, capa, action, createdBy) {
 /**
  * Create maintenance notification
  */
-export function notifyMaintenance(operatorId, userId, equipment, maintenanceType, dueDate, createdBy) {
+export function notifyMaintenance(organizationId, userId, equipment, maintenanceType, dueDate, createdBy) {
   const isOverdue = dueDate && new Date(dueDate) < new Date()
 
   return createNotification({
-    operatorId,
+    organizationId,
     userId,
     type: isOverdue ? 'error' : 'reminder',
     category: 'maintenance',
@@ -487,9 +487,9 @@ export function notifyMaintenance(operatorId, userId, equipment, maintenanceType
 /**
  * Create reminder notification
  */
-export function createReminder(operatorId, userId, title, message, dueDate, link = null) {
+export function createReminder(organizationId, userId, title, message, dueDate, link = null) {
   return createNotification({
-    operatorId,
+    organizationId,
     userId,
     type: 'reminder',
     category: 'general',
@@ -584,7 +584,7 @@ export default {
   NOTIFICATION_CATEGORIES,
   createNotification,
   createBulkNotifications,
-  notifyAllOperatorUsers,
+  notifyAllOrganizationUsers,
   getUserNotifications,
   subscribeToNotifications,
   getUnreadCount,

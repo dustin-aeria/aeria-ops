@@ -110,7 +110,7 @@ export const DEFAULT_CHECKLISTS = {
  */
 export async function createChecklistTemplate(templateData) {
   const template = {
-    operatorId: templateData.operatorId,
+    organizationId: templateData.organizationId,
     name: templateData.name,
     description: templateData.description || '',
     type: templateData.type || 'custom',
@@ -129,12 +129,12 @@ export async function createChecklistTemplate(templateData) {
 /**
  * Get checklist templates for an operator
  */
-export async function getChecklistTemplates(operatorId, options = {}) {
+export async function getChecklistTemplates(organizationId, options = {}) {
   const { type = null } = options
 
   let q = query(
     collection(db, 'checklistTemplates'),
-    where('operatorId', '==', operatorId),
+    where('organizationId', '==', organizationId),
     orderBy('name', 'asc')
   )
 
@@ -180,7 +180,7 @@ export async function deleteChecklistTemplate(templateId) {
  */
 export async function createChecklistInstance(instanceData) {
   const instance = {
-    operatorId: instanceData.operatorId,
+    organizationId: instanceData.organizationId,
     templateId: instanceData.templateId || null,
     templateName: instanceData.templateName || 'Custom Checklist',
     type: instanceData.type || 'custom',

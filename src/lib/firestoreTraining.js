@@ -249,20 +249,20 @@ export async function getCourse(courseId) {
 /**
  * Get all courses for an operator
  */
-export async function getCourses(operatorId, options = {}) {
+export async function getCourses(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { category, activeOnly = true } = options
 
     let q = query(
       trainingCoursesRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('courseCode')
     )
 
     if (category) {
       q = query(
         trainingCoursesRef,
-        where('operatorId', '==', operatorId),
+        where('organizationId', '==', organizationId),
         where('category', '==', category),
         orderBy('courseCode')
       )
@@ -296,7 +296,7 @@ export async function deactivateCourse(courseId) {
 /**
  * Seed default courses for a new operator
  */
-export async function seedDefaultCourses(operatorId) {
+export async function seedDefaultCourses(organizationId) {
   return withErrorHandling(async () => {
     const batch = writeBatch(db)
     const createdCourses = []
@@ -305,7 +305,7 @@ export async function seedDefaultCourses(operatorId) {
       const docRef = doc(trainingCoursesRef)
       const courseData = {
         ...course,
-        operatorId,
+        organizationId,
         isActive: true,
         isDefault: true,
         createdAt: serverTimestamp(),
@@ -391,11 +391,11 @@ export async function getTrainingRecord(recordId) {
 /**
  * Get training records for a crew member
  */
-export async function getTrainingRecordsForCrewMember(operatorId, crewMemberId) {
+export async function getTrainingRecordsForCrewMember(organizationId, crewMemberId) {
   return withErrorHandling(async () => {
     const q = query(
       trainingRecordsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('crewMemberId', '==', crewMemberId),
       orderBy('completionDate', 'desc')
     )
@@ -412,11 +412,11 @@ export async function getTrainingRecordsForCrewMember(operatorId, crewMemberId) 
 /**
  * Get training records for a course
  */
-export async function getTrainingRecordsForCourse(operatorId, courseId) {
+export async function getTrainingRecordsForCourse(organizationId, courseId) {
   return withErrorHandling(async () => {
     const q = query(
       trainingRecordsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('courseId', '==', courseId),
       orderBy('completionDate', 'desc')
     )
@@ -433,13 +433,13 @@ export async function getTrainingRecordsForCourse(operatorId, courseId) {
 /**
  * Get all training records for an operator
  */
-export async function getAllTrainingRecords(operatorId, options = {}) {
+export async function getAllTrainingRecords(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { limitCount = 500 } = options
 
     const q = query(
       trainingRecordsRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('completionDate', 'desc'),
       limit(limitCount)
     )
@@ -492,12 +492,12 @@ export function calculateTrainingStatus(record) {
 /**
  * Create or update training requirements for a role
  */
-export async function setRoleTrainingRequirements(operatorId, roleName, requiredCourses) {
+export async function setRoleTrainingRequirements(organizationId, roleName, requiredCourses) {
   return withErrorHandling(async () => {
     // Check if role already exists
     const q = query(
       trainingMatrixRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('roleName', '==', roleName),
       limit(1)
     )
@@ -514,7 +514,7 @@ export async function setRoleTrainingRequirements(operatorId, roleName, required
     } else {
       // Create new
       const newMatrix = {
-        operatorId,
+        organizationId,
         roleName,
         requiredCourses,
         createdAt: serverTimestamp(),
@@ -529,11 +529,11 @@ export async function setRoleTrainingRequirements(operatorId, roleName, required
 /**
  * Get training requirements for a role
  */
-export async function getRoleTrainingRequirements(operatorId, roleName) {
+export async function getRoleTrainingRequirements(organizationId, roleName) {
   return withErrorHandling(async () => {
     const q = query(
       trainingMatrixRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       where('roleName', '==', roleName),
       limit(1)
     )
@@ -550,11 +550,11 @@ export async function getRoleTrainingRequirements(operatorId, roleName) {
 /**
  * Get all training matrix entries for an operator
  */
-export async function getTrainingMatrix(operatorId) {
+export async function getTrainingMatrix(organizationId) {
   return withErrorHandling(async () => {
     const q = query(
       trainingMatrixRef,
-      where('operatorId', '==', operatorId),
+      where('organizationId', '==', organizationId),
       orderBy('roleName')
     )
 
@@ -601,14 +601,14 @@ export async function verifyCompetency(recordId, verificationData) {
 /**
  * Get training compliance summary for a crew member
  */
-export async function getCrewMemberTrainingCompliance(operatorId, crewMemberId, roleName) {
+export async function getCrewMemberTrainingCompliance(organizationId, crewMemberId, roleName) {
   return withErrorHandling(async () => {
     // Get required training for role
-    const roleRequirements = await getRoleTrainingRequirements(operatorId, roleName)
+    const roleRequirements = await getRoleTrainingRequirements(organizationId, roleName)
     const requiredCourseIds = roleRequirements?.requiredCourses?.map(c => c.courseId) || []
 
     // Get crew member's training records
-    const records = await getTrainingRecordsForCrewMember(operatorId, crewMemberId)
+    const records = await getTrainingRecordsForCrewMember(organizationId, crewMemberId)
 
     // Build compliance summary
     const compliance = {
@@ -664,11 +664,11 @@ export async function getCrewMemberTrainingCompliance(operatorId, crewMemberId, 
 /**
  * Get organization-wide training compliance metrics
  */
-export async function getTrainingMetrics(operatorId) {
+export async function getTrainingMetrics(organizationId) {
   return withErrorHandling(async () => {
     const [courses, records] = await Promise.all([
-      getCourses(operatorId),
-      getAllTrainingRecords(operatorId)
+      getCourses(organizationId),
+      getAllTrainingRecords(organizationId)
     ])
 
     // Categorize records by status
@@ -729,11 +729,11 @@ export async function getTrainingMetrics(operatorId) {
 /**
  * Generate COR audit-ready training report
  */
-export async function generateCORTrainingReport(operatorId, options = {}) {
+export async function generateCORTrainingReport(organizationId, options = {}) {
   return withErrorHandling(async () => {
     const { startDate, endDate, crewMemberIds } = options
 
-    let records = await getAllTrainingRecords(operatorId)
+    let records = await getAllTrainingRecords(organizationId)
 
     // Filter by date range if specified
     if (startDate) {
@@ -789,9 +789,9 @@ export async function generateCORTrainingReport(operatorId, options = {}) {
 /**
  * Get training summary for dashboard
  */
-export async function getTrainingSummary(operatorId) {
+export async function getTrainingSummary(organizationId) {
   return withErrorHandling(async () => {
-    const records = await getAllTrainingRecords(operatorId)
+    const records = await getAllTrainingRecords(organizationId)
 
     let current = 0
     let expiringSoon = 0
@@ -819,11 +819,11 @@ export async function getTrainingSummary(operatorId) {
 /**
  * Calculate COR Element 3 (Training) readiness score
  */
-export async function getCORTrainingMetrics(operatorId) {
+export async function getCORTrainingMetrics(organizationId) {
   return withErrorHandling(async () => {
     const [courses, records] = await Promise.all([
-      getCourses(operatorId),
-      getAllTrainingRecords(operatorId)
+      getCourses(organizationId),
+      getAllTrainingRecords(organizationId)
     ])
 
     // COR Criteria:

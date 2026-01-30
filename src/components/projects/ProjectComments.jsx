@@ -56,7 +56,7 @@ const ACTIVITY_ICONS = {
   completed: Check
 }
 
-export default function ProjectComments({ project, operatorId }) {
+export default function ProjectComments({ project, organizationId }) {
   const { user, userProfile } = useAuth()
   const [comments, setComments] = useState([])
   const [activities, setActivities] = useState([])
@@ -100,7 +100,7 @@ export default function ProjectComments({ project, operatorId }) {
       await createComment({
         entityType: 'project',
         entityId: project.id,
-        operatorId,
+        organizationId,
         type: commentType,
         content: newComment.trim(),
         authorId: user?.uid,

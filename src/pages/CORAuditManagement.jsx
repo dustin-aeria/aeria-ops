@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   Award,
   Calendar,
@@ -54,7 +55,7 @@ import CORAuditorModal from '../components/cor/CORAuditorModal'
 
 export default function CORAuditManagement() {
   const { user } = useAuth()
-  const operatorId = user?.uid
+  const { organizationId } = useOrganization()
 
   // State
   const [loading, setLoading] = useState(true)
@@ -73,16 +74,16 @@ export default function CORAuditManagement() {
 
   // Load data
   const loadData = useCallback(async () => {
-    if (!operatorId) return
+    if (!organizationId) return
 
     setLoading(true)
     try {
       const [auditsData, certificatesData, auditorsData, cycleData, deficienciesData] = await Promise.all([
-        getAudits(operatorId),
-        getCertificates(operatorId),
-        getAuditors(operatorId, { activeOnly: false }),
-        getAuditCycleStatus(operatorId),
-        getOpenDeficiencies(operatorId)
+        getAudits(organizationId),
+        getCertificates(organizationId),
+        getAuditors(organizationId, { activeOnly: false }),
+        getAuditCycleStatus(organizationId),
+        getOpenDeficiencies(organizationId)
       ])
 
       setAudits(auditsData)
@@ -95,7 +96,7 @@ export default function CORAuditManagement() {
     } finally {
       setLoading(false)
     }
-  }, [operatorId])
+  }, [organizationId])
 
   useEffect(() => {
     loadData()
@@ -647,7 +648,7 @@ export default function CORAuditManagement() {
           isOpen={auditModalOpen}
           onClose={handleModalClose}
           audit={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
           auditors={auditors}
         />
       )}
@@ -657,7 +658,7 @@ export default function CORAuditManagement() {
           isOpen={certificateModalOpen}
           onClose={handleModalClose}
           certificate={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
           audits={audits.filter(a => a.status === 'passed')}
         />
       )}
@@ -667,7 +668,7 @@ export default function CORAuditManagement() {
           isOpen={auditorModalOpen}
           onClose={handleModalClose}
           auditor={selectedItem}
-          operatorId={operatorId}
+          organizationId={organizationId}
         />
       )}
     </div>

@@ -75,7 +75,7 @@ export const SEARCH_ENTITIES = {
  */
 export async function globalSearch(query, options = {}) {
   const {
-    operatorId = null,
+    organizationId = null,
     entities = Object.keys(SEARCH_ENTITIES),
     limit = 10
   } = options
@@ -85,7 +85,7 @@ export async function globalSearch(query, options = {}) {
   }
 
   const searchPromises = entities.map(entity =>
-    searchEntity(entity, query, operatorId, limit)
+    searchEntity(entity, query, organizationId, limit)
   )
 
   const results = await Promise.all(searchPromises)
@@ -107,7 +107,7 @@ export async function globalSearch(query, options = {}) {
 /**
  * Search within a specific entity type
  */
-export async function searchEntity(entityType, query, operatorId = null, maxResults = 20) {
+export async function searchEntity(entityType, query, organizationId = null, maxResults = 20) {
   const config = SEARCH_ENTITIES[entityType]
   if (!config) return []
 
@@ -131,10 +131,10 @@ export async function searchEntity(entityType, query, operatorId = null, maxResu
         items = await getEquipment()
         break
       case 'incidents':
-        items = operatorId ? await getAllIncidents(operatorId) : []
+        items = organizationId ? await getAllIncidents(organizationId) : []
         break
       case 'capas':
-        items = operatorId ? await getAllCapas(operatorId) : []
+        items = organizationId ? await getAllCapas(organizationId) : []
         break
       default:
         items = []
@@ -160,13 +160,13 @@ export async function searchEntity(entityType, query, operatorId = null, maxResu
 /**
  * Quick search for command palette
  */
-export async function quickSearch(query, operatorId = null) {
+export async function quickSearch(query, organizationId = null) {
   if (!query || query.length < 2) {
     return []
   }
 
   const results = await globalSearch(query, {
-    operatorId,
+    organizationId,
     entities: ['projects', 'clients', 'operators', 'aircraft', 'equipment'],
     limit: 5
   })

@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -50,7 +51,7 @@ const EVENT_TYPES = {
 
 export default function Calendar() {
   const { user } = useAuth()
-  const operatorId = user?.uid
+  const { organizationId } = useOrganization()
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState([])
@@ -83,10 +84,10 @@ export default function Calendar() {
   const [manualEvents, setManualEvents] = useState([])
 
   useEffect(() => {
-    if (operatorId) {
+    if (organizationId) {
       loadEvents()
     }
-  }, [operatorId, currentDate])
+  }, [organizationId, currentDate])
 
   const loadEvents = async () => {
     setLoading(true)
@@ -94,7 +95,7 @@ export default function Calendar() {
       const allEvents = []
 
       // Load projects
-      const projects = await getProjects(operatorId).catch(() => [])
+      const projects = await getProjects(organizationId).catch(() => [])
       projects.forEach(project => {
         if (project.startDate) {
           allEvents.push({
@@ -113,7 +114,7 @@ export default function Calendar() {
       })
 
       // Load training records with expiry dates
-      const trainingRecords = await getAllTrainingRecords(operatorId).catch(() => [])
+      const trainingRecords = await getAllTrainingRecords(organizationId).catch(() => [])
       trainingRecords.forEach(record => {
         if (record.expiryDate) {
           const expiryDate = record.expiryDate?.toDate?.() || new Date(record.expiryDate)
@@ -146,7 +147,7 @@ export default function Calendar() {
       })
 
       // Load insurance policies with expiry dates
-      const policies = await getInsurancePolicies(operatorId).catch(() => [])
+      const policies = await getInsurancePolicies(organizationId).catch(() => [])
       policies.forEach(policy => {
         if (policy.expiryDate) {
           const expiryDate = policy.expiryDate?.toDate?.() || new Date(policy.expiryDate)
@@ -166,7 +167,7 @@ export default function Calendar() {
       })
 
       // Load inspections
-      const inspections = await getInspections(operatorId).catch(() => [])
+      const inspections = await getInspections(organizationId).catch(() => [])
       inspections.forEach(inspection => {
         if (inspection.scheduledDate) {
           const scheduledDate = inspection.scheduledDate?.toDate?.() || new Date(inspection.scheduledDate)
@@ -208,7 +209,7 @@ export default function Calendar() {
       })
 
       // Load permit expiry events
-      const permitEvents = await getPermitExpiryEvents(operatorId, 365).catch(() => [])
+      const permitEvents = await getPermitExpiryEvents(organizationId, 365).catch(() => [])
       permitEvents.forEach(event => {
         allEvents.push(event)
       })
