@@ -28,7 +28,8 @@ import {
   CalendarDays,
   ShieldCheck,
   Briefcase,
-  Wrench
+  Wrench,
+  Clock
 } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
 import NotificationBell from './NotificationBell'
@@ -38,6 +39,7 @@ import KeyboardShortcuts from './KeyboardShortcuts'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
+  { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
   { name: 'Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
 ]

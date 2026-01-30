@@ -29,6 +29,7 @@ import ProjectView from './pages/ProjectView'
 
 // Lazy-loaded pages - secondary features
 const Forms = lazy(() => import('./pages/Forms'))
+const TimeTracking = lazy(() => import('./pages/TimeTracking'))
 const Operators = lazy(() => import('./pages/Operators'))
 const Aircraft = lazy(() => import('./pages/Aircraft'))
 const Equipment = lazy(() => import('./pages/Equipment'))
@@ -135,6 +136,7 @@ function App() {
           <Route path="projects/:projectId" element={<ProjectView />} />
 
           {/* Lazy-loaded pages - wrapped in Suspense */}
+          <Route path="time-tracking" element={<Suspense fallback={<PageLoader />}><TimeTracking /></Suspense>} />
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><Forms /></Suspense>} />
           <Route path="policies" element={<Suspense fallback={<PageLoader />}><PolicyProcedureLibrary /></Suspense>} />
           <Route path="policies/:id" element={<Suspense fallback={<PageLoader />}><PolicyDetail /></Suspense>} />

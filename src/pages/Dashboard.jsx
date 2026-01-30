@@ -55,6 +55,7 @@ import ExpiryRemindersWidget from '../components/dashboard/ExpiryRemindersWidget
 import MaintenanceAlertWidget from '../components/maintenance/MaintenanceAlertWidget'
 import OnboardingChecklist from '../components/onboarding/OnboardingChecklist'
 import ContentGapAnalysis from '../components/onboarding/ContentGapAnalysis'
+import TimeSummaryWidget from '../components/time/TimeSummaryWidget'
 
 // ============================================
 // SAIL CALCULATION HELPER
@@ -517,8 +518,13 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Content Gap Analysis */}
-      {!loading && <ContentGapAnalysis />}
+      {/* Time Tracking Summary */}
+      {!loading && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <TimeSummaryWidget />
+          <ContentGapAnalysis />
+        </div>
+      )}
 
       {/* Recent activity */}
       <div className="grid lg:grid-cols-2 gap-6">
