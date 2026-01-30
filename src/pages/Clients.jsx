@@ -11,10 +11,10 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Building2, 
+import {
+  Plus,
+  Search,
+  Building2,
   MoreVertical,
   Trash2,
   Edit,
@@ -22,6 +22,7 @@ import {
   Phone,
   MapPin,
   User,
+  Users,
   X,
   Upload,
   Image,
@@ -29,6 +30,8 @@ import {
 } from 'lucide-react'
 import { getClients, createClient, updateClient, deleteClient } from '../lib/firestore'
 import { logger } from '../lib/logger'
+import ClientPortalManager from '../components/clients/ClientPortalManager'
+import Modal from '../components/Modal'
 
 // Logo Upload Component
 function LogoUpload({ logo, onLogoChange }) {
@@ -358,7 +361,7 @@ function ClientModal({ isOpen, onClose, client, onSave }) {
 }
 
 // Client Card Component
-function ClientCard({ client, onEdit, onDelete, menuOpen, setMenuOpen }) {
+function ClientCard({ client, onEdit, onDelete, onPortalAccess, menuOpen, setMenuOpen }) {
   // FIX #6: Handle menu button click with stopPropagation
   const handleMenuClick = (e) => {
     e.stopPropagation() // Prevent document click handler from firing
@@ -368,6 +371,12 @@ function ClientCard({ client, onEdit, onDelete, menuOpen, setMenuOpen }) {
   const handleEditClick = (e) => {
     e.stopPropagation()
     onEdit(client)
+    setMenuOpen(null)
+  }
+
+  const handlePortalClick = (e) => {
+    e.stopPropagation()
+    onPortalAccess(client)
     setMenuOpen(null)
   }
 
@@ -423,13 +432,20 @@ function ClientCard({ client, onEdit, onDelete, menuOpen, setMenuOpen }) {
                   setMenuOpen(null)
                 }}
               />
-              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[120px]">
+              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[140px]">
                 <button
                   onClick={handleEditClick}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
                   Edit
+                </button>
+                <button
+                  onClick={handlePortalClick}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  Portal Access
                 </button>
                 <button
                   onClick={handleDeleteClick}
@@ -496,6 +512,7 @@ export default function Clients() {
   const [showModal, setShowModal] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
   const [menuOpen, setMenuOpen] = useState(null)
+  const [portalClient, setPortalClient] = useState(null)
 
   useEffect(() => {
     loadClients()
@@ -540,6 +557,10 @@ export default function Clients() {
   const handleEdit = (client) => {
     setEditingClient(client)
     setShowModal(true)
+  }
+
+  const handlePortalAccess = (client) => {
+    setPortalClient(client)
   }
 
   const filteredClients = clients.filter(client => {
@@ -627,6 +648,7 @@ export default function Clients() {
               client={client}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onPortalAccess={handlePortalAccess}
               menuOpen={menuOpen}
               setMenuOpen={setMenuOpen}
             />
@@ -646,7 +668,7 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Client Edit Modal */}
       <ClientModal
         isOpen={showModal}
         onClose={() => {
@@ -656,6 +678,53 @@ export default function Clients() {
         client={editingClient}
         onSave={handleSave}
       />
+
+      {/* Portal Access Modal */}
+      <Modal
+        isOpen={!!portalClient}
+        onClose={() => setPortalClient(null)}
+        size="lg"
+        showClose={false}
+      >
+        <div className="-mx-6 -mt-4">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              {portalClient?.logo ? (
+                <div className="w-12 h-12 rounded-lg border bg-white flex items-center justify-center p-1">
+                  <img
+                    src={portalClient.logo}
+                    alt={portalClient.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-aeria-blue to-aeria-navy flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{portalClient?.name}</h2>
+                <p className="text-sm text-gray-500">Manage portal access for this client</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setPortalClient(null)}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="px-6 py-4">
+            {portalClient && (
+              <ClientPortalManager
+                client={portalClient}
+                onUpdate={() => loadClients()}
+              />
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
