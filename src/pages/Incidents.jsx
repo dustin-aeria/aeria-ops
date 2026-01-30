@@ -1,6 +1,6 @@
 /**
  * Incidents.jsx
- * Incident List Page for Aeria Ops Safety Module
+ * Incident List Page for Muster Safety Module
  * 
  * Displays all incidents with filtering, search, and quick actions
  * 

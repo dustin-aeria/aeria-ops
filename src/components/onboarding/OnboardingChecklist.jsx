@@ -173,7 +173,7 @@ export default function OnboardingChecklist({ onDismiss }) {
             </h3>
             <p className={`text-sm ${allComplete ? 'text-green-700' : 'text-blue-700'}`}>
               {allComplete
-                ? 'You\'re all set to use Aeria Ops'
+                ? 'You\'re all set to use Muster'
                 : `${completedSteps.length} of ${ONBOARDING_STEPS.length} steps completed`}
             </p>
           </div>

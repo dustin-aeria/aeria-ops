@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - Twilio SMS Service
+ * Muster - Twilio SMS Service
  * Handles SMS delivery via Twilio API
  *
  * Required Environment Variables:

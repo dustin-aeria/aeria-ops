@@ -14,7 +14,7 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Configuration - UPDATE THESE VALUES
-const PRIMARY_ORG_NAME = 'Aeria Solutions Ltd'
+const PRIMARY_ORG_NAME = 'Muster Solutions Ltd'
 const OWNER_EMAIL = 'dustin@aeria.ai'
 
 // Initialize Firebase Admin
@@ -79,7 +79,7 @@ async function cleanup() {
     console.log(`  - ${doc.id}: ${data.name} (created by: ${data.createdBy})`)
 
     // Keep the org created by the owner, or the first one
-    if (data.createdBy === ownerId || (!primaryOrgId && data.name?.includes('Aeria'))) {
+    if (data.createdBy === ownerId || (!primaryOrgId && data.name?.includes('Muster'))) {
       primaryOrgId = doc.id
     } else {
       orgsToDelete.push(doc.id)

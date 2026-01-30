@@ -83,7 +83,7 @@ export default function CreateOrganization() {
           <div className="w-16 h-16 bg-aeria-sky rounded-full flex items-center justify-center mx-auto mb-4">
             <Rocket className="w-8 h-8 text-aeria-navy" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to Aeria Ops!</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome to Muster!</h1>
           <p className="text-gray-600 mt-2">
             Let's set up your organization to get started.
           </p>

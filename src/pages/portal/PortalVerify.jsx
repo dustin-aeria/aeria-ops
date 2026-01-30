@@ -64,7 +64,7 @@ export default function PortalVerify() {
               <Building2 className="w-6 h-6 text-slate-900" />
             </div>
             <div>
-              <div className="text-white font-bold text-xl">Aeria Ops</div>
+              <div className="text-white font-bold text-xl">Muster</div>
               <div className="text-slate-400 text-xs">Client Portal</div>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function PortalVerify() {
       {/* Footer */}
       <footer className="p-6 text-center">
         <p className="text-slate-500 text-sm">
-          © {new Date().getFullYear()} Aeria Ops. All rights reserved.
+          © {new Date().getFullYear()} Muster. All rights reserved.
         </p>
       </footer>
     </div>

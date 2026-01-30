@@ -123,7 +123,7 @@ function Sidebar({ mobile, onClose }) {
             <span className="text-white font-bold text-sm">A</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-aeria-navy leading-tight">Aeria Ops</span>
+            <span className="font-semibold text-aeria-navy leading-tight">Muster</span>
             {organization && (
               <span className="text-xs text-gray-500 truncate max-w-[140px]" title={organization.name}>
                 {organization.name}
@@ -435,7 +435,7 @@ export default function Layout() {
               <div className="w-7 h-7 bg-aeria-navy rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">A</span>
               </div>
-              <span className="font-semibold text-aeria-navy">Aeria Ops</span>
+              <span className="font-semibold text-aeria-navy">Muster</span>
             </div>
           </div>
           <NotificationBell />

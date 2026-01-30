@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - Firebase Cloud Functions
+ * Muster - Firebase Cloud Functions
  * Handles notifications for team communication
  *
  * NOTE: Email/SMS sending is disabled. Only in-app notifications are active.

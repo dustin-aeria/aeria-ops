@@ -1,6 +1,6 @@
 /**
  * IncidentReport.jsx
- * Report New Incident Form for Aeria Ops Safety Module
+ * Report New Incident Form for Muster Safety Module
  * 
  * Comprehensive incident reporting with:
  * - Incident classification

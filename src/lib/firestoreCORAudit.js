@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - COR Audit Management Data Operations
+ * Muster - COR Audit Management Data Operations
  * Firestore functions for COR audits, certificates, auditors, and compliance tracking
  *
  * COR Certification Cycle Management:

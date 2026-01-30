@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - Team Notification Service
+ * Muster - Team Notification Service
  * Orchestration service for sending team notifications
  *
  * Phase 1: In-app notifications

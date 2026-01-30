@@ -1,6 +1,6 @@
 {
   "name": "aeria-ops-functions",
-  "description": "Firebase Cloud Functions for Aeria Ops notifications",
+  "description": "Firebase Cloud Functions for Muster notifications",
   "version": "1.0.0",
   "engines": {
     "node": "20"

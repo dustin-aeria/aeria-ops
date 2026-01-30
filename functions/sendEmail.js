@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - SendGrid Email Service
+ * Muster - SendGrid Email Service
  * Handles email delivery via SendGrid API
  *
  * Required Environment Variables:
@@ -17,7 +17,7 @@ const sgMail = require('@sendgrid/mail')
 const config = functions.config()
 const SENDGRID_API_KEY = config.sendgrid?.api_key || process.env.SENDGRID_API_KEY
 const FROM_EMAIL = config.sendgrid?.from_email || process.env.SENDGRID_FROM_EMAIL || 'notifications@aeria.ca'
-const FROM_NAME = config.sendgrid?.from_name || process.env.SENDGRID_FROM_NAME || 'Aeria Ops'
+const FROM_NAME = config.sendgrid?.from_name || process.env.SENDGRID_FROM_NAME || 'Muster'
 
 if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY)

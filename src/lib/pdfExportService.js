@@ -641,7 +641,7 @@ export class BrandedPDF {
       this.doc.setPage(i)
       this.addFooter(i - 1, totalPages - 1)
     }
-    this.doc.setProperties({ title: this.title, subject: this.subtitle, author: this.branding.operator.name, creator: 'Aeria Ops' })
+    this.doc.setProperties({ title: this.title, subject: this.subtitle, author: this.branding.operator.name, creator: 'Muster' })
     return this
   }
 

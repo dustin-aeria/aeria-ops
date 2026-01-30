@@ -68,7 +68,7 @@ export default function PortalLayout({ children }) {
                   {client?.name || 'Client Portal'}
                 </div>
                 <div className="text-white/60 text-xs">
-                  Powered by Aeria Ops
+                  Powered by Muster
                 </div>
               </div>
             </div>
@@ -199,7 +199,7 @@ export default function PortalLayout({ children }) {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-gray-500 text-sm">
               <Building2 className="w-4 h-4" />
-              <span>Powered by Aeria Ops</span>
+              <span>Powered by Muster</span>
             </div>
             <div className="text-gray-400 text-sm">
               © {new Date().getFullYear()} All rights reserved.

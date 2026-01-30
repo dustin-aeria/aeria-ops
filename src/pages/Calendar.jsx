@@ -300,7 +300,7 @@ export default function Calendar() {
     let icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Aeria Ops//Calendar//EN',
+      'PRODID:-//Muster//Calendar//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH'
     ]

@@ -1,6 +1,6 @@
 /**
  * SafetyDashboard.jsx
- * Main Safety KPI Dashboard for Aeria Ops
+ * Main Safety KPI Dashboard for Muster
  * 
  * Includes COR Program Report export functionality
  * 

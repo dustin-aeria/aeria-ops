@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - Training Management Data Operations
+ * Muster - Training Management Data Operations
  * Firestore functions for training courses, records, and compliance tracking
  *
  * COR Element 3: Training & Instruction of Workers (10-15% weight)

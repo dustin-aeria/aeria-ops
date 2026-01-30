@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - Distribution Lists Service
+ * Muster - Distribution Lists Service
  * Firestore functions for team notification distribution lists
  *
  * Phase 1: Team Notifications Feature

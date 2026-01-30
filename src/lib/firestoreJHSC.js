@@ -1,5 +1,5 @@
 /**
- * Aeria Ops - JHSC (Joint Health & Safety Committee) Data Operations
+ * Muster - JHSC (Joint Health & Safety Committee) Data Operations
  * Firestore functions for JHSC committee management, meetings, minutes, and recommendations
  *
  * COR Element 8: Joint Health & Safety Committee (5-10% weight)
