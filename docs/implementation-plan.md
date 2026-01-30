@@ -11,6 +11,7 @@
 | Jan 30, 2026 | Phase 1, Sprint 2 | Timesheet submission confirmation modal, notes for approver, rejection display |
 | Jan 30, 2026 | Phase 1, Sprint 3 | TimeApproval page for managers, approve/reject workflow, bulk approval |
 | Jan 30, 2026 | Phase 1, Sprint 4 | ProjectTimeEntries component, Time tab in ProjectView, labor cost display |
+| Jan 30, 2026 | Phase 1.1 Complete | Bug fixes: project selector, Firestore queries, timesheet totals, draft entry detection |
 
 ---
 
@@ -26,9 +27,10 @@ This plan transforms Aeria Ops from a drone-focused compliance platform into a c
 
 ---
 
-### 1.1 Time Tracking
+### 1.1 Time Tracking ✅ COMPLETE
 **Priority:** High
 **Estimated Effort:** 3-4 weeks
+**Status:** Complete (Jan 30, 2026)
 
 #### Data Model
 
