@@ -24,8 +24,9 @@ import {
   ArrowRight,
   Clock
 } from 'lucide-react'
-import { getRecentOperatorActivity, ACTIVITY_TYPES, COMMENT_TYPES } from '../../lib/firestoreComments'
+import { getRecentOrganizationActivity, ACTIVITY_TYPES, COMMENT_TYPES } from '../../lib/firestoreComments'
 import { useAuth } from '../../contexts/AuthContext'
+import { useOrganization } from '../../hooks/useOrganization'
 
 const ACTIVITY_ICONS = {
   created: Plus,
@@ -47,16 +48,17 @@ const COMMENT_ICONS = {
 
 export default function ActivityFeed({ limit = 10 }) {
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadActivity = async () => {
-      if (!user?.uid) return
+      if (!organizationId) return
 
       setLoading(true)
       try {
-        const data = await getRecentOperatorActivity(user.uid, limit)
+        const data = await getRecentOrganizationActivity(organizationId, limit)
         setActivities(data)
       } catch (err) {
         // Activity feed is optional, fail silently
@@ -66,7 +68,7 @@ export default function ActivityFeed({ limit = 10 }) {
     }
 
     loadActivity()
-  }, [user?.uid, limit])
+  }, [organizationId, limit])
 
   const formatDate = (date) => {
     if (!date) return ''
