@@ -40,6 +40,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
+  { name: 'Time Approval', href: '/time-approval', icon: ClipboardCheck },
   { name: 'Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
 ]

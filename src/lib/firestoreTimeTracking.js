@@ -591,6 +591,55 @@ export async function getPendingTimesheets() {
 }
 
 /**
+ * Get a single timesheet with its entries
+ * @param {string} timesheetId - Timesheet ID
+ * @returns {Promise<Object>}
+ */
+export async function getTimesheetWithEntries(timesheetId) {
+  const docRef = doc(db, 'timesheets', timesheetId)
+  const timesheetSnap = await getDoc(docRef)
+
+  if (!timesheetSnap.exists()) {
+    throw new Error('Timesheet not found')
+  }
+
+  const timesheet = { id: timesheetSnap.id, ...timesheetSnap.data() }
+
+  // Get the entries for this timesheet's week
+  const weekStart = timesheet.weekStartDate?.toDate
+    ? timesheet.weekStartDate.toDate()
+    : new Date(timesheet.weekStartDate)
+
+  const entries = await getTimeEntriesForWeek(timesheet.operatorId, weekStart)
+
+  return {
+    ...timesheet,
+    entries
+  }
+}
+
+/**
+ * Get all timesheets with a specific status
+ * @param {string} status - Status to filter by
+ * @param {Object} options - Optional filters
+ * @returns {Promise<Array>}
+ */
+export async function getTimesheetsByStatus(status, options = {}) {
+  let q = query(
+    timesheetsRef,
+    where('status', '==', status),
+    orderBy('submittedAt', 'desc')
+  )
+
+  if (options.limit) {
+    q = query(q, limit(options.limit))
+  }
+
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+/**
  * Get timesheets for a specific operator
  * @param {string} operatorId - Operator ID
  * @param {Object} filters - Optional filters
