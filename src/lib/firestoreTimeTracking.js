@@ -639,6 +639,7 @@ export async function rejectTimesheet(timesheetId, rejectedBy, reason) {
 
 /**
  * Get pending timesheets for approval (for managers)
+ * Calculates totals from actual entries to ensure accuracy
  * @returns {Promise<Array>}
  */
 export async function getPendingTimesheets() {
@@ -648,8 +649,44 @@ export async function getPendingTimesheets() {
   )
   const snapshot = await getDocs(q)
   const timesheets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+  // Calculate totals from entries for each timesheet
+  const timesheetsWithTotals = await Promise.all(
+    timesheets.map(async (timesheet) => {
+      try {
+        const weekStart = timesheet.weekStartDate?.toDate
+          ? timesheet.weekStartDate.toDate()
+          : new Date(timesheet.weekStartDate)
+        const entries = await getTimeEntriesForWeek(timesheet.operatorId, weekStart)
+
+        let totalHours = 0
+        let billableHours = 0
+        let totalBillingAmount = 0
+
+        entries.forEach(entry => {
+          totalHours += entry.totalHours || 0
+          if (entry.billable) {
+            billableHours += entry.totalHours || 0
+            totalBillingAmount += entry.billingAmount || 0
+          }
+        })
+
+        return {
+          ...timesheet,
+          totalHours,
+          billableHours,
+          totalBillingAmount,
+          entriesCount: entries.length
+        }
+      } catch (err) {
+        // If calculation fails, return original timesheet
+        return timesheet
+      }
+    })
+  )
+
   // Sort client-side by submittedAt ascending
-  return timesheets.sort((a, b) => {
+  return timesheetsWithTotals.sort((a, b) => {
     const aTime = a.submittedAt?.toMillis?.() || 0
     const bTime = b.submittedAt?.toMillis?.() || 0
     return aTime - bTime
@@ -704,6 +741,7 @@ export async function getTimesheetWithEntries(timesheetId) {
 
 /**
  * Get all timesheets with a specific status
+ * Calculates totals from actual entries to ensure accuracy
  * @param {string} status - Status to filter by
  * @param {Object} options - Optional filters
  * @returns {Promise<Array>}
@@ -728,7 +766,42 @@ export async function getTimesheetsByStatus(status, options = {}) {
     timesheets = timesheets.slice(0, options.limit)
   }
 
-  return timesheets
+  // Calculate totals from entries for each timesheet
+  const timesheetsWithTotals = await Promise.all(
+    timesheets.map(async (timesheet) => {
+      try {
+        const weekStart = timesheet.weekStartDate?.toDate
+          ? timesheet.weekStartDate.toDate()
+          : new Date(timesheet.weekStartDate)
+        const entries = await getTimeEntriesForWeek(timesheet.operatorId, weekStart)
+
+        let totalHours = 0
+        let billableHours = 0
+        let totalBillingAmount = 0
+
+        entries.forEach(entry => {
+          totalHours += entry.totalHours || 0
+          if (entry.billable) {
+            billableHours += entry.totalHours || 0
+            totalBillingAmount += entry.billingAmount || 0
+          }
+        })
+
+        return {
+          ...timesheet,
+          totalHours,
+          billableHours,
+          totalBillingAmount,
+          entriesCount: entries.length
+        }
+      } catch (err) {
+        // If calculation fails, return original timesheet
+        return timesheet
+      }
+    })
+  )
+
+  return timesheetsWithTotals
 }
 
 /**
