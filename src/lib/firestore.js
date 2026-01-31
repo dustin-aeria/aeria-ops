@@ -848,10 +848,10 @@ export async function createOperator(data) {
 
 export async function updateOperator(id, data) {
   const docRef = doc(db, 'operators', id)
-  await updateDoc(docRef, {
+  await setDoc(docRef, {
     ...data,
     updatedAt: serverTimestamp()
-  })
+  }, { merge: true })
 }
 
 export async function deleteOperator(id) {
