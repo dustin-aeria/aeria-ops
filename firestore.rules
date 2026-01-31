@@ -613,9 +613,51 @@ service cloud.firestore {
     }
 
     // ============================================
+    // Timesheets Collection
+    // ============================================
+    match /timesheets/{timesheetId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
     // Services Collection
     // ============================================
     match /services/{serviceId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Forms Collection
+    // ============================================
+    match /forms/{formId} {
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
+    }
+
+    // ============================================
+    // Custom Forms Collection
+    // ============================================
+    match /customForms/{formId} {
       allow read: if isAuthenticated() &&
         isMemberOf(resource.data.organizationId);
       allow create: if isAuthenticated() &&
@@ -641,17 +683,17 @@ service cloud.firestore {
     }
 
     // ============================================
-    // Operators Collection (User Profiles)
+    // Operators Collection (Team Members)
     // ============================================
     match /operators/{operatorId} {
-      // Users can read operators in their organization or their own profile
-      allow read: if isAuthenticated();
-
-      // Users can create/update their own profile
-      allow create, update: if isOwner(operatorId) || isAuthenticated();
-
-      // Only the user can delete their profile
-      allow delete: if isOwner(operatorId);
+      allow read: if isAuthenticated() &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        canEdit(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        canEdit(resource.data.organizationId);
+      allow delete: if isAuthenticated() &&
+        canDelete(resource.data.organizationId);
     }
 
     // ============================================

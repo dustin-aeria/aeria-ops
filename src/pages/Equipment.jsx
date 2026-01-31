@@ -45,6 +45,7 @@ import {
   EQUIPMENT_CATEGORIES,
   EQUIPMENT_STATUS
 } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import { calculateOverallMaintenanceStatus } from '../lib/firestoreMaintenance'
 import { formatCurrency } from '../lib/costEstimator'
 import EquipmentModal from '../components/EquipmentModal'
@@ -110,6 +111,7 @@ const maintenanceStatusConfig = {
 // ============================================
 export default function Equipment() {
   const navigate = useNavigate()
+  const { organizationId } = useOrganization()
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -128,13 +130,15 @@ export default function Equipment() {
   const { branding } = useBranding()
 
   useEffect(() => {
-    loadEquipment()
-  }, [])
+    if (organizationId) {
+      loadEquipment()
+    }
+  }, [organizationId])
 
   const loadEquipment = async () => {
     setLoading(true)
     try {
-      const data = await getEquipment()
+      const data = await getEquipment(organizationId)
       setEquipment(data)
     } catch (err) {
       logger.error('Error loading equipment:', err)

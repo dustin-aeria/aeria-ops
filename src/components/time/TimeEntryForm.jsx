@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { X, Clock, Calendar, Briefcase, DollarSign, FileText } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useOrganizationContext } from '../../contexts/OrganizationContext'
 import { getProjects } from '../../lib/firestore'
 import { getOperators } from '../../lib/firestore'
 import {
@@ -35,6 +36,7 @@ export default function TimeEntryForm({
   onSaved
 }) {
   const { user, userProfile } = useAuth()
+  const { organizationId } = useOrganizationContext()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -56,16 +58,22 @@ export default function TimeEntryForm({
   const [projects, setProjects] = useState([])
   const [loadingProjects, setLoadingProjects] = useState(true)
 
-  // Load projects on mount
+  // Load projects when organizationId is available
   useEffect(() => {
-    loadProjects()
-  }, [])
+    if (organizationId) {
+      loadProjects()
+    }
+  }, [organizationId])
 
   const loadProjects = async () => {
+    if (!organizationId) {
+      setProjects([])
+      return
+    }
     try {
       setLoadingProjects(true)
       // Load all projects (no status filter) for maximum flexibility
-      const allProjects = await getProjects()
+      const allProjects = await getProjects(organizationId)
       // Filter out archived projects but allow all others
       const availableProjects = allProjects.filter(p => p.status !== 'archived')
       setProjects(availableProjects)
@@ -174,8 +182,8 @@ export default function TimeEntryForm({
         await updateTimeEntry(entry.id, entryData)
         logger.info('Time entry updated:', entry.id)
       } else {
-        // Create new entry
-        await createTimeEntry(entryData)
+        // Create new entry (organizationId required for security rules)
+        await createTimeEntry(entryData, organizationId)
         logger.info('Time entry created')
       }
 

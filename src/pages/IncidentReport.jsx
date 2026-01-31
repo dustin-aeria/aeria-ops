@@ -37,6 +37,7 @@ import {
   XCircle
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganizationContext } from '../contexts/OrganizationContext'
 import { getProjects } from '../lib/firestore'
 import { getAircraft } from '../lib/firestore'
 import {
@@ -150,7 +151,8 @@ export default function IncidentReport() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { userProfile } = useAuth()
-  
+  const { organizationId } = useOrganizationContext()
+
   const [saving, setSaving] = useState(false)
   const [projects, setProjects] = useState([])
   const [aircraft, setAircraft] = useState([])
@@ -202,8 +204,10 @@ export default function IncidentReport() {
   })
 
   useEffect(() => {
-    loadReferenceData()
-  }, [])
+    if (organizationId) {
+      loadReferenceData()
+    }
+  }, [organizationId])
 
   useEffect(() => {
     // Update notifications when relevant fields change
@@ -212,15 +216,16 @@ export default function IncidentReport() {
   }, [formData.type, formData.rpasType, formData.severity, formData.involvedPersons])
 
   const loadReferenceData = async () => {
+    if (!organizationId) return
     setLoadingData(true)
     try {
       const [projectsData, aircraftData] = await Promise.all([
-        getProjects(),
-        getAircraft()
+        getProjects(organizationId),
+        getAircraft(organizationId)
       ])
       setProjects(projectsData)
       setAircraft(aircraftData)
-      
+
       // If projectId was passed, set the project name
       if (searchParams.get('projectId')) {
         const project = projectsData.find(p => p.id === searchParams.get('projectId'))
@@ -377,6 +382,7 @@ export default function IncidentReport() {
     try {
       const incident = await createIncident({
         ...formData,
+        organizationId, // Required for Firestore security rules
         dateOccurred: new Date(formData.dateOccurred),
         // Clean up the involved persons/equipment/witnesses to remove temp IDs
         involvedPersons: formData.involvedPersons.map(({ id, ...rest }) => rest),

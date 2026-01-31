@@ -18,6 +18,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { getOperators, deleteOperator } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import OperatorModal from '../components/OperatorModal'
 import { format, differenceInDays } from 'date-fns'
 import { logger } from '../lib/logger'
@@ -31,6 +32,7 @@ const roleColors = {
 }
 
 export default function Operators() {
+  const { organizationId } = useOrganization()
   const [operators, setOperators] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -41,13 +43,15 @@ export default function Operators() {
   const [expandedOperator, setExpandedOperator] = useState(null)
 
   useEffect(() => {
-    loadOperators()
-  }, [])
+    if (organizationId) {
+      loadOperators()
+    }
+  }, [organizationId])
 
   const loadOperators = async () => {
     setLoading(true)
     try {
-      const data = await getOperators()
+      const data = await getOperators(organizationId)
       setOperators(data)
     } catch (err) {
       logger.error('Error loading operators:', err)

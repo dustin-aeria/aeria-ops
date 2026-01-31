@@ -24,6 +24,7 @@ import {
   FolderKanban
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganizationContext } from '../contexts/OrganizationContext'
 import {
   getTimeEntriesByOperator,
   getTimeEntriesForWeek,
@@ -77,6 +78,7 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function TimeTracking() {
   const { user, userProfile } = useAuth()
+  const { organizationId } = useOrganizationContext()
   const [loading, setLoading] = useState(true)
   const [entries, setEntries] = useState([])
   const [weekSummary, setWeekSummary] = useState(null)
@@ -93,19 +95,23 @@ export default function TimeTracking() {
   const [viewMode, setViewMode] = useState('week') // 'week' | 'list'
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Load data
+  // Load data when user and organizationId are available
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && organizationId) {
       loadData()
     }
-  }, [user?.uid, currentWeekStart])
+  }, [user?.uid, organizationId, currentWeekStart])
 
   const loadData = async () => {
+    if (!organizationId) {
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       const [weekEntries, summary] = await Promise.all([
-        getTimeEntriesForWeek(user.uid, currentWeekStart),
-        getCurrentWeekSummary(user.uid)
+        getTimeEntriesForWeek(user.uid, currentWeekStart, organizationId),
+        getCurrentWeekSummary(user.uid, organizationId)
       ])
       setEntries(weekEntries)
       setWeekSummary(summary)
@@ -232,13 +238,17 @@ export default function TimeTracking() {
 
   // Handle timesheet submission
   const handleSubmitTimesheet = async () => {
+    if (!organizationId) {
+      logger.error('Cannot submit timesheet: organizationId is missing')
+      return
+    }
     try {
       setSubmitting(true)
       const operatorName = userProfile?.firstName
         ? `${userProfile.firstName} ${userProfile.lastName || ''}`
         : user.email
 
-      const timesheet = await getOrCreateTimesheet(user.uid, operatorName, currentWeekStart)
+      const timesheet = await getOrCreateTimesheet(user.uid, operatorName, currentWeekStart, organizationId)
       await submitTimesheet(timesheet.id, submitNotes)
       logger.info('Timesheet submitted:', timesheet.id)
       setShowSubmitConfirm(false)

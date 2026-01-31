@@ -160,7 +160,7 @@ export default function NewProjectModal({ isOpen, onClose }) {
         createdBy: user.uid
       }
 
-      const project = await createProject(projectData)
+      const project = await createProject(projectData, organizationId)
       onClose()
       navigate(`/projects/${project.id}`)
     } catch (err) {

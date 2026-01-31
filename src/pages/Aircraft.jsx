@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getAircraft, deleteAircraft } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import { calculateOverallMaintenanceStatus } from '../lib/firestoreMaintenance'
 import AircraftModal from '../components/AircraftModal'
 import AircraftSpecSheet, { generateAircraftSpecPDF } from '../components/AircraftSpecSheet'
@@ -84,6 +85,7 @@ const categoryLabels = {
 // MAIN COMPONENT
 // ============================================
 export default function Aircraft() {
+  const { organizationId } = useOrganization()
   const [aircraft, setAircraft] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,17 +94,19 @@ export default function Aircraft() {
   const [editingAircraft, setEditingAircraft] = useState(null)
   const [menuOpen, setMenuOpen] = useState(null)
   const [selectedSpec, setSelectedSpec] = useState(null)
-  
+
   const { branding } = useBranding()
 
   useEffect(() => {
-    loadAircraft()
-  }, [])
+    if (organizationId) {
+      loadAircraft()
+    }
+  }, [organizationId])
 
   const loadAircraft = async () => {
     setLoading(true)
     try {
-      const data = await getAircraft()
+      const data = await getAircraft(organizationId)
       setAircraft(data)
     } catch (err) {
       logger.error('Error loading aircraft:', err)

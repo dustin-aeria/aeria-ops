@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal, { ModalFooter } from './Modal'
 import { createOperator, updateOperator } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import { Plus, Trash2, AlertCircle, Award, DollarSign } from 'lucide-react'
 
 const availableRoles = [
@@ -55,6 +56,7 @@ const isValidPhone = (phone) => {
 }
 
 export default function OperatorModal({ isOpen, onClose, operator }) {
+  const { organizationId } = useOrganization()
   const isEditing = !!operator
 
   const [loading, setLoading] = useState(false)
@@ -224,7 +226,7 @@ export default function OperatorModal({ isOpen, onClose, operator }) {
       if (isEditing) {
         await updateOperator(operator.id, operatorData)
       } else {
-        await createOperator(operatorData)
+        await createOperator(operatorData, organizationId)
       }
       onClose()
     } catch (err) {

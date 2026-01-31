@@ -355,16 +355,21 @@ export const createDefaultHazard = () => ({
 /**
  * Create a new project with multi-site support
  */
-export async function createProject(data) {
+export async function createProject(data, organizationId) {
+  if (!organizationId) {
+    throw new Error('organizationId is required to create a project')
+  }
+
   // Create the first default site
   const initialSite = createDefaultSite({
     name: data.siteName || 'Primary Site',
     description: '',
     order: 0
   })
-  
+
   const project = {
     ...data,
+    organizationId,
     status: 'draft',
     projectVersion: CURRENT_PROJECT_VERSION,
     
@@ -840,14 +845,19 @@ export async function getOperator(id) {
   return { id: snapshot.id, ...snapshot.data() }
 }
 
-export async function createOperator(data) {
+export async function createOperator(data, organizationId) {
+  if (!organizationId) {
+    throw new Error('organizationId is required to create an operator')
+  }
+
   const operator = {
     ...data,
+    organizationId,
     status: 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }
-  
+
   const docRef = await addDoc(operatorsRef, operator)
   return { id: docRef.id, ...operator }
 }

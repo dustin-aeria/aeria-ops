@@ -267,9 +267,15 @@ export async function getTimeEntriesForWeek(operatorId, weekStartDate, organizat
 /**
  * Create a new time entry
  * @param {Object} data - Time entry data
+ * @param {string} organizationId - Organization ID (required for security rules)
  * @returns {Promise<Object>}
  */
-export async function createTimeEntry(data) {
+export async function createTimeEntry(data, organizationId) {
+  // organizationId is REQUIRED for Firestore security rules
+  if (!organizationId) {
+    throw new Error('organizationId is required to create a time entry')
+  }
+
   // Calculate total hours if not provided
   const totalHours = data.totalHours ?? calculateTotalHours(
     data.startTime,
@@ -283,6 +289,9 @@ export async function createTimeEntry(data) {
     : 0
 
   const entry = {
+    // Organization (REQUIRED for security rules)
+    organizationId,
+
     // Project/Site association
     projectId: data.projectId,
     projectName: data.projectName || '',
@@ -431,10 +440,16 @@ export async function getTimesheetForWeek(operatorId, weekStartDate, organizatio
  * @param {string} operatorId - Operator ID
  * @param {string} operatorName - Operator name
  * @param {Date} weekStartDate - Monday of the week
+ * @param {string} organizationId - Organization ID (required for security rules)
  * @returns {Promise<Object>}
  */
-export async function getOrCreateTimesheet(operatorId, operatorName, weekStartDate) {
-  const existing = await getTimesheetForWeek(operatorId, weekStartDate)
+export async function getOrCreateTimesheet(operatorId, operatorName, weekStartDate, organizationId) {
+  // organizationId is REQUIRED for Firestore security rules
+  if (!organizationId) {
+    throw new Error('organizationId is required to create a timesheet')
+  }
+
+  const existing = await getTimesheetForWeek(operatorId, weekStartDate, organizationId)
   if (existing) return existing
 
   const weekId = getWeekId(weekStartDate)
@@ -442,6 +457,9 @@ export async function getOrCreateTimesheet(operatorId, operatorName, weekStartDa
   const sunday = getWeekEnd(weekStartDate)
 
   const timesheet = {
+    // Organization (REQUIRED for security rules)
+    organizationId,
+
     operatorId,
     operatorName: operatorName || '',
     weekId,
@@ -474,9 +492,14 @@ export async function getOrCreateTimesheet(operatorId, operatorName, weekStartDa
  * Calculate and update timesheet totals from entries
  * @param {string} operatorId - Operator ID
  * @param {Date} weekStartDate - Monday of the week
+ * @param {string} organizationId - Organization ID (required for security rules)
  */
-export async function recalculateTimesheetTotals(operatorId, weekStartDate) {
-  const entries = await getTimeEntriesForWeek(operatorId, weekStartDate)
+export async function recalculateTimesheetTotals(operatorId, weekStartDate, organizationId) {
+  if (!organizationId) {
+    throw new Error('organizationId is required to recalculate timesheet totals')
+  }
+
+  const entries = await getTimeEntriesForWeek(operatorId, weekStartDate, organizationId)
 
   let totalHours = 0
   let billableHours = 0
@@ -491,7 +514,7 @@ export async function recalculateTimesheetTotals(operatorId, weekStartDate) {
   })
 
   // Get or create timesheet
-  const timesheet = await getOrCreateTimesheet(operatorId, '', weekStartDate)
+  const timesheet = await getOrCreateTimesheet(operatorId, '', weekStartDate, organizationId)
 
   if (timesheet) {
     const docRef = doc(db, 'timesheets', timesheet.id)
