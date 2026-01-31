@@ -162,18 +162,123 @@ export async function makeCurrentUserPlatformAdmin(auth) {
   return makePlatformAdmin(user.uid)
 }
 
+/**
+ * Enable dev mode for a user (grants all permissions bypass)
+ * @param {string} userId - The user's Firebase UID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function enableDevMode(userId) {
+  try {
+    const userRef = doc(db, 'operators', userId)
+    const userSnap = await getDoc(userRef)
+
+    if (!userSnap.exists()) {
+      return { success: false, error: 'User not found in operators collection' }
+    }
+
+    await updateDoc(userRef, {
+      devMode: true,
+      isPlatformAdmin: true,
+      role: 'owner'
+    })
+
+    logger.info(`Dev mode enabled for user ${userId}`)
+    return { success: true, message: 'Dev mode enabled. Please refresh the page.' }
+  } catch (error) {
+    logger.error('Error enabling dev mode:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Disable dev mode for a user
+ * @param {string} userId - The user's Firebase UID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function disableDevMode(userId) {
+  try {
+    const userRef = doc(db, 'operators', userId)
+    await updateDoc(userRef, {
+      devMode: false
+    })
+
+    logger.info(`Dev mode disabled for user ${userId}`)
+    return { success: true }
+  } catch (error) {
+    logger.error('Error disabling dev mode:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Enable dev mode for the current logged-in user
+ * @param {Object} auth - Firebase auth instance
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function enableDevModeForCurrentUser(auth) {
+  const user = auth.currentUser
+  if (!user) {
+    return { success: false, error: 'No user logged in' }
+  }
+  return enableDevMode(user.uid)
+}
+
+/**
+ * Quick setup: Make current user owner + platform admin + dev mode
+ * Use this for initial development setup
+ * @param {Object} auth - Firebase auth instance
+ * @returns {Promise<{success: boolean, message?: string, error?: string}>}
+ */
+export async function setupDevAccess(auth) {
+  const user = auth.currentUser
+  if (!user) {
+    return { success: false, error: 'No user logged in' }
+  }
+
+  try {
+    // Enable dev mode on user profile
+    await enableDevMode(user.uid)
+
+    // Also elevate to owner in all organizations
+    await autoElevateToOwner(auth)
+
+    return {
+      success: true,
+      message: 'Full dev access enabled! You now have owner + platform admin + dev mode. Please refresh the page.'
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 // SECURITY: Admin functions should only be called through authenticated admin UI
 // Do NOT expose to window object in production
 // Use the MasterPolicyAdmin page or Settings page for admin operations
 
 // Development helper: expose to window for console access
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
-  window.adminUtils = {
-    makeOrganizationOwner,
-    autoElevateToOwner,
-    makePlatformAdmin,
-    removePlatformAdmin,
-    makeCurrentUserPlatformAdmin
-  }
-  console.log('Admin utils available. Run: adminUtils.autoElevateToOwner(window.auth) to become owner.')
+  // Import auth and expose it
+  import('./firebase').then(({ auth }) => {
+    window.auth = auth
+
+    window.adminUtils = {
+      makeOrganizationOwner,
+      autoElevateToOwner,
+      makePlatformAdmin,
+      removePlatformAdmin,
+      makeCurrentUserPlatformAdmin,
+      enableDevMode,
+      disableDevMode,
+      enableDevModeForCurrentUser,
+      setupDevAccess
+    }
+
+    console.log('%c🔧 Admin Utils Ready', 'font-size: 14px; font-weight: bold; color: #3B82F6;')
+    console.log('%cQuick commands:', 'font-weight: bold;')
+    console.log('  adminUtils.setupDevAccess(auth)    - Full access (owner + admin + devMode)')
+    console.log('  adminUtils.autoElevateToOwner(auth) - Make yourself org owner')
+    console.log('  adminUtils.enableDevModeForCurrentUser(auth) - Enable devMode bypass')
+    console.log('')
+    console.log('After running any command, refresh the page to see changes.')
+  })
 }

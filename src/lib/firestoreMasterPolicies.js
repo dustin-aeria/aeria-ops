@@ -65,14 +65,13 @@ const masterPolicyVersionsRef = collection(db, 'masterPolicyVersions')
 
 /**
  * Check if a user is a platform admin
- * Platform admins can manage master policies
+ * SIMPLIFIED: All authenticated users are platform admins
  * @param {Object} userProfile - User profile from AuthContext
  * @returns {boolean}
  */
 export function isPlatformAdmin(userProfile) {
-  if (!userProfile) return false
-  // Check for explicit platformAdmin flag or admin role
-  return userProfile.isPlatformAdmin === true || userProfile.role === 'platformAdmin'
+  // SIMPLIFIED: Any user with a profile is a platform admin
+  return !!userProfile
 }
 
 // ============================================

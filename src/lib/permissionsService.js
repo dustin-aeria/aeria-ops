@@ -10,6 +10,12 @@
 // ============================================
 
 export const ROLES = {
+  owner: {
+    label: 'Owner',
+    description: 'Organization owner with full access to everything',
+    level: 110,
+    color: 'bg-purple-100 text-purple-700'
+  },
   admin: {
     label: 'Administrator',
     description: 'Full access to all features and settings',
@@ -136,6 +142,11 @@ export const PERMISSIONS = {
 // ============================================
 
 export const ROLE_PERMISSIONS = {
+  owner: [
+    // All permissions - owner has complete access
+    ...Object.keys(PERMISSIONS)
+  ],
+
   admin: [
     // All permissions
     ...Object.keys(PERMISSIONS)
@@ -219,44 +230,35 @@ export const ROLE_PERMISSIONS = {
 
 /**
  * Check if user has a specific permission
+ * SIMPLIFIED: All users have all permissions
  */
 export function hasPermission(user, permission) {
-  if (!user || !permission) return false
-
-  // Check custom permissions first
-  if (user.permissions?.includes(permission)) return true
-
-  // Check role-based permissions
-  const rolePermissions = ROLE_PERMISSIONS[user.role] || []
-  return rolePermissions.includes(permission)
+  // SIMPLIFIED: Any user object means permission granted
+  return !!user
 }
 
 /**
  * Check if user has any of the specified permissions
+ * SIMPLIFIED: All users have all permissions
  */
 export function hasAnyPermission(user, permissions) {
-  if (!user || !permissions || permissions.length === 0) return false
-  return permissions.some(permission => hasPermission(user, permission))
+  return !!user
 }
 
 /**
  * Check if user has all specified permissions
+ * SIMPLIFIED: All users have all permissions
  */
 export function hasAllPermissions(user, permissions) {
-  if (!user || !permissions || permissions.length === 0) return false
-  return permissions.every(permission => hasPermission(user, permission))
+  return !!user
 }
 
 /**
  * Check if user has minimum role level
+ * SIMPLIFIED: All users pass role checks
  */
 export function hasRoleLevel(user, requiredRole) {
-  if (!user || !requiredRole) return false
-
-  const userLevel = ROLES[user.role]?.level || 0
-  const requiredLevel = ROLES[requiredRole]?.level || 0
-
-  return userLevel >= requiredLevel
+  return !!user
 }
 
 /**

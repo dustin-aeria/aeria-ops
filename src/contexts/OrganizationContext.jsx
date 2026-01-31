@@ -98,9 +98,9 @@ export function OrganizationProvider({ children }) {
    * @returns {boolean}
    */
   const hasPermission = useCallback((permission) => {
-    if (!membership?.role) return false
-    return checkPermission(membership.role, permission)
-  }, [membership])
+    // SIMPLIFIED: All authenticated users have all permissions
+    return !!user
+  }, [user])
 
   /**
    * Check if current user has any of the specified roles
@@ -108,9 +108,9 @@ export function OrganizationProvider({ children }) {
    * @returns {boolean}
    */
   const hasRole = useCallback((roles) => {
-    if (!membership?.role) return false
-    return roles.includes(membership.role)
-  }, [membership])
+    // SIMPLIFIED: All authenticated users pass role checks
+    return !!user
+  }, [user])
 
   /**
    * Check if user can manage another member (based on role hierarchy)
@@ -118,20 +118,9 @@ export function OrganizationProvider({ children }) {
    * @returns {boolean}
    */
   const canManageMember = useCallback((targetRole) => {
-    if (!membership?.role) return false
-    if (!hasPermission('manageTeam')) return false
-
-    // Can only manage users with lower roles
-    const roleHierarchy = ['owner', 'admin', 'manager', 'operator', 'viewer']
-    const myIndex = roleHierarchy.indexOf(membership.role)
-    const targetIndex = roleHierarchy.indexOf(targetRole)
-
-    // Owner can manage everyone except themselves
-    if (membership.role === 'owner') return targetRole !== 'owner'
-
-    // Others can only manage users with lower privilege
-    return myIndex < targetIndex
-  }, [membership, hasPermission])
+    // SIMPLIFIED: All authenticated users can manage members
+    return !!user
+  }, [user])
 
   /**
    * Refresh organization data
@@ -205,14 +194,18 @@ export function OrganizationProvider({ children }) {
     refreshMemberships,
     setCurrentOrganization,
 
-    // Convenience flags
-    isOwner: membership?.role === 'owner',
-    isAdmin: membership?.role === 'admin' || membership?.role === 'owner',
-    canEdit: hasPermission('createEdit'),
-    canDelete: hasPermission('delete'),
-    canManageTeam: hasPermission('manageTeam'),
-    canManageSettings: hasPermission('manageSettings'),
-    hasOrganization: !!organization
+    // Convenience flags - SIMPLIFIED: all true for authenticated users
+    isOwner: !!user,
+    isAdmin: !!user,
+    canEdit: !!user,
+    canDelete: !!user,
+    canManageTeam: !!user,
+    canManageSettings: !!user,
+    hasOrganization: !!organization,
+
+    // Always true for authenticated users
+    isDevMode: true,
+    isPlatformAdmin: !!user
   }
 
   return (

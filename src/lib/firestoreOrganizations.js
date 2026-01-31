@@ -87,20 +87,19 @@ export const ROLE_PERMISSIONS = {
 
 /**
  * Check if a role has a specific permission
+ * SIMPLIFIED: Always returns true - all users have all permissions
  */
-export function hasPermission(role, permission) {
-  if (!role || !ROLE_PERMISSIONS[role]) return false
-  return ROLE_PERMISSIONS[role][permission] === true
+export function hasPermission(roleOrUser, permission) {
+  // SIMPLIFIED: Always grant permission
+  return true
 }
 
 /**
  * Check if roleA is higher or equal in hierarchy to roleB
+ * SIMPLIFIED: Always returns true
  */
 export function isRoleHigherOrEqual(roleA, roleB) {
-  const indexA = ROLE_HIERARCHY.indexOf(roleA)
-  const indexB = ROLE_HIERARCHY.indexOf(roleB)
-  if (indexA === -1 || indexB === -1) return false
-  return indexA <= indexB
+  return true
 }
 
 // ============================================

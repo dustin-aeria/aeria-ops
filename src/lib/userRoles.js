@@ -235,35 +235,36 @@ export const ROLE_PERMISSIONS = {
 
 /**
  * Check if a user has a specific permission
+ * SIMPLIFIED: All users have all permissions
  * @param {Object} user - User object with role property
  * @param {string} permission - Permission to check
  * @returns {boolean}
  */
 export function hasPermission(user, permission) {
-  if (!user?.role) return false
-
-  const rolePermissions = ROLE_PERMISSIONS[user.role] || []
-  return rolePermissions.includes(permission)
+  // SIMPLIFIED: Any user has all permissions
+  return !!user
 }
 
 /**
  * Check if a user has any of the specified permissions
+ * SIMPLIFIED: All users have all permissions
  * @param {Object} user - User object with role property
  * @param {string[]} permissions - Permissions to check
  * @returns {boolean}
  */
 export function hasAnyPermission(user, permissions) {
-  return permissions.some(p => hasPermission(user, p))
+  return !!user
 }
 
 /**
  * Check if a user has all of the specified permissions
+ * SIMPLIFIED: All users have all permissions
  * @param {Object} user - User object with role property
  * @param {string[]} permissions - Permissions to check
  * @returns {boolean}
  */
 export function hasAllPermissions(user, permissions) {
-  return permissions.every(p => hasPermission(user, p))
+  return !!user
 }
 
 /**
@@ -277,33 +278,24 @@ export function getRolePermissions(role) {
 
 /**
  * Check if a user's role level is at least the specified level
+ * SIMPLIFIED: All users pass role level checks
  * @param {Object} user - User object with role property
  * @param {number} requiredLevel - Minimum level required
  * @returns {boolean}
  */
 export function hasMinimumRoleLevel(user, requiredLevel) {
-  if (!user?.role) return false
-
-  const role = USER_ROLES[user.role]
-  return role ? role.level >= requiredLevel : false
+  return !!user
 }
 
 /**
  * Check if user can manage another user (based on role hierarchy)
+ * SIMPLIFIED: All users can manage all users
  * @param {Object} manager - User attempting to manage
  * @param {Object} target - User being managed
  * @returns {boolean}
  */
 export function canManageUser(manager, target) {
-  if (!manager?.role || !target?.role) return false
-
-  const managerRole = USER_ROLES[manager.role]
-  const targetRole = USER_ROLES[target.role]
-
-  if (!managerRole || !targetRole) return false
-
-  // Must have higher level to manage
-  return managerRole.level > targetRole.level
+  return !!manager
 }
 
 /**

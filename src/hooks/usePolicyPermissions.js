@@ -7,14 +7,6 @@
 
 import { useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  canViewPolicy,
-  canEditPolicy,
-  canApprovePolicy,
-  canManageCategories,
-  canManageDefaults
-} from '../lib/firestorePolicies'
-import { isPlatformAdmin as checkPlatformAdmin } from '../lib/firestoreMasterPolicies'
 
 /**
  * Permission levels for quick reference
@@ -31,6 +23,13 @@ export const PERMISSION_LEVELS = {
  * Default permission configuration by role
  */
 export const DEFAULT_ROLE_PERMISSIONS = {
+  owner: {
+    canViewAll: true,
+    canEdit: true,
+    canApprove: true,
+    canManageCategories: true,
+    canManageDefaults: true
+  },
   admin: {
     canViewAll: true,
     canEdit: true,
@@ -77,98 +76,44 @@ export function usePolicyPermissions(policy = null) {
   const { user, userProfile } = useAuth()
 
   const permissions = useMemo(() => {
-    // Default permissions for unauthenticated users
-    if (!user) {
-      return {
-        canView: false,
-        canEdit: false,
-        canApprove: false,
-        canDelete: false,
-        canManageCategories: false,
-        canManageDefaults: false,
-        canAcknowledge: false,
-        canViewAcknowledgments: false,
-        canManageAcknowledgments: false,
-        canViewVersions: false,
-        canRollback: false,
-        permissionLevel: null,
-        isAdmin: false,
-        isPlatformAdmin: false,
-        canManageMasterPolicies: false
-      }
-    }
-
-    // Get user's role and policy-specific permissions
-    const role = userProfile?.role || 'viewer'
-    const policyPermissions = userProfile?.policyPermissions || DEFAULT_ROLE_PERMISSIONS[role] || DEFAULT_ROLE_PERMISSIONS.viewer
-    const isAdmin = role === 'admin'
-    const isPlatformAdmin = checkPlatformAdmin(userProfile)
-
-    // Build user object for permission checks
-    const userForCheck = {
-      id: user.uid,
-      role,
-      policyPermissions
-    }
-
-    // Calculate permissions
-    let canView = true
-    let canEdit = isAdmin || policyPermissions.canEdit
-    let canApprove = isAdmin || policyPermissions.canApprove
-
-    // If a specific policy is provided, check its permissions
-    if (policy) {
-      canView = canViewPolicy(policy, userForCheck)
-      canEdit = canEditPolicy(policy, userForCheck)
-      canApprove = canApprovePolicy(policy, userForCheck)
-    }
-
-    // Determine permission level
-    let permissionLevel = PERMISSION_LEVELS.VIEWER
-    if (isPlatformAdmin) {
-      permissionLevel = PERMISSION_LEVELS.PLATFORM_ADMIN
-    } else if (isAdmin) {
-      permissionLevel = PERMISSION_LEVELS.ADMIN
-    } else if (canApprove) {
-      permissionLevel = PERMISSION_LEVELS.APPROVER
-    } else if (canEdit) {
-      permissionLevel = PERMISSION_LEVELS.EDITOR
-    }
+    // SIMPLIFIED: All authenticated users have all permissions
+    const isAuthenticated = !!user
 
     return {
-      // Policy-specific permissions
-      canView,
-      canEdit,
-      canApprove,
-      canDelete: canEdit && (isAdmin || policy?.status === 'draft'),
+      // Policy-specific permissions - all true for authenticated users
+      canView: isAuthenticated,
+      canEdit: isAuthenticated,
+      canApprove: isAuthenticated,
+      canDelete: isAuthenticated,
 
       // Category and template management
-      canManageCategories: canManageCategories(userForCheck),
-      canManageDefaults: canManageDefaults(userForCheck),
+      canManageCategories: isAuthenticated,
+      canManageDefaults: isAuthenticated,
 
       // Acknowledgment permissions
-      canAcknowledge: canView && user,
-      canViewAcknowledgments: canEdit || isAdmin,
-      canManageAcknowledgments: isAdmin,
+      canAcknowledge: isAuthenticated,
+      canViewAcknowledgments: isAuthenticated,
+      canManageAcknowledgments: isAuthenticated,
 
       // Version management
-      canViewVersions: canView,
-      canRollback: canEdit && (isAdmin || canApprove),
+      canViewVersions: isAuthenticated,
+      canRollback: isAuthenticated,
 
       // Workflow permissions
-      canSubmitForReview: canEdit && policy?.status === 'draft',
-      canSubmitForApproval: canEdit && policy?.status === 'pending_review',
-      canPublish: canApprove && policy?.status === 'pending_approval',
-      canRetire: canApprove && policy?.status === 'active',
+      canSubmitForReview: isAuthenticated,
+      canSubmitForApproval: isAuthenticated,
+      canPublish: isAuthenticated,
+      canRetire: isAuthenticated,
 
-      // Meta
-      permissionLevel,
-      isAdmin,
-      isPlatformAdmin,
-      canManageMasterPolicies: isPlatformAdmin,
-      userRole: role
+      // Meta - all users are treated as platform admin
+      permissionLevel: isAuthenticated ? PERMISSION_LEVELS.PLATFORM_ADMIN : null,
+      isAdmin: isAuthenticated,
+      isPlatformAdmin: isAuthenticated,
+      isDevMode: isAuthenticated,
+      canManageMasterPolicies: isAuthenticated,
+      userRole: 'owner'
     }
-  }, [user, userProfile, policy])
+  }, [user])
 
   return permissions
 }
