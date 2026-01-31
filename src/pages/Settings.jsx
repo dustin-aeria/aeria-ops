@@ -23,6 +23,8 @@ import OrganizationSettings from './settings/OrganizationSettings'
 import TeamMembers from './settings/TeamMembers'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
 import { logger } from '../lib/logger'
+import { autoElevateToOwner } from '../lib/adminUtils'
+import { auth } from '../lib/firebase'
 
 export default function Settings() {
   const { userProfile, user } = useAuth()
@@ -76,6 +78,28 @@ export default function Settings() {
   const [seedingPolicies, setSeedingPolicies] = useState(false)
   const [seedProgress, setSeedProgress] = useState({ current: 0, total: 0 })
   const [seedResult, setSeedResult] = useState(null)
+
+  // Permission elevation state
+  const [elevating, setElevating] = useState(false)
+  const [elevateResult, setElevateResult] = useState(null)
+
+  // Handle elevate to owner
+  const handleElevateToOwner = async () => {
+    setElevating(true)
+    setElevateResult(null)
+    try {
+      const result = await autoElevateToOwner(auth)
+      setElevateResult(result)
+      if (result.success) {
+        // Reload page to refresh permissions
+        setTimeout(() => window.location.reload(), 1500)
+      }
+    } catch (err) {
+      setElevateResult({ success: false, error: err.message })
+    } finally {
+      setElevating(false)
+    }
+  }
 
   // Load profile data
   useEffect(() => {
@@ -744,6 +768,47 @@ export default function Settings() {
                         ))}
                       </ul>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* Permission Fix Section */}
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <h3 className="font-medium text-purple-900 mb-2">Fix Permissions</h3>
+                <p className="text-sm text-purple-700 mb-4">
+                  If you're the application owner and seeing "Contact administrator" messages,
+                  click below to elevate your account to Owner role with full access.
+                </p>
+                <button
+                  onClick={handleElevateToOwner}
+                  disabled={elevating}
+                  className="btn-primary inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+                >
+                  {elevating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Updating permissions...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4" />
+                      Make Me Owner
+                    </>
+                  )}
+                </button>
+                {elevateResult && (
+                  <div className={`mt-3 p-3 rounded-lg ${
+                    elevateResult.success
+                      ? 'bg-green-50 border border-green-200'
+                      : 'bg-red-50 border border-red-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      elevateResult.success ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {elevateResult.success
+                        ? elevateResult.message || 'Success! Reloading page...'
+                        : elevateResult.error || 'Failed to update permissions'}
+                    </p>
                   </div>
                 )}
               </div>
