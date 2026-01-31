@@ -31,6 +31,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { getProjects, getClients, getEquipment, getOperators } from '../lib/firestore'
+import { useOrganizationContext } from '../contexts/OrganizationContext'
 
 // Navigation items
 const NAVIGATION_ITEMS = [
@@ -68,6 +69,7 @@ export default function CommandPalette() {
   const [isSearching, setIsSearching] = useState(false)
   const inputRef = useRef(null)
   const navigate = useNavigate()
+  const { organizationId } = useOrganizationContext()
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -142,11 +144,11 @@ export default function CommandPalette() {
     }))
     items.push(...actionMatches)
 
-    // Search projects (if query is 3+ chars)
-    if (q.length >= 3) {
+    // Search projects (if query is 3+ chars and organizationId available)
+    if (q.length >= 3 && organizationId) {
       setIsSearching(true)
       try {
-        const projects = await getProjects()
+        const projects = await getProjects(organizationId)
         const projectMatches = projects
           .filter(p =>
             p.name?.toLowerCase().includes(q) ||
@@ -166,7 +168,7 @@ export default function CommandPalette() {
         items.push(...projectMatches)
 
         // Search clients
-        const clients = await getClients()
+        const clients = await getClients(organizationId)
         const clientMatches = clients
           .filter(c => c.name?.toLowerCase().includes(q))
           .slice(0, 3)
@@ -182,7 +184,7 @@ export default function CommandPalette() {
         items.push(...clientMatches)
 
         // Search operators
-        const operators = await getOperators()
+        const operators = await getOperators(organizationId)
         const operatorMatches = operators
           .filter(o =>
             `${o.firstName} ${o.lastName}`.toLowerCase().includes(q) ||
@@ -209,7 +211,7 @@ export default function CommandPalette() {
 
     setResults(items)
     setSelectedIndex(0)
-  }, [])
+  }, [organizationId])
 
   // Debounced search
   useEffect(() => {

@@ -33,6 +33,7 @@ import {
 import { getOperators } from '../../lib/firestore'
 import { USER_ROLES, getRoleInfo } from '../../lib/userRoles'
 import { logger } from '../../lib/logger'
+import { useOrganization } from '../../hooks/useOrganization'
 
 // Project-specific roles
 const PROJECT_ROLES = {
@@ -176,6 +177,7 @@ function TeamMemberCard({ member, projectRole, onRemove, onRoleChange, isLead })
 }
 
 export default function ProjectTeamPanel({ project, onUpdate }) {
+  const { organizationId } = useOrganization()
   const [operators, setOperators] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddMember, setShowAddMember] = useState(false)
@@ -186,11 +188,12 @@ export default function ProjectTeamPanel({ project, onUpdate }) {
 
   useEffect(() => {
     loadOperators()
-  }, [])
+  }, [organizationId])
 
   const loadOperators = async () => {
+    if (!organizationId) return
     try {
-      const data = await getOperators()
+      const data = await getOperators(organizationId)
       setOperators(data)
     } catch (err) {
       logger.error('Failed to load operators:', err)

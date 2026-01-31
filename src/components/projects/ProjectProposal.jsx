@@ -34,6 +34,7 @@ import {
 } from '../../lib/proposalGenerator'
 import { calculateProjectCost } from '../../lib/costEstimator'
 import { getEquipment } from '../../lib/firestore'
+import { useOrganization } from '../../hooks/useOrganization'
 
 const SECTION_ICONS = {
   executive_summary: FileText,
@@ -50,6 +51,7 @@ const SECTION_ICONS = {
 }
 
 export default function ProjectProposal({ project }) {
+  const { organizationId } = useOrganization()
   const [template, setTemplate] = useState('standard')
   const [showPreview, setShowPreview] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -82,15 +84,16 @@ export default function ProjectProposal({ project }) {
   // Load equipment for cost calculations
   useEffect(() => {
     const loadEquipment = async () => {
+      if (!organizationId) return
       try {
-        const data = await getEquipment()
+        const data = await getEquipment(organizationId)
         setEquipment(data)
       } catch (err) {
         // Non-critical - equipment costs will be skipped
       }
     }
     loadEquipment()
-  }, [])
+  }, [organizationId])
 
   // Generate proposal preview
   useEffect(() => {

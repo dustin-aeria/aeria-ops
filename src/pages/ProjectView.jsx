@@ -186,7 +186,7 @@ export default function ProjectView() {
     const loadClientData = async () => {
       if (project?.clientId) {
         try {
-          const clients = await getClients()
+          const clients = await getClients(organizationId)
           const client = clients.find(c => c.id === project.clientId)
           setClientData(client || null)
         } catch (err) {

@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganizationContext } from '../contexts/OrganizationContext'
 import { getOperators } from '../lib/firestore'
 import { getIncident } from '../lib/firestoreSafety'
 import {
@@ -57,6 +58,7 @@ export default function CapaNew() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { userProfile } = useAuth()
+  const { organizationId } = useOrganizationContext()
   
   const [saving, setSaving] = useState(false)
   const [operators, setOperators] = useState([])
@@ -119,7 +121,7 @@ export default function CapaNew() {
     setLoadingData(true)
     try {
       const [operatorsData] = await Promise.all([
-        getOperators()
+        organizationId ? getOperators(organizationId) : Promise.resolve([])
       ])
       setOperators(operatorsData)
       

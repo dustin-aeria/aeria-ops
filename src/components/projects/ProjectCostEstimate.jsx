@@ -63,14 +63,15 @@ export default function ProjectCostEstimate({ project, organizationId, onSave })
   }, [project, equipment, crew, settings, customItems])
 
   const loadData = async () => {
+    if (!organizationId) return
     setLoading(true)
     try {
       // Load equipment with billing rates
-      const equipmentData = await getEquipment()
+      const equipmentData = await getEquipment(organizationId)
       setEquipment(equipmentData || [])
 
       // Load operators with billing rates
-      const operatorsData = await getOperators()
+      const operatorsData = await getOperators(organizationId)
 
       // Map project crew assignments to full operator objects with rates
       const projectCrew = project?.crew || []

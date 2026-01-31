@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { getOperators } from '../../lib/firestore'
+import { useOrganization } from '../../hooks/useOrganization'
 import { 
   Plus, 
   Users, 
@@ -38,6 +39,7 @@ const roleColors = {
 }
 
 export default function ProjectCrew({ project, onUpdate }) {
+  const { organizationId } = useOrganization()
   const [operators, setOperators] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -47,11 +49,12 @@ export default function ProjectCrew({ project, onUpdate }) {
 
   useEffect(() => {
     loadOperators()
-  }, [])
+  }, [organizationId])
 
   const loadOperators = async () => {
+    if (!organizationId) return
     try {
-      const data = await getOperators()
+      const data = await getOperators(organizationId)
       setOperators(data.filter(op => op.status === 'active'))
     } catch (err) {
       logger.error('Error loading operators:', err)

@@ -116,19 +116,19 @@ export async function searchEntity(entityType, query, organizationId = null, max
 
     switch (entityType) {
       case 'projects':
-        items = await getProjects()
+        items = organizationId ? await getProjects(organizationId) : []
         break
       case 'clients':
-        items = await getClients()
+        items = organizationId ? await getClients(organizationId) : []
         break
       case 'operators':
-        items = await getOperators()
+        items = organizationId ? await getOperators(organizationId) : []
         break
       case 'aircraft':
-        items = await getAircraft()
+        items = organizationId ? await getAircraft(organizationId) : []
         break
       case 'equipment':
-        items = await getEquipment()
+        items = organizationId ? await getEquipment(organizationId) : []
         break
       case 'incidents':
         items = organizationId ? await getAllIncidents(organizationId) : []

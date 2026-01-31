@@ -12,8 +12,10 @@ import PhaseCostSummary from './phases/PhaseCostSummary'
 import AddTaskModal from './phases/AddTaskModal'
 import AddCostItemModal from './phases/AddCostItemModal'
 import { getOperators } from '../../lib/firestore'
+import { useOrganization } from '../../hooks/useOrganization'
 
 export default function ProjectPreField({ project, onUpdate }) {
+  const { organizationId } = useOrganization()
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [costModalOpen, setCostModalOpen] = useState(false)
@@ -25,15 +27,16 @@ export default function ProjectPreField({ project, onUpdate }) {
   // Fetch fresh operator data to get current rates
   useEffect(() => {
     const loadOperators = async () => {
+      if (!organizationId) return
       try {
-        const ops = await getOperators()
+        const ops = await getOperators(organizationId)
         setFreshOperators(ops)
       } catch (err) {
         console.error('Error loading operators:', err)
       }
     }
     loadOperators()
-  }, [])
+  }, [organizationId])
 
   // Merge crew assignments with fresh operator rates
   const crewWithFreshRates = (project?.crew || []).map(crewMember => {

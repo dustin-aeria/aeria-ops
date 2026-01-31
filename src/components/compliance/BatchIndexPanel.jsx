@@ -28,6 +28,7 @@ import {
   Pause
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useOrganizationContext } from '../../contexts/OrganizationContext'
 import { useKnowledgeBase } from '../../hooks/useKnowledgeBase'
 import { getProjects } from '../../lib/firestore'
 import { getPoliciesEnhanced } from '../../lib/firestorePolicies'
@@ -168,6 +169,7 @@ function IndexProgress({ current, total, source }) {
 
 export default function BatchIndexPanel({ compact = false }) {
   const { user } = useAuth()
+  const { organizationId } = useOrganizationContext()
   const { indexStatus, refreshStatus } = useKnowledgeBase()
 
   // State
@@ -199,7 +201,7 @@ export default function BatchIndexPanel({ compact = false }) {
       // Load projects (if available)
       let projects = []
       try {
-        projects = await getProjects()
+        projects = organizationId ? await getProjects(organizationId) : []
       } catch (e) {
         logger.warn('Could not load projects:', e)
       }
@@ -233,7 +235,7 @@ export default function BatchIndexPanel({ compact = false }) {
           break
 
         case 'projects':
-          const projects = await getProjects()
+          const projects = organizationId ? await getProjects(organizationId) : []
           result = { indexed: 0, chunks: 0, errors: [] }
           setProgress({ current: 0, total: projects.length })
 
@@ -294,7 +296,7 @@ export default function BatchIndexPanel({ compact = false }) {
       setProgress({ current: 1, total: 2 })
 
       // Then projects
-      const projects = await getProjects()
+      const projects = organizationId ? await getProjects(organizationId) : []
       for (const project of projects) {
         try {
           await indexProject(user.uid, project)
