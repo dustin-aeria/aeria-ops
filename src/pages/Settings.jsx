@@ -24,7 +24,6 @@ import TeamMembers from './settings/TeamMembers'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
 import { logger } from '../lib/logger'
 import { autoElevateToOwner } from '../lib/adminUtils'
-import { auth } from '../lib/firebase'
 
 export default function Settings() {
   const { userProfile, user } = useAuth()
