@@ -11,6 +11,7 @@ import {
   updateEquipment,
   EQUIPMENT_CATEGORIES
 } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import { uploadEquipmentImage, deleteEquipmentImage } from '../lib/storageHelpers'
 import {
   AlertCircle,
@@ -174,6 +175,7 @@ const categoryFields = {
 export default function EquipmentModal({ isOpen, onClose, equipment }) {
   const isEditing = !!equipment
   const fileInputRef = useRef(null)
+  const { organizationId } = useOrganization()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -373,7 +375,7 @@ export default function EquipmentModal({ isOpen, onClose, equipment }) {
       if (isEditing) {
         await updateEquipment(equipmentId, equipmentData)
       } else {
-        const newEquipment = await createEquipment(equipmentData)
+        const newEquipment = await createEquipment(equipmentData, organizationId)
         equipmentId = newEquipment.id
       }
 

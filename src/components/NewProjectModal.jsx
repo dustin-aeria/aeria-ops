@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import Modal, { ModalFooter } from './Modal'
 import { createProject, getClients, createClient } from '../lib/firestore'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import { Plus, Building2, AlertCircle } from 'lucide-react'
 
 export default function NewProjectModal({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [clients, setClients] = useState([])
@@ -42,7 +44,7 @@ export default function NewProjectModal({ isOpen, onClose }) {
   const loadClients = async () => {
     setLoadingClients(true)
     try {
-      const data = await getClients()
+      const data = await getClients(organizationId)
       setClients(data)
     } catch {
       // Intentionally silent - if clients fail to load, user can still create project without selecting client
@@ -101,12 +103,12 @@ export default function NewProjectModal({ isOpen, onClose }) {
 
   const handleCreateClient = async () => {
     if (!newClient.name.trim()) return
-    
+
     try {
       const client = await createClient({
         name: newClient.name.trim(),
         shortName: newClient.shortName.trim() || newClient.name.substring(0, 3).toUpperCase()
-      })
+      }, organizationId)
       
       setClients(prev => [...prev, client])
       setFormData(prev => ({

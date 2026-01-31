@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal, { ModalFooter } from './Modal'
 import { createAircraft, updateAircraft } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 import { AlertCircle, Plane, Info, DollarSign, Wrench, Gauge, RotateCcw, Calendar } from 'lucide-react'
 
 const categoryOptions = [
@@ -20,6 +21,7 @@ const statusOptions = [
 
 export default function AircraftModal({ isOpen, onClose, aircraft }) {
   const isEditing = !!aircraft
+  const { organizationId } = useOrganization()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -152,7 +154,7 @@ export default function AircraftModal({ isOpen, onClose, aircraft }) {
       if (isEditing) {
         await updateAircraft(aircraft.id, aircraftData)
       } else {
-        await createAircraft(aircraftData)
+        await createAircraft(aircraftData, organizationId)
       }
 
       onClose()

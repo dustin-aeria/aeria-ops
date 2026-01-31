@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { getAircraft, createAircraft } from '../lib/firestore'
 import { logger } from '../lib/logger'
+import { useOrganization } from '../hooks/useOrganization'
 
 // ============================================
 // STATUS CONFIGURATION
@@ -277,6 +278,7 @@ export default function NoAircraftAssignedModal({
   onAircraftSelected,
   context = 'flight planning' // 'flight planning' | 'site survey' | 'SORA'
 }) {
+  const { organizationId } = useOrganization()
   const [allAircraft, setAllAircraft] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -297,7 +299,7 @@ export default function NoAircraftAssignedModal({
   const loadAircraft = async () => {
     setLoading(true)
     try {
-      const data = await getAircraft()
+      const data = await getAircraft(organizationId)
       setAllAircraft(data)
     } catch (err) {
       logger.error('Failed to load aircraft:', err)
@@ -327,7 +329,7 @@ export default function NoAircraftAssignedModal({
     setError('')
 
     try {
-      const newAircraft = await createAircraft(aircraftData)
+      const newAircraft = await createAircraft(aircraftData, organizationId)
       // Auto-select the newly created aircraft
       onAircraftSelected(newAircraft)
       onClose()

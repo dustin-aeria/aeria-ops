@@ -16,6 +16,7 @@ import {
 } from '../lib/firestore'
 import { uploadPolicyAttachment, deletePolicyAttachment } from '../lib/storageHelpers'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import {
   Plus,
   Trash2,
@@ -35,6 +36,7 @@ const CATEGORIES = [
 
 export default function PolicyModal({ isOpen, onClose, policy, onSaved }) {
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const isEditing = !!policy
   const fileInputRef = useRef(null)
 
@@ -99,7 +101,7 @@ export default function PolicyModal({ isOpen, onClose, policy, onSaved }) {
 
   const loadAllPolicies = async () => {
     try {
-      const policies = await getPolicies()
+      const policies = await getPolicies(organizationId)
       setAllPolicies(policies)
     } catch {
       // Intentionally silent - policies will be empty for new installations, related policy dropdown shows none
@@ -285,7 +287,7 @@ export default function PolicyModal({ isOpen, onClose, policy, onSaved }) {
       if (isEditing) {
         await updatePolicy(policy.id, policyData)
       } else {
-        await createPolicy(policyData)
+        await createPolicy(policyData, organizationId)
       }
 
       onSaved?.()

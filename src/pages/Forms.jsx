@@ -32,6 +32,7 @@ import { logger } from '../lib/logger'
 import { createForm, getForms, getProjects, getOperators, getAircraft, getEquipment, getServices, getCustomForms, createCustomForm } from '../lib/firestore'
 import { uploadFormAttachment, deleteFormAttachment } from '../lib/storageHelpers'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../hooks/useOrganization'
 import FormBuilder from '../components/forms/FormBuilder'
 import TemplateLibrary from '../components/forms/TemplateLibrary'
 
@@ -480,6 +481,7 @@ function LibraryMultiSelect({ field, value, onChange, fetchFn, labelFn, valueFn,
 // Form field components
 function FormField({ field, value, onChange, formData, formId }) {
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const [localValue, setLocalValue] = useState(value || '')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState(null)
@@ -1078,7 +1080,7 @@ function FormField({ field, value, onChange, formData, formId }) {
           field={field}
           value={localValue}
           onChange={handleChange}
-          fetchFn={getProjects}
+          fetchFn={() => getProjects(organizationId)}
           labelFn={(item) => item.name}
           valueFn={(item) => item.id}
           required={field.required}
@@ -1101,7 +1103,7 @@ function FormField({ field, value, onChange, formData, formId }) {
               })
             }
           }}
-          fetchFn={getOperators}
+          fetchFn={() => getOperators(organizationId)}
           labelFn={(item) => `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.name || 'Unknown'}
           valueFn={(item) => item.id}
           detailFn={(item) => item.certNumber ? `Cert: ${item.certNumber}` : null}
@@ -1126,7 +1128,7 @@ function FormField({ field, value, onChange, formData, formId }) {
               })
             }
           }}
-          fetchFn={getAircraft}
+          fetchFn={() => getAircraft(organizationId)}
           labelFn={(item) => item.nickname || item.model || 'Unknown Aircraft'}
           valueFn={(item) => item.id}
           detailFn={(item) => {
@@ -1146,7 +1148,7 @@ function FormField({ field, value, onChange, formData, formId }) {
           field={field}
           value={localValue}
           onChange={handleChange}
-          fetchFn={getOperators}
+          fetchFn={() => getOperators(organizationId)}
           labelFn={(item) => `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.name || 'Unknown'}
           valueFn={(item) => item.id}
           detailFn={(item) => item.role || item.position}
@@ -1160,7 +1162,7 @@ function FormField({ field, value, onChange, formData, formId }) {
           field={field}
           value={localValue}
           onChange={handleChange}
-          fetchFn={() => getEquipment(field.equipmentCategory ? { category: field.equipmentCategory } : {})}
+          fetchFn={() => getEquipment(organizationId, field.equipmentCategory ? { category: field.equipmentCategory } : {})}
           labelFn={(item) => item.name || item.nickname || 'Unknown'}
           valueFn={(item) => item.id}
           detailFn={(item) => item.serialNumber ? `S/N: ${item.serialNumber}` : null}
@@ -1184,7 +1186,7 @@ function FormField({ field, value, onChange, formData, formId }) {
               })
             }
           }}
-          fetchFn={() => getServices(field.serviceCategory ? { category: field.serviceCategory } : {})}
+          fetchFn={() => getServices(organizationId, field.serviceCategory ? { category: field.serviceCategory } : {})}
           labelFn={(item) => item.name || 'Unknown Service'}
           valueFn={(item) => item.id}
           detailFn={(item) => item.hourlyRate ? `$${item.hourlyRate}/hr` : null}
@@ -1965,6 +1967,7 @@ function ActiveFormPanel({ template, onClose, onSave, projects = [], selectedPro
 // Main Forms page
 export default function Forms() {
   const { user } = useAuth()
+  const { organizationId } = useOrganization()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [activeForm, setActiveForm] = useState(null)
@@ -1983,9 +1986,9 @@ export default function Forms() {
     async function loadForms() {
       try {
         const [submittedForms, userCustomForms, allProjects] = await Promise.all([
-          getForms({ status: 'completed' }),
-          user?.uid ? getCustomForms(user.uid) : [],
-          getProjects().catch(() => [])
+          getForms(organizationId, { status: 'completed' }),
+          organizationId ? getCustomForms(organizationId) : [],
+          getProjects(organizationId).catch(() => [])
         ])
 
         setRecentForms(submittedForms.map(f => ({
@@ -2015,7 +2018,7 @@ export default function Forms() {
       throw new Error('You must be logged in to create custom forms')
     }
 
-    const saved = await createCustomForm(formData, user.uid)
+    const saved = await createCustomForm(formData, user.uid, organizationId)
     setCustomForms([saved, ...customForms])
     logger.debug('Custom form saved:', saved.id)
   }
@@ -2039,7 +2042,7 @@ export default function Forms() {
       sections: template.sections
     }
 
-    const saved = await createCustomForm(formData, user.uid)
+    const saved = await createCustomForm(formData, user.uid, organizationId)
     setCustomForms([saved, ...customForms])
     setImportedTemplates([...importedTemplates, template.id])
     logger.debug('Template imported:', saved.id)
@@ -2089,7 +2092,7 @@ export default function Forms() {
         submittedBy: user?.displayName || user?.email || 'Unknown User',
         submittedById: user?.uid,
         projectId: projectId || selectedProjectId  // Link to selected project
-      })
+      }, organizationId)
 
       logger.debug('Form saved:', savedForm.id, projectId ? `linked to project ${projectId}` : '')
 

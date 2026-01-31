@@ -28,6 +28,7 @@ import {
   Archive
 } from 'lucide-react'
 import { createEquipment, EQUIPMENT_CATEGORIES } from '../lib/firestore'
+import { useOrganization } from '../hooks/useOrganization'
 
 // ============================================
 // EQUIPMENT FIELDS FOR MAPPING
@@ -74,6 +75,7 @@ const steps = [
 // ============================================
 export default function EquipmentImport({ isOpen, onClose, onImportComplete }) {
   const fileInputRef = useRef(null)
+  const { organizationId } = useOrganization()
 
   // State
   const [currentStep, setCurrentStep] = useState(1)
@@ -317,7 +319,7 @@ export default function EquipmentImport({ isOpen, onClose, onImportComplete }) {
         }
 
         // Create equipment
-        await createEquipment(equipmentData)
+        await createEquipment(equipmentData, organizationId)
         results.success.push({ row: i + 1, name: equipmentData.name })
 
       } catch (err) {
