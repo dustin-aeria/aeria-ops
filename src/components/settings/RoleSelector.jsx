@@ -10,18 +10,16 @@ import { ChevronDown, Shield, Check } from 'lucide-react'
 import { ROLE_HIERARCHY } from '../../lib/firestoreOrganizations'
 
 const ROLE_LABELS = {
-  owner: 'Owner',
   admin: 'Admin',
-  manager: 'Manager',
+  management: 'Management',
   operator: 'Operator',
   viewer: 'Viewer'
 }
 
 const ROLE_COLORS = {
-  owner: 'bg-purple-100 text-purple-800 border-purple-200',
-  admin: 'bg-blue-100 text-blue-800 border-blue-200',
-  manager: 'bg-green-100 text-green-800 border-green-200',
-  operator: 'bg-gray-100 text-gray-800 border-gray-200',
+  admin: 'bg-purple-100 text-purple-800 border-purple-200',
+  management: 'bg-blue-100 text-blue-800 border-blue-200',
+  operator: 'bg-green-100 text-green-800 border-green-200',
   viewer: 'bg-gray-100 text-gray-600 border-gray-200'
 }
 

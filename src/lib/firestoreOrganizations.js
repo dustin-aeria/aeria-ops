@@ -33,73 +33,102 @@ const organizationMembersRef = collection(db, 'organizationMembers')
 // ============================================
 
 export const ORGANIZATION_ROLES = {
-  owner: 'owner',
   admin: 'admin',
-  manager: 'manager',
+  management: 'management',
   operator: 'operator',
   viewer: 'viewer'
 }
 
-export const ROLE_HIERARCHY = ['owner', 'admin', 'manager', 'operator', 'viewer']
+export const ROLE_HIERARCHY = ['admin', 'management', 'operator', 'viewer']
 
 export const ROLE_PERMISSIONS = {
-  owner: {
-    viewData: true,
-    createEdit: true,
-    delete: true,
-    manageTeam: true,
-    manageSettings: true,
-    transferOwnership: true
-  },
   admin: {
     viewData: true,
     createEdit: true,
     delete: true,
+    approve: true,
     manageTeam: true,
     manageSettings: true,
-    transferOwnership: false
+    reportIncidents: true,
+    recordOwnTraining: true
   },
-  manager: {
+  management: {
     viewData: true,
     createEdit: true,
     delete: true,
+    approve: true,
     manageTeam: false,
     manageSettings: false,
-    transferOwnership: false
+    reportIncidents: true,
+    recordOwnTraining: true
   },
   operator: {
     viewData: true,
     createEdit: true,
     delete: false,
+    approve: false,
     manageTeam: false,
     manageSettings: false,
-    transferOwnership: false
+    reportIncidents: true,
+    recordOwnTraining: true
   },
   viewer: {
     viewData: true,
     createEdit: false,
     delete: false,
+    approve: false,
     manageTeam: false,
     manageSettings: false,
-    transferOwnership: false
+    reportIncidents: false,
+    recordOwnTraining: false
   }
 }
 
 /**
  * Check if a role has a specific permission
- * SIMPLIFIED: Always returns true - all users have all permissions
+ * @param {string} role - Role name
+ * @param {string} permission - Permission to check
+ * @returns {boolean}
  */
-export function hasPermission(roleOrUser, permission) {
-  // SIMPLIFIED: Always grant permission
-  return true
+export function hasPermission(role, permission) {
+  if (!role || !ROLE_PERMISSIONS[role]) return false
+  return ROLE_PERMISSIONS[role][permission] === true
 }
 
 /**
  * Check if roleA is higher or equal in hierarchy to roleB
- * SIMPLIFIED: Always returns true
+ * @param {string} roleA - First role
+ * @param {string} roleB - Second role
+ * @returns {boolean}
  */
 export function isRoleHigherOrEqual(roleA, roleB) {
-  return true
+  const indexA = ROLE_HIERARCHY.indexOf(roleA)
+  const indexB = ROLE_HIERARCHY.indexOf(roleB)
+  if (indexA === -1 || indexB === -1) return false
+  return indexA <= indexB // Lower index = higher role
+}
+
+/**
+ * Get the level/priority of a role (higher = more permissions)
+ * @param {string} role - Role name
+ * @returns {number}
+ */
+export function getRoleLevel(role) {
+  const levels = { admin: 100, management: 70, operator: 40, viewer: 10 }
+  return levels[role] || 0
+}
+
+/**
+ * Check if a user can assign a specific role to another user
+ * @param {string} assignerRole - Role of the user doing the assignment
+ * @param {string} targetRole - Role being assigned
+ * @returns {boolean}
+ */
+export function canAssignRole(assignerRole, targetRole) {
+  if (!hasPermission(assignerRole, 'manageTeam')) return false
+  const assignerLevel = getRoleLevel(assignerRole)
+  const targetLevel = getRoleLevel(targetRole)
+  return assignerLevel > targetLevel
 }
 
 // ============================================
@@ -152,12 +181,12 @@ export async function createOrganization(data, creatorId) {
   // Create organization
   const orgDocRef = await addDoc(organizationsRef, organization)
 
-  // Create owner membership for creator
+  // Create admin membership for creator (first user is always Admin)
   const membershipId = `${creatorId}_${orgDocRef.id}`
   const membership = {
     organizationId: orgDocRef.id,
     userId: creatorId,
-    role: ORGANIZATION_ROLES.owner,
+    role: ORGANIZATION_ROLES.admin,
     status: 'active',
     invitedAt: null,
     invitedBy: null,
@@ -353,8 +382,8 @@ export async function inviteMember(orgId, email, role, invitedBy, userId = null)
   if (!role || !ORGANIZATION_ROLES[role]) {
     throw new Error('Valid role is required')
   }
-  if (role === ORGANIZATION_ROLES.owner) {
-    throw new Error('Cannot invite as owner. Use transferOwnership instead.')
+  if (role === ORGANIZATION_ROLES.admin) {
+    throw new Error('Cannot invite as admin. Promote an existing member instead.')
   }
 
   // Check organization exists and get member count
@@ -472,12 +501,9 @@ export async function updateMemberRole(memberId, newRole, updatedBy) {
 
   const membership = docSnap.data()
 
-  // Cannot change owner role directly
-  if (membership.role === ORGANIZATION_ROLES.owner) {
-    throw new Error('Cannot change owner role. Use transferOwnership instead.')
-  }
-  if (newRole === ORGANIZATION_ROLES.owner) {
-    throw new Error('Cannot promote to owner. Use transferOwnership instead.')
+  // Only admins can change roles, and they can't demote other admins
+  if (membership.role === ORGANIZATION_ROLES.admin) {
+    throw new Error('Cannot change admin role directly.')
   }
 
   await updateDoc(doc(organizationMembersRef, memberId), {
@@ -504,9 +530,9 @@ export async function removeMember(memberId) {
 
   const membership = docSnap.data()
 
-  // Cannot remove owner
-  if (membership.role === ORGANIZATION_ROLES.owner) {
-    throw new Error('Cannot remove organization owner. Transfer ownership first.')
+  // Cannot remove admin (they can only leave voluntarily or be demoted first)
+  if (membership.role === ORGANIZATION_ROLES.admin) {
+    throw new Error('Cannot remove organization admin directly.')
   }
 
   await deleteDoc(doc(organizationMembersRef, memberId))
@@ -529,8 +555,8 @@ export async function suspendMember(memberId) {
 
   const membership = docSnap.data()
 
-  if (membership.role === ORGANIZATION_ROLES.owner) {
-    throw new Error('Cannot suspend organization owner')
+  if (membership.role === ORGANIZATION_ROLES.admin) {
+    throw new Error('Cannot suspend organization admin')
   }
 
   await updateDoc(doc(organizationMembersRef, memberId), {
@@ -556,47 +582,37 @@ export async function reactivateMember(memberId) {
 }
 
 /**
- * Transfer ownership of an organization to another member
+ * Promote a member to admin role
  * @param {string} orgId - Organization ID
- * @param {string} currentOwnerId - Current owner's user ID
- * @param {string} newOwnerId - New owner's user ID
+ * @param {string} adminId - Current admin's user ID (must be admin)
+ * @param {string} targetUserId - User to promote to admin
  * @returns {Promise<void>}
  */
-export async function transferOwnership(orgId, currentOwnerId, newOwnerId) {
-  if (!orgId || !currentOwnerId || !newOwnerId) {
-    throw new Error('Organization ID, current owner ID, and new owner ID are required')
+export async function promoteToAdmin(orgId, adminId, targetUserId) {
+  if (!orgId || !adminId || !targetUserId) {
+    throw new Error('Organization ID, admin ID, and target user ID are required')
   }
 
-  const currentOwnerMembershipId = `${currentOwnerId}_${orgId}`
-  const newOwnerMembershipId = `${newOwnerId}_${orgId}`
+  const adminMembershipId = `${adminId}_${orgId}`
+  const targetMembershipId = `${targetUserId}_${orgId}`
 
-  // Verify current owner
-  const currentOwnerDoc = await getDoc(doc(organizationMembersRef, currentOwnerMembershipId))
-  if (!currentOwnerDoc.exists() || currentOwnerDoc.data().role !== ORGANIZATION_ROLES.owner) {
-    throw new Error('Current user is not the organization owner')
+  // Verify current user is admin
+  const adminDoc = await getDoc(doc(organizationMembersRef, adminMembershipId))
+  if (!adminDoc.exists() || adminDoc.data().role !== ORGANIZATION_ROLES.admin) {
+    throw new Error('Only admins can promote other members to admin')
   }
 
-  // Verify new owner is a member
-  const newOwnerDoc = await getDoc(doc(organizationMembersRef, newOwnerMembershipId))
-  if (!newOwnerDoc.exists()) {
-    throw new Error('New owner must be an existing member of the organization')
+  // Verify target is a member
+  const targetDoc = await getDoc(doc(organizationMembersRef, targetMembershipId))
+  if (!targetDoc.exists()) {
+    throw new Error('Target user must be an existing member of the organization')
   }
 
-  const batch = writeBatch(db)
-
-  // Demote current owner to admin
-  batch.update(doc(organizationMembersRef, currentOwnerMembershipId), {
+  // Promote to admin
+  await updateDoc(doc(organizationMembersRef, targetMembershipId), {
     role: ORGANIZATION_ROLES.admin,
     updatedAt: serverTimestamp()
   })
-
-  // Promote new owner
-  batch.update(doc(organizationMembersRef, newOwnerMembershipId), {
-    role: ORGANIZATION_ROLES.owner,
-    updatedAt: serverTimestamp()
-  })
-
-  await batch.commit()
 }
 
 // ============================================
@@ -704,7 +720,9 @@ export default {
   removeMember,
   suspendMember,
   reactivateMember,
-  transferOwnership,
+  promoteToAdmin,
+  getRoleLevel,
+  canAssignRole,
 
   // Utilities
   isSlugAvailable,

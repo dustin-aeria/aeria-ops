@@ -23,7 +23,7 @@ import OrganizationSettings from './settings/OrganizationSettings'
 import TeamMembers from './settings/TeamMembers'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
 import { logger } from '../lib/logger'
-import { autoElevateToOwner } from '../lib/adminUtils'
+import { autoElevateToAdmin } from '../lib/adminUtils'
 
 export default function Settings() {
   const { userProfile, user } = useAuth()
@@ -82,12 +82,12 @@ export default function Settings() {
   const [elevating, setElevating] = useState(false)
   const [elevateResult, setElevateResult] = useState(null)
 
-  // Handle elevate to owner
-  const handleElevateToOwner = async () => {
+  // Handle elevate to admin
+  const handleElevateToAdmin = async () => {
     setElevating(true)
     setElevateResult(null)
     try {
-      const result = await autoElevateToOwner(auth)
+      const result = await autoElevateToAdmin(auth)
       setElevateResult(result)
       if (result.success) {
         // Reload page to refresh permissions
@@ -775,11 +775,11 @@ export default function Settings() {
               <div className="p-4 bg-purple-50 rounded-lg">
                 <h3 className="font-medium text-purple-900 mb-2">Fix Permissions</h3>
                 <p className="text-sm text-purple-700 mb-4">
-                  If you're the application owner and seeing "Contact administrator" messages,
-                  click below to elevate your account to Owner role with full access.
+                  If you're the application admin and seeing "Contact administrator" messages,
+                  click below to elevate your account to Admin role with full access.
                 </p>
                 <button
-                  onClick={handleElevateToOwner}
+                  onClick={handleElevateToAdmin}
                   disabled={elevating}
                   className="btn-primary inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
                 >
@@ -791,7 +791,7 @@ export default function Settings() {
                   ) : (
                     <>
                       <Shield className="w-4 h-4" />
-                      Make Me Owner
+                      Make Me Admin
                     </>
                   )}
                 </button>

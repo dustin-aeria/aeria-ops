@@ -19,9 +19,8 @@ import {
 } from 'lucide-react'
 
 const AVAILABLE_ROLES = [
-  { value: 'admin', label: 'Admin', description: 'Full access, can manage team and settings' },
-  { value: 'manager', label: 'Manager', description: 'Can create, edit, and delete content' },
-  { value: 'operator', label: 'Operator', description: 'Can create and edit content' },
+  { value: 'management', label: 'Management', description: 'Can create, edit, delete, and approve content' },
+  { value: 'operator', label: 'Operator', description: 'Can view and edit content, report incidents' },
   { value: 'viewer', label: 'Viewer', description: 'Read-only access to all data' }
 ]
 
@@ -29,7 +28,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSuccess, organiza
   const { user } = useAuth()
 
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState('operator')
+  const [role, setRole] = useState('management')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -58,7 +57,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSuccess, organiza
   const handleClose = () => {
     if (!sending) {
       setEmail('')
-      setRole('operator')
+      setRole('management')
       setError(null)
       setSuccess(false)
       onClose()

@@ -12,12 +12,12 @@ import { db } from './firebase'
 import { logger } from './logger'
 
 /**
- * Make a user the owner of their organization
+ * Make a user the admin of their organization
  * @param {string} userId - The user's Firebase UID
  * @param {string} organizationId - The organization ID
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function makeOrganizationOwner(userId, organizationId) {
+export async function makeOrganizationAdmin(userId, organizationId) {
   try {
     if (!userId || !organizationId) {
       return { success: false, error: 'User ID and Organization ID are required' }
@@ -28,38 +28,38 @@ export async function makeOrganizationOwner(userId, organizationId) {
     const memberSnap = await getDoc(memberRef)
 
     if (memberSnap.exists()) {
-      // Update existing membership to owner
+      // Update existing membership to admin
       await updateDoc(memberRef, {
-        role: 'owner',
+        role: 'admin',
         status: 'active',
         updatedAt: serverTimestamp()
       })
     } else {
-      // Create new membership as owner
+      // Create new membership as admin
       await setDoc(memberRef, {
         organizationId: organizationId,
         userId: userId,
-        role: 'owner',
+        role: 'admin',
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
     }
 
-    logger.info(`User ${userId} is now owner of organization ${organizationId}`)
+    logger.info(`User ${userId} is now admin of organization ${organizationId}`)
     return { success: true }
   } catch (error) {
-    logger.error('Error making user organization owner:', error)
+    logger.error('Error making user organization admin:', error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Auto-elevate current user to owner if they're the only member or first member
+ * Auto-elevate current user to admin if they're the only member or first member
  * @param {Object} auth - Firebase auth instance
  * @returns {Promise<{success: boolean, message?: string, error?: string}>}
  */
-export async function autoElevateToOwner(auth) {
+export async function autoElevateToAdmin(auth) {
   try {
     const user = auth.currentUser
     if (!user) {
@@ -79,21 +79,21 @@ export async function autoElevateToOwner(auth) {
     let elevated = false
     for (const docSnap of snapshot.docs) {
       const membership = docSnap.data()
-      if (membership.role !== 'owner') {
+      if (membership.role !== 'admin') {
         await updateDoc(doc(db, 'organizationMembers', docSnap.id), {
-          role: 'owner',
+          role: 'admin',
           status: 'active',
           updatedAt: serverTimestamp()
         })
         elevated = true
-        logger.info(`Elevated user ${user.uid} to owner in organization ${membership.organizationId}`)
+        logger.info(`Elevated user ${user.uid} to admin in organization ${membership.organizationId}`)
       }
     }
 
     if (elevated) {
-      return { success: true, message: 'User elevated to owner. Please refresh the page.' }
+      return { success: true, message: 'User elevated to admin. Please refresh the page.' }
     } else {
-      return { success: true, message: 'User is already an owner.' }
+      return { success: true, message: 'User is already an admin.' }
     }
   } catch (error) {
     logger.error('Error auto-elevating user:', error)
@@ -179,7 +179,7 @@ export async function enableDevMode(userId) {
     await updateDoc(userRef, {
       devMode: true,
       isPlatformAdmin: true,
-      role: 'owner'
+      role: 'admin'
     })
 
     logger.info(`Dev mode enabled for user ${userId}`)
@@ -224,7 +224,7 @@ export async function enableDevModeForCurrentUser(auth) {
 }
 
 /**
- * Quick setup: Make current user owner + platform admin + dev mode
+ * Quick setup: Make current user admin + platform admin + dev mode
  * Use this for initial development setup
  * @param {Object} auth - Firebase auth instance
  * @returns {Promise<{success: boolean, message?: string, error?: string}>}
@@ -239,12 +239,12 @@ export async function setupDevAccess(auth) {
     // Enable dev mode on user profile
     await enableDevMode(user.uid)
 
-    // Also elevate to owner in all organizations
-    await autoElevateToOwner(auth)
+    // Also elevate to admin in all organizations
+    await autoElevateToAdmin(auth)
 
     return {
       success: true,
-      message: 'Full dev access enabled! You now have owner + platform admin + dev mode. Please refresh the page.'
+      message: 'Full dev access enabled! You now have admin + platform admin + dev mode. Please refresh the page.'
     }
   } catch (error) {
     return { success: false, error: error.message }
@@ -262,8 +262,8 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     window.auth = auth
 
     window.adminUtils = {
-      makeOrganizationOwner,
-      autoElevateToOwner,
+      makeOrganizationAdmin,
+      autoElevateToAdmin,
       makePlatformAdmin,
       removePlatformAdmin,
       makeCurrentUserPlatformAdmin,
@@ -275,8 +275,8 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 
     console.log('%c🔧 Admin Utils Ready', 'font-size: 14px; font-weight: bold; color: #3B82F6;')
     console.log('%cQuick commands:', 'font-weight: bold;')
-    console.log('  adminUtils.setupDevAccess(auth)    - Full access (owner + admin + devMode)')
-    console.log('  adminUtils.autoElevateToOwner(auth) - Make yourself org owner')
+    console.log('  adminUtils.setupDevAccess(auth)    - Full access (admin + platform admin + devMode)')
+    console.log('  adminUtils.autoElevateToAdmin(auth) - Make yourself org admin')
     console.log('  adminUtils.enableDevModeForCurrentUser(auth) - Enable devMode bypass')
     console.log('')
     console.log('After running any command, refresh the page to see changes.')

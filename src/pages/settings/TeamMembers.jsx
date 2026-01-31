@@ -36,10 +36,9 @@ import {
 } from 'lucide-react'
 
 const ROLE_COLORS = {
-  owner: 'bg-purple-100 text-purple-800',
-  admin: 'bg-blue-100 text-blue-800',
-  manager: 'bg-green-100 text-green-800',
-  operator: 'bg-gray-100 text-gray-800',
+  admin: 'bg-purple-100 text-purple-800',
+  management: 'bg-blue-100 text-blue-800',
+  operator: 'bg-green-100 text-green-800',
   viewer: 'bg-gray-100 text-gray-600'
 }
 
@@ -275,7 +274,7 @@ export default function TeamMembers() {
                         currentRole={member.role}
                         onChange={(newRole) => handleRoleChange(member.id, newRole)}
                         disabled={processing === member.id}
-                        excludeRoles={['owner']}
+                        excludeRoles={['admin']}
                       />
                     ) : (
                       <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${ROLE_COLORS[member.role] || ROLE_COLORS.operator}`}>
@@ -346,7 +345,7 @@ export default function TeamMembers() {
       {/* Role Permissions Info */}
       <div className="card bg-gray-50">
         <h3 className="text-sm font-medium text-gray-900 mb-3">Role Permissions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           {ROLE_HIERARCHY.map((role) => (
             <div key={role} className="space-y-1">
               <p className={`font-medium capitalize px-2 py-1 rounded inline-block ${ROLE_COLORS[role]}`}>
@@ -356,17 +355,22 @@ export default function TeamMembers() {
                 <li className="flex items-center gap-1">
                   <Check className="w-3 h-3 text-green-500" /> View data
                 </li>
-                {['owner', 'admin', 'manager', 'operator'].includes(role) && (
+                {['admin', 'management', 'operator'].includes(role) && (
                   <li className="flex items-center gap-1">
                     <Check className="w-3 h-3 text-green-500" /> Create/Edit
                   </li>
                 )}
-                {['owner', 'admin', 'manager'].includes(role) && (
+                {['admin', 'management'].includes(role) && (
                   <li className="flex items-center gap-1">
                     <Check className="w-3 h-3 text-green-500" /> Delete
                   </li>
                 )}
-                {['owner', 'admin'].includes(role) && (
+                {['admin', 'management'].includes(role) && (
+                  <li className="flex items-center gap-1">
+                    <Check className="w-3 h-3 text-green-500" /> Approve
+                  </li>
+                )}
+                {['admin'].includes(role) && (
                   <li className="flex items-center gap-1">
                     <Check className="w-3 h-3 text-green-500" /> Manage team
                   </li>

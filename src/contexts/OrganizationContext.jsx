@@ -13,8 +13,8 @@ import { useAuth } from './AuthContext'
 import {
   getMembershipsByUser,
   getOrganization,
-  hasPermission as checkPermission,
   ROLE_PERMISSIONS,
+  ROLE_HIERARCHY,
   ORGANIZATION_ROLES,
   linkPendingInvitations
 } from '../lib/firestoreOrganizations'
@@ -98,19 +98,20 @@ export function OrganizationProvider({ children }) {
    * @returns {boolean}
    */
   const hasPermission = useCallback((permission) => {
-    // SIMPLIFIED: All authenticated users have all permissions
-    return !!user
-  }, [user])
+    if (!membership?.role) return false
+    const rolePerms = ROLE_PERMISSIONS[membership.role]
+    return rolePerms?.[permission] === true
+  }, [membership?.role])
 
   /**
    * Check if current user has any of the specified roles
    * @param {string[]} roles - Array of role names
    * @returns {boolean}
    */
-  const hasRole = useCallback((roles) => {
-    // SIMPLIFIED: All authenticated users pass role checks
-    return !!user
-  }, [user])
+  const hasRole = useCallback((allowedRoles) => {
+    if (!membership?.role) return false
+    return allowedRoles.includes(membership.role)
+  }, [membership?.role])
 
   /**
    * Check if user can manage another member (based on role hierarchy)
@@ -118,9 +119,13 @@ export function OrganizationProvider({ children }) {
    * @returns {boolean}
    */
   const canManageMember = useCallback((targetRole) => {
-    // SIMPLIFIED: All authenticated users can manage members
-    return !!user
-  }, [user])
+    if (!membership?.role) return false
+    if (!hasPermission('manageTeam')) return false
+    const myIndex = ROLE_HIERARCHY.indexOf(membership.role)
+    const targetIndex = ROLE_HIERARCHY.indexOf(targetRole)
+    if (myIndex === -1 || targetIndex === -1) return false
+    return myIndex < targetIndex // Can only manage lower roles
+  }, [membership?.role, hasPermission])
 
   /**
    * Refresh organization data
@@ -194,18 +199,16 @@ export function OrganizationProvider({ children }) {
     refreshMemberships,
     setCurrentOrganization,
 
-    // Convenience flags - SIMPLIFIED: all true for authenticated users
-    isOwner: !!user,
-    isAdmin: !!user,
-    canEdit: !!user,
-    canDelete: !!user,
-    canManageTeam: !!user,
-    canManageSettings: !!user,
-    hasOrganization: !!organization,
-
-    // Always true for authenticated users
-    isDevMode: true,
-    isPlatformAdmin: !!user
+    // Convenience flags - computed from actual role permissions
+    isAdmin: membership?.role === 'admin',
+    isManagement: membership?.role === 'admin' || membership?.role === 'management',
+    canEdit: hasPermission('createEdit'),
+    canDelete: hasPermission('delete'),
+    canApprove: hasPermission('approve'),
+    canManageTeam: hasPermission('manageTeam'),
+    canManageSettings: hasPermission('manageSettings'),
+    canReportIncidents: hasPermission('reportIncidents'),
+    hasOrganization: !!organization
   }
 
   return (

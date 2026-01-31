@@ -20,8 +20,8 @@ import { useOrganizationContext } from '../contexts/OrganizationContext'
  * @property {Function} hasPermission - Check if user has a permission
  * @property {Function} hasRole - Check if user has any of specified roles
  * @property {Function} canManageMember - Check if user can manage a member
- * @property {boolean} isOwner - True if user is organization owner
- * @property {boolean} isAdmin - True if user is owner or admin
+ * @property {boolean} isAdmin - True if user is organization admin
+ * @property {boolean} isManagement - True if user is admin or management
  * @property {boolean} canEdit - True if user can create/edit data
  * @property {boolean} canDelete - True if user can delete data
  * @property {boolean} canManageTeam - True if user can manage team members
@@ -41,7 +41,7 @@ import { useOrganizationContext } from '../contexts/OrganizationContext'
  * @example
  * // Role checks
  * const { hasRole, membership } = useOrganization()
- * if (hasRole(['owner', 'admin'])) { ... }
+ * if (hasRole(['admin', 'management'])) { ... }
  */
 export function useOrganization() {
   return useOrganizationContext()

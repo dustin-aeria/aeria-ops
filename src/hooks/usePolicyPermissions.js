@@ -7,6 +7,7 @@
 
 import { useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from './useOrganization'
 
 /**
  * Permission levels for quick reference
@@ -23,13 +24,6 @@ export const PERMISSION_LEVELS = {
  * Default permission configuration by role
  */
 export const DEFAULT_ROLE_PERMISSIONS = {
-  owner: {
-    canViewAll: true,
-    canEdit: true,
-    canApprove: true,
-    canManageCategories: true,
-    canManageDefaults: true
-  },
   admin: {
     canViewAll: true,
     canEdit: true,
@@ -37,29 +31,22 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     canManageCategories: true,
     canManageDefaults: true
   },
-  manager: {
+  management: {
     canViewAll: true,
     canEdit: true,
     canApprove: true,
     canManageCategories: false,
     canManageDefaults: false
   },
-  editor: {
+  operator: {
     canViewAll: true,
     canEdit: true,
     canApprove: false,
     canManageCategories: false,
     canManageDefaults: false
   },
-  operator: {
-    canViewAll: true,
-    canEdit: false,
-    canApprove: false,
-    canManageCategories: false,
-    canManageDefaults: false
-  },
   viewer: {
-    canViewAll: false,
+    canViewAll: true,
     canEdit: false,
     canApprove: false,
     canManageCategories: false,
@@ -73,47 +60,49 @@ export const DEFAULT_ROLE_PERMISSIONS = {
  * @returns {Object} Permission flags and helper functions
  */
 export function usePolicyPermissions(policy = null) {
-  const { user, userProfile } = useAuth()
+  const { user } = useAuth()
+  const { membership, hasPermission, isAdmin, isManagement, canEdit, canDelete, canApprove } = useOrganization()
 
   const permissions = useMemo(() => {
-    // SIMPLIFIED: All authenticated users have all permissions
     const isAuthenticated = !!user
+    const userRole = membership?.role || 'viewer'
+    const rolePerms = DEFAULT_ROLE_PERMISSIONS[userRole] || DEFAULT_ROLE_PERMISSIONS.viewer
 
     return {
-      // Policy-specific permissions - all true for authenticated users
-      canView: isAuthenticated,
-      canEdit: isAuthenticated,
-      canApprove: isAuthenticated,
-      canDelete: isAuthenticated,
+      // Policy-specific permissions based on actual role
+      canView: isAuthenticated && hasPermission('viewData'),
+      canEdit: isAuthenticated && canEdit,
+      canApprove: isAuthenticated && canApprove,
+      canDelete: isAuthenticated && canDelete,
 
-      // Category and template management
-      canManageCategories: isAuthenticated,
-      canManageDefaults: isAuthenticated,
+      // Category and template management - admin only
+      canManageCategories: isAuthenticated && isAdmin,
+      canManageDefaults: isAuthenticated && isAdmin,
 
       // Acknowledgment permissions
-      canAcknowledge: isAuthenticated,
-      canViewAcknowledgments: isAuthenticated,
-      canManageAcknowledgments: isAuthenticated,
+      canAcknowledge: isAuthenticated, // All users can acknowledge
+      canViewAcknowledgments: isAuthenticated && isManagement,
+      canManageAcknowledgments: isAuthenticated && isAdmin,
 
       // Version management
       canViewVersions: isAuthenticated,
-      canRollback: isAuthenticated,
+      canRollback: isAuthenticated && isAdmin,
 
       // Workflow permissions
-      canSubmitForReview: isAuthenticated,
-      canSubmitForApproval: isAuthenticated,
-      canPublish: isAuthenticated,
-      canRetire: isAuthenticated,
+      canSubmitForReview: isAuthenticated && canEdit,
+      canSubmitForApproval: isAuthenticated && isManagement,
+      canPublish: isAuthenticated && canApprove,
+      canRetire: isAuthenticated && isAdmin,
 
-      // Meta - all users are treated as platform admin
-      permissionLevel: isAuthenticated ? PERMISSION_LEVELS.PLATFORM_ADMIN : null,
-      isAdmin: isAuthenticated,
-      isPlatformAdmin: isAuthenticated,
-      isDevMode: isAuthenticated,
-      canManageMasterPolicies: isAuthenticated,
-      userRole: 'owner'
+      // Meta
+      permissionLevel: isAdmin ? PERMISSION_LEVELS.ADMIN :
+                       isManagement ? PERMISSION_LEVELS.APPROVER :
+                       canEdit ? PERMISSION_LEVELS.EDITOR : PERMISSION_LEVELS.VIEWER,
+      isAdmin: isAdmin,
+      canManageMasterPolicies: isAdmin,
+      userRole: userRole
     }
-  }, [user])
+  }, [user, membership?.role, hasPermission, isAdmin, isManagement, canEdit, canDelete, canApprove])
 
   return permissions
 }
