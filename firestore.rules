@@ -352,6 +352,20 @@ service cloud.firestore {
         canDelete(resource.data.organizationId);
     }
 
+    // Master Policies - global templates readable by all authenticated users
+    match /masterPolicies/{policyId} {
+      allow read: if isAuthenticated();
+      // Only system admins should write (handled by admin SDK or restricted)
+      allow write: if false;
+    }
+
+    // Master Procedures - global templates readable by all authenticated users
+    match /masterProcedures/{procedureId} {
+      allow read: if isAuthenticated();
+      // Only system admins should write (handled by admin SDK or restricted)
+      allow write: if false;
+    }
+
     // ============================================
     // Hazard Assessments Collection
     // ============================================
