@@ -228,14 +228,18 @@ export async function getFormalHazards(filters = {}) {
 }
 
 /**
- * Get formal hazards for a specific user/organization
- * @param {string} ownerId - Owner ID (user or org)
+ * Get formal hazards for a specific organization
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Array>}
  */
-export async function getUserFormalHazards(ownerId) {
+export async function getUserFormalHazards(organizationId) {
+  if (!organizationId) {
+    console.warn('getUserFormalHazards called without organizationId')
+    return []
+  }
   const q = query(
     formalHazardsRef,
-    where('ownerId', '==', ownerId),
+    where('organizationId', '==', organizationId),
     orderBy('createdAt', 'desc')
   )
   const snapshot = await getDocs(q)
@@ -482,12 +486,12 @@ export async function getFHAsByRiskLevel(riskLevel, ownerId = null) {
 
 /**
  * Get FHA statistics
- * @param {string} ownerId - Owner ID
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>} Statistics object
  */
-export async function getFHAStats(ownerId = null) {
-  const fhas = ownerId
-    ? await getUserFormalHazards(ownerId)
+export async function getFHAStats(organizationId = null) {
+  const fhas = organizationId
+    ? await getUserFormalHazards(organizationId)
     : await getFormalHazards()
 
   const stats = {
@@ -601,19 +605,24 @@ export async function unlinkFieldFormFromFHA(fhaId, fieldFormId) {
 // ============================================
 
 /**
- * Seed default FHAs for a user with white-labeling
+ * Seed default FHAs for an organization with white-labeling
  * @param {string} userId - User ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} businessDetails - Business details for white-labeling
  * @param {Array} defaultTemplates - Default FHA templates
  * @returns {Promise<Object>} Seeding result
  */
-export async function seedDefaultFHAs(userId, businessDetails = {}, defaultTemplates = []) {
+export async function seedDefaultFHAs(userId, organizationId, businessDetails = {}, defaultTemplates = []) {
+  if (!organizationId) {
+    return { created: 0, skipped: 0, total: 0, error: 'Organization ID is required' }
+  }
+
   const batch = writeBatch(db)
   let created = 0
   let skipped = 0
 
   // Get existing FHAs to avoid duplicates
-  const existing = await getUserFormalHazards(userId)
+  const existing = await getUserFormalHazards(organizationId)
   const existingNumbers = new Set(existing.map(fha => fha.fhaNumber))
 
   for (const template of defaultTemplates) {
@@ -632,6 +641,7 @@ export async function seedDefaultFHAs(userId, businessDetails = {}, defaultTempl
     batch.set(docRef, {
       ...whiteLabeledFHA,
       ownerId: userId,
+      organizationId,
       source: 'default',
       status: 'active',
       createdBy: userId,
@@ -689,13 +699,13 @@ export function whiteLabel(template, businessDetails = {}) {
 }
 
 /**
- * Check which default FHAs are missing for a user
- * @param {string} userId - User ID
+ * Check which default FHAs are missing for an organization
+ * @param {string} organizationId - Organization ID
  * @param {Array} defaultTemplates - Default FHA templates
  * @returns {Promise<Array>} Missing FHA numbers
  */
-export async function getMissingDefaultFHAs(userId, defaultTemplates = []) {
-  const existing = await getUserFormalHazards(userId)
+export async function getMissingDefaultFHAs(organizationId, defaultTemplates = []) {
+  const existing = await getUserFormalHazards(organizationId)
   const existingNumbers = new Set(existing.map(fha => fha.fhaNumber))
 
   return defaultTemplates.filter(template => !existingNumbers.has(template.fhaNumber))
@@ -704,13 +714,14 @@ export async function getMissingDefaultFHAs(userId, defaultTemplates = []) {
 /**
  * Seed only missing default FHAs
  * @param {string} userId - User ID
+ * @param {string} organizationId - Organization ID
  * @param {Object} businessDetails - Business details for white-labeling
  * @param {Array} defaultTemplates - Default FHA templates
  * @returns {Promise<Object>} Seeding result
  */
-export async function seedMissingFHAs(userId, businessDetails = {}, defaultTemplates = []) {
-  const missing = await getMissingDefaultFHAs(userId, defaultTemplates)
-  return seedDefaultFHAs(userId, businessDetails, missing)
+export async function seedMissingFHAs(userId, organizationId, businessDetails = {}, defaultTemplates = []) {
+  const missing = await getMissingDefaultFHAs(organizationId, defaultTemplates)
+  return seedDefaultFHAs(userId, organizationId, businessDetails, missing)
 }
 
 // ============================================

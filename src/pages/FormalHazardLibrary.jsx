@@ -30,6 +30,7 @@ import {
   BarChart3
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useOrganizationContext } from '../contexts/OrganizationContext'
 import FHACard from '../components/fha/FHACard'
 import FHAFilters from '../components/fha/FHAFilters'
 import { RiskMatrixDisplay, RiskSummaryStats } from '../components/fha/FHARiskMatrix'
@@ -49,6 +50,7 @@ import { DEFAULT_FHA_TEMPLATES } from '../data/defaultFHATemplates'
 
 export default function FormalHazardLibrary() {
   const { user, userProfile } = useAuth()
+  const { organizationId } = useOrganizationContext()
 
   // State
   const [fhas, setFhas] = useState([])
@@ -80,19 +82,21 @@ export default function FormalHazardLibrary() {
 
   // Load FHAs
   useEffect(() => {
-    loadFHAs()
-  }, [user])
+    if (organizationId) {
+      loadFHAs()
+    }
+  }, [user, organizationId])
 
   const loadFHAs = async () => {
-    if (!user) return
+    if (!user || !organizationId) return
 
     setLoading(true)
     setError(null)
 
     try {
       const [data, statsData, reviewCount] = await Promise.all([
-        getUserFormalHazards(user.uid),
-        getFHAStats(user.uid),
+        getUserFormalHazards(organizationId),
+        getFHAStats(organizationId),
         getPendingReviewsCount(user.uid)
       ])
       setFhas(data)
@@ -157,7 +161,7 @@ export default function FormalHazardLibrary() {
 
   // Handlers
   const handleSeedDefaults = async () => {
-    if (!user) return
+    if (!user || !organizationId) return
 
     setSeeding(true)
     try {
@@ -168,7 +172,7 @@ export default function FormalHazardLibrary() {
         address: userProfile?.organization?.address || ''
       }
 
-      await seedDefaultFHAs(user.uid, businessDetails, DEFAULT_FHA_TEMPLATES)
+      await seedDefaultFHAs(user.uid, organizationId, businessDetails, DEFAULT_FHA_TEMPLATES)
       await loadFHAs()
     } catch (err) {
       console.error('Error seeding FHAs:', err)
