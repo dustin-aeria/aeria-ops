@@ -646,13 +646,13 @@ export default function ProcedureLibrary() {
 
   // Handle seed missing procedures
   const handleSeedProcedures = async () => {
-    if (!user) return
+    if (!user || !organizationId) return
 
     setSeeding(true)
     setError('')
 
     try {
-      const result = await seedMissingProcedures(user.uid)
+      const result = await seedMissingProcedures(user.uid, organizationId)
       if (result.success) {
         await loadProcedures()
         if (result.added > 0) {

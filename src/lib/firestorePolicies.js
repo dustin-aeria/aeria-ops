@@ -2421,12 +2421,17 @@ const SAMPLE_POLICIES = [
 /**
  * Seed the database with sample policies
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID (required)
  * @returns {Promise<{success: boolean, count: number, error?: string}>}
  */
-export async function seedSamplePolicies(userId) {
+export async function seedSamplePolicies(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, count: 0, error: 'Organization ID is required' }
+  }
+
   try {
-    // Check if policies already exist
-    const existingSnapshot = await getDocs(query(policiesRef, limit(1)))
+    // Check if policies already exist for this organization
+    const existingSnapshot = await getDocs(query(policiesRef, where('organizationId', '==', organizationId), limit(1)))
     if (!existingSnapshot.empty) {
       return { success: false, count: 0, error: 'Policies already exist. Clear existing policies first.' }
     }
@@ -2456,6 +2461,7 @@ export async function seedSamplePolicies(userId) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,
@@ -2475,12 +2481,17 @@ export async function seedSamplePolicies(userId) {
 /**
  * Seed only missing policies (policies that don't exist in Firestore)
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID to seed policies for
  * @returns {Promise<{success: boolean, added: number, skipped: number, error?: string}>}
  */
-export async function seedMissingPolicies(userId) {
+export async function seedMissingPolicies(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, added: 0, skipped: 0, error: 'Organization ID is required' }
+  }
+
   try {
-    // Get all existing policy numbers
-    const existingSnapshot = await getDocs(policiesRef)
+    // Get all existing policy numbers for this organization
+    const existingSnapshot = await getDocs(query(policiesRef, where('organizationId', '==', organizationId)))
     const existingNumbers = new Set(
       existingSnapshot.docs.map(doc => doc.data().number)
     )
@@ -2519,6 +2530,7 @@ export async function seedMissingPolicies(userId) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,
@@ -2547,15 +2559,20 @@ export async function seedMissingPolicies(userId) {
  * Seed operator policies from masterPolicies collection
  * This is the preferred method - seeds from Firestore masterPolicies
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID to seed policies for
  * @returns {Promise<{success: boolean, count: number, error?: string}>}
  */
-export async function seedFromMasterPolicies(userId) {
+export async function seedFromMasterPolicies(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, count: 0, error: 'Organization ID is required' }
+  }
+
   try {
     // Dynamic import to avoid circular dependencies
     const { getPublishedMasterPolicies } = await import('./firestoreMasterPolicies.js')
 
-    // Check if policies already exist
-    const existingSnapshot = await getDocs(query(policiesRef, limit(1)))
+    // Check if policies already exist for this organization
+    const existingSnapshot = await getDocs(query(policiesRef, where('organizationId', '==', organizationId), limit(1)))
     if (!existingSnapshot.empty) {
       return { success: false, count: 0, error: 'Policies already exist. Clear existing policies first.' }
     }
@@ -2565,7 +2582,7 @@ export async function seedFromMasterPolicies(userId) {
 
     if (masterPolicies.length === 0) {
       // Fallback to SAMPLE_POLICIES if no master policies exist
-      return seedSamplePolicies(userId)
+      return seedSamplePolicies(userId, organizationId)
     }
 
     const batch = writeBatch(db)
@@ -2612,6 +2629,7 @@ export async function seedFromMasterPolicies(userId) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,
@@ -2631,14 +2649,19 @@ export async function seedFromMasterPolicies(userId) {
 /**
  * Seed only missing policies from masterPolicies
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID to seed policies for
  * @returns {Promise<{success: boolean, added: number, skipped: number, error?: string}>}
  */
-export async function seedMissingFromMaster(userId) {
+export async function seedMissingFromMaster(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, added: 0, skipped: 0, error: 'Organization ID is required' }
+  }
+
   try {
     const { getPublishedMasterPolicies } = await import('./firestoreMasterPolicies.js')
 
-    // Get existing policy numbers
-    const existingSnapshot = await getDocs(policiesRef)
+    // Get existing policy numbers for this organization
+    const existingSnapshot = await getDocs(query(policiesRef, where('organizationId', '==', organizationId)))
     const existingNumbers = new Set(
       existingSnapshot.docs.map(doc => doc.data().number)
     )
@@ -2648,7 +2671,7 @@ export async function seedMissingFromMaster(userId) {
 
     if (masterPolicies.length === 0) {
       // Fallback to seedMissingPolicies if no master policies
-      return seedMissingPolicies(userId)
+      return seedMissingPolicies(userId, organizationId)
     }
 
     // Filter to only policies that don't exist
@@ -2702,6 +2725,7 @@ export async function seedMissingFromMaster(userId) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,

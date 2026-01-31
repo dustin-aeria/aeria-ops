@@ -124,17 +124,27 @@ function deserializeFromFirestore(obj) {
 
 const projectsRef = collection(db, 'projects')
 
-export async function getProjects(filters = {}) {
-  let q = query(projectsRef, orderBy('createdAt', 'desc'))
-  
+export async function getProjects(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getProjects called without organizationId')
+    return []
+  }
+
+  // Build query constraints
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  ]
+
   if (filters.status) {
-    q = query(q, where('status', '==', filters.status))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
-  
+
   if (filters.limit) {
-    q = query(q, limit(filters.limit))
+    constraints.push(limit(filters.limit))
   }
-  
+
+  const q = query(projectsRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => {
     const data = deserializeFromFirestore(doc.data())
@@ -742,8 +752,17 @@ export async function setActiveSite(projectId, siteId) {
 
 const clientsRef = collection(db, 'clients')
 
-export async function getClients() {
-  const q = query(clientsRef, orderBy('name', 'asc'))
+export async function getClients(organizationId) {
+  if (!organizationId) {
+    console.warn('getClients called without organizationId')
+    return []
+  }
+
+  const q = query(
+    clientsRef,
+    where('organizationId', '==', organizationId),
+    orderBy('name', 'asc')
+  )
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -789,8 +808,17 @@ export async function deleteClient(id) {
 
 const operatorsRef = collection(db, 'operators')
 
-export async function getOperators() {
-  const q = query(operatorsRef, orderBy('lastName', 'asc'))
+export async function getOperators(organizationId) {
+  if (!organizationId) {
+    console.warn('getOperators called without organizationId')
+    return []
+  }
+
+  const q = query(
+    operatorsRef,
+    where('organizationId', '==', organizationId),
+    orderBy('lastName', 'asc')
+  )
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -837,8 +865,17 @@ export async function deleteOperator(id) {
 
 const aircraftRef = collection(db, 'aircraft')
 
-export async function getAircraft() {
-  const q = query(aircraftRef, orderBy('nickname', 'asc'))
+export async function getAircraft(organizationId) {
+  if (!organizationId) {
+    console.warn('getAircraft called without organizationId')
+    return []
+  }
+
+  const q = query(
+    aircraftRef,
+    where('organizationId', '==', organizationId),
+    orderBy('nickname', 'asc')
+  )
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -953,19 +990,28 @@ export const EQUIPMENT_STATUS = {
 
 /**
  * Get all equipment with optional filters
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters (category, status, search)
  * @returns {Promise<Array>}
  */
-export async function getEquipment(filters = {}) {
+export async function getEquipment(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getEquipment called without organizationId')
+    return []
+  }
+
   // Build query constraints array
-  const constraints = [orderBy('name', 'asc')]
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('name', 'asc')
+  ]
 
   if (filters.category) {
-    constraints.unshift(where('category', '==', filters.category))
+    constraints.splice(1, 0, where('category', '==', filters.category))
   }
 
   if (filters.status) {
-    constraints.unshift(where('status', '==', filters.status))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
 
   const q = query(equipmentRef, ...constraints)
@@ -1112,16 +1158,23 @@ export async function removeEquipmentFromProject(projectId, assignmentId, equipm
 
 /**
  * Get equipment due for maintenance
+ * @param {string} organizationId - Organization ID
  * @param {number} daysAhead - Number of days to look ahead (default 30)
  * @returns {Promise<Array>}
  */
-export async function getEquipmentDueForMaintenance(daysAhead = 30) {
+export async function getEquipmentDueForMaintenance(organizationId, daysAhead = 30) {
+  if (!organizationId) {
+    console.warn('getEquipmentDueForMaintenance called without organizationId')
+    return []
+  }
+
   const futureDate = new Date()
   futureDate.setDate(futureDate.getDate() + daysAhead)
   const futureDateStr = futureDate.toISOString().split('T')[0]
 
   const q = query(
     equipmentRef,
+    where('organizationId', '==', organizationId),
     where('nextServiceDate', '<=', futureDateStr),
     where('status', '!=', 'retired'),
     orderBy('nextServiceDate', 'asc')
@@ -1133,12 +1186,20 @@ export async function getEquipmentDueForMaintenance(daysAhead = 30) {
 
 /**
  * Get equipment maintenance statistics
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>} Maintenance statistics
  */
-export async function getEquipmentMaintenanceStats() {
-  const allEquipment = await getEquipment()
+export async function getEquipmentMaintenanceStats(organizationId) {
+  if (!organizationId) {
+    console.warn('getEquipmentMaintenanceStats called without organizationId')
+    return {
+      total: 0, withMaintenance: 0, overdue: 0, dueSoon: 0,
+      upToDate: 0, noSchedule: 0, overdueItems: [], dueSoonItems: []
+    }
+  }
+
+  const allEquipment = await getEquipment(organizationId)
   const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
 
   const stats = {
     total: allEquipment.length,
@@ -1251,10 +1312,16 @@ export async function setEquipmentMaintenanceStatus(equipmentId, inMaintenance, 
 
 /**
  * Get equipment value summary (for insurance/accounting)
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>} Value summary by category and status
  */
-export async function getEquipmentValueSummary() {
-  const allEquipment = await getEquipment()
+export async function getEquipmentValueSummary(organizationId) {
+  if (!organizationId) {
+    console.warn('getEquipmentValueSummary called without organizationId')
+    return { totalValue: 0, totalItems: 0, byCategory: {}, byStatus: {} }
+  }
+
+  const allEquipment = await getEquipment(organizationId)
 
   const summary = {
     totalValue: 0,
@@ -1295,19 +1362,28 @@ const servicesRef = collection(db, 'services')
 
 /**
  * Get all services with optional filters
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters (category, status)
  * @returns {Promise<Array>}
  */
-export async function getServices(filters = {}) {
+export async function getServices(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getServices called without organizationId')
+    return []
+  }
+
   // Build query constraints array
-  const constraints = [orderBy('name', 'asc')]
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('name', 'asc')
+  ]
 
   if (filters.category) {
-    constraints.unshift(where('category', '==', filters.category))
+    constraints.splice(1, 0, where('category', '==', filters.category))
   }
 
   if (filters.status) {
-    constraints.unshift(where('status', '==', filters.status))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
 
   const q = query(servicesRef, ...constraints)
@@ -1385,25 +1461,34 @@ export async function deleteService(id) {
 
 const formsRef = collection(db, 'forms')
 
-export async function getForms(filters = {}) {
-  let q = query(formsRef, orderBy('createdAt', 'desc'))
+export async function getForms(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getForms called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  ]
 
   if (filters.projectId) {
-    q = query(q, where('projectId', '==', filters.projectId))
+    constraints.splice(1, 0, where('projectId', '==', filters.projectId))
   }
 
   if (filters.type) {
-    q = query(q, where('type', '==', filters.type))
+    constraints.splice(1, 0, where('type', '==', filters.type))
   }
 
   if (filters.status) {
-    q = query(q, where('status', '==', filters.status))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
 
   if (filters.limit) {
-    q = query(q, limit(filters.limit))
+    constraints.push(limit(filters.limit))
   }
 
+  const q = query(formsRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -1478,15 +1563,23 @@ const policiesRef = collection(db, 'policies')
 
 /**
  * Get all policies
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters (category, status)
  * @returns {Promise<Array>}
  */
-export async function getPolicies(filters = {}) {
-  // Build query constraints array
-  const constraints = [orderBy('number', 'asc')]
+export async function getPolicies(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getPolicies called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('number', 'asc')
+  ]
 
   if (filters.category) {
-    constraints.unshift(where('category', '==', filters.category))
+    constraints.splice(1, 0, where('category', '==', filters.category))
   }
 
   const q = query(policiesRef, ...constraints)
@@ -1564,10 +1657,11 @@ export async function deletePolicy(id) {
 
 /**
  * Generate next policy number for a category
+ * @param {string} organizationId - Organization ID
  * @param {string} category - Category ID (rpas, crm, hse)
  * @returns {Promise<string>}
  */
-export async function getNextPolicyNumber(category) {
+export async function getNextPolicyNumber(organizationId, category) {
   const categoryRanges = {
     rpas: { start: 1001, end: 1999 },
     crm: { start: 2001, end: 2999 },
@@ -1576,8 +1670,16 @@ export async function getNextPolicyNumber(category) {
 
   const range = categoryRanges[category] || categoryRanges.rpas
 
-  // Get all policies in category
-  const q = query(policiesRef, where('category', '==', category))
+  if (!organizationId) {
+    return String(range.start)
+  }
+
+  // Get all policies in category for this organization
+  const q = query(
+    policiesRef,
+    where('organizationId', '==', organizationId),
+    where('category', '==', category)
+  )
   const snapshot = await getDocs(q)
 
   // Find highest number in range
@@ -1742,12 +1844,21 @@ export function migrateProjectToSORA(project) {
 const customFormsRef = collection(db, 'customForms')
 
 /**
- * Get all custom forms for a user
- * @param {string} userId - User ID
+ * Get all custom forms for an organization
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Array>}
  */
-export async function getCustomForms(userId) {
-  const q = query(customFormsRef, where('createdBy', '==', userId), orderBy('createdAt', 'desc'))
+export async function getCustomForms(organizationId) {
+  if (!organizationId) {
+    console.warn('getCustomForms called without organizationId')
+    return []
+  }
+
+  const q = query(
+    customFormsRef,
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  )
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -1841,19 +1952,27 @@ export async function submitFeedback(data) {
 
 /**
  * Get all feedback with optional filters
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Optional filters (status, type, limit)
  * @returns {Promise<Array>}
  */
-export async function getFeedback(filters = {}) {
-  // Build query constraints array
-  const constraints = [orderBy('createdAt', 'desc')]
+export async function getFeedback(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getFeedback called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  ]
 
   if (filters.status) {
-    constraints.unshift(where('status', '==', filters.status))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
 
   if (filters.type) {
-    constraints.unshift(where('type', '==', filters.type))
+    constraints.splice(1, 0, where('type', '==', filters.type))
   }
 
   if (filters.limit) {
@@ -1889,10 +2008,21 @@ export async function deleteFeedback(id) {
 
 /**
  * Get feedback statistics
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>}
  */
-export async function getFeedbackStats() {
-  const allFeedback = await getFeedback()
+export async function getFeedbackStats(organizationId) {
+  if (!organizationId) {
+    console.warn('getFeedbackStats called without organizationId')
+    return {
+      total: 0,
+      byStatus: { new: 0, reviewed: 0, resolved: 0 },
+      byType: { general: 0, bug: 0, feature: 0, question: 0 },
+      recentFeedback: []
+    }
+  }
+
+  const allFeedback = await getFeedback(organizationId)
 
   const stats = {
     total: allFeedback.length,

@@ -330,40 +330,42 @@ export const getDefaultIncidentStructure = () => ({
 
 /**
  * Get all incidents with optional filters
+ * @param {string} organizationId - Organization ID
+ * @param {Object} filters - Optional filters
  */
-export async function getIncidents(filters = {}) {
-  let q = query(incidentsRef, orderBy('createdAt', 'desc'))
-  
+export async function getIncidents(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getIncidents called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  ]
+
   // Apply filters
   if (filters.status) {
-    q = query(incidentsRef, where('status', '==', filters.status), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
-  
+
   if (filters.type) {
-    q = query(incidentsRef, where('type', '==', filters.type), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('type', '==', filters.type))
   }
-  
+
   if (filters.severity) {
-    q = query(incidentsRef, where('severity', '==', filters.severity), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('severity', '==', filters.severity))
   }
-  
+
   if (filters.projectId) {
-    q = query(incidentsRef, where('projectId', '==', filters.projectId), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('projectId', '==', filters.projectId))
   }
-  
-  if (filters.dateFrom && filters.dateTo) {
-    q = query(
-      incidentsRef,
-      where('dateOccurred', '>=', Timestamp.fromDate(new Date(filters.dateFrom))),
-      where('dateOccurred', '<=', Timestamp.fromDate(new Date(filters.dateTo))),
-      orderBy('dateOccurred', 'desc')
-    )
-  }
-  
+
   if (filters.limit) {
-    q = query(q, limit(filters.limit))
+    constraints.push(limit(filters.limit))
   }
-  
+
+  const q = query(incidentsRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
@@ -600,48 +602,49 @@ export const getDefaultCapaStructure = () => ({
 
 /**
  * Get all CAPAs with optional filters
+ * @param {string} organizationId - Organization ID
+ * @param {Object} filters - Optional filters
  */
-export async function getCapas(filters = {}) {
-  let q = query(capasRef, orderBy('createdAt', 'desc'))
-  
+export async function getCapas(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getCapas called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc')
+  ]
+
   if (filters.status) {
-    q = query(capasRef, where('status', '==', filters.status), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('status', '==', filters.status))
   }
-  
+
   if (filters.assignedTo) {
-    q = query(capasRef, where('assignedTo', '==', filters.assignedTo), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('assignedTo', '==', filters.assignedTo))
   }
-  
+
   if (filters.priority) {
-    q = query(capasRef, where('priority', '==', filters.priority), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('priority', '==', filters.priority))
   }
-  
+
   if (filters.type) {
-    q = query(capasRef, where('type', '==', filters.type), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('type', '==', filters.type))
   }
-  
+
   if (filters.sourceType) {
-    q = query(capasRef, where('sourceType', '==', filters.sourceType), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('sourceType', '==', filters.sourceType))
   }
-  
+
   if (filters.incidentId) {
-    q = query(capasRef, where('relatedIncidentId', '==', filters.incidentId), orderBy('createdAt', 'desc'))
+    constraints.splice(1, 0, where('relatedIncidentId', '==', filters.incidentId))
   }
-  
-  if (filters.overdue) {
-    const now = Timestamp.now()
-    q = query(
-      capasRef,
-      where('targetDate', '<', now),
-      where('status', 'in', ['open', 'in_progress']),
-      orderBy('targetDate', 'asc')
-    )
-  }
-  
+
   if (filters.limit) {
-    q = query(q, limit(filters.limit))
+    constraints.push(limit(filters.limit))
   }
-  
+
+  const q = query(capasRef, ...constraints)
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }

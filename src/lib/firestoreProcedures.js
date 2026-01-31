@@ -787,12 +787,19 @@ export async function updateProcedureField(id, fields, userId = null) {
 
 /**
  * Get all procedures with optional filtering
+ * @param {string} organizationId - Organization ID
  * @param {Object} filters - Filter options
  * @returns {Promise<Array>}
  */
-export async function getProceduresEnhanced(filters = {}) {
-  let q = proceduresRef
-  const constraints = []
+export async function getProceduresEnhanced(organizationId, filters = {}) {
+  if (!organizationId) {
+    console.warn('getProceduresEnhanced called without organizationId')
+    return []
+  }
+
+  const constraints = [
+    where('organizationId', '==', organizationId)
+  ]
 
   if (filters.category) {
     constraints.push(where('category', '==', filters.category))
@@ -816,7 +823,7 @@ export async function getProceduresEnhanced(filters = {}) {
     constraints.push(limit(filters.limit))
   }
 
-  q = query(proceduresRef, ...constraints)
+  const q = query(proceduresRef, ...constraints)
 
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
@@ -1190,9 +1197,14 @@ export async function getAvailableContentProcedureNumbers() {
  * Seed default procedures from procedureContent.js
  * Creates all default procedures in Firestore
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID to seed procedures for
  * @returns {Promise<{success: boolean, added: number, errors: Array}>}
  */
-export async function seedDefaultProcedures(userId = null) {
+export async function seedDefaultProcedures(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, added: 0, errors: ['Organization ID is required'] }
+  }
+
   const { PROCEDURE_CONTENT } = await import('../data/procedureContent.js')
 
   const results = {
@@ -1226,7 +1238,7 @@ export async function seedDefaultProcedures(userId = null) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
-        organizationId: 'default',
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,
@@ -1247,9 +1259,14 @@ export async function seedDefaultProcedures(userId = null) {
 /**
  * Seed only missing procedures (doesn't overwrite existing)
  * @param {string} userId - User ID performing the seed
+ * @param {string} organizationId - Organization ID to seed procedures for
  * @returns {Promise<{success: boolean, added: number, skipped: number, errors: Array}>}
  */
-export async function seedMissingProcedures(userId = null) {
+export async function seedMissingProcedures(userId, organizationId) {
+  if (!organizationId) {
+    return { success: false, added: 0, skipped: 0, errors: ['Organization ID is required'] }
+  }
+
   const { PROCEDURE_CONTENT } = await import('../data/procedureContent.js')
 
   const results = {
@@ -1260,8 +1277,8 @@ export async function seedMissingProcedures(userId = null) {
   }
 
   try {
-    // Get all existing procedure numbers
-    const existingSnapshot = await getDocs(proceduresRef)
+    // Get all existing procedure numbers for this organization
+    const existingSnapshot = await getDocs(query(proceduresRef, where('organizationId', '==', organizationId)))
     const existingNumbers = new Set(
       existingSnapshot.docs.map(doc => doc.data().number)
     )
@@ -1299,7 +1316,7 @@ export async function seedMissingProcedures(userId = null) {
           signatureRequired: false,
           signatureType: 'checkbox'
         },
-        organizationId: 'default',
+        organizationId,
         createdAt: now,
         createdBy: userId,
         updatedAt: now,

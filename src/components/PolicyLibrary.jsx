@@ -1915,14 +1915,14 @@ export default function PolicyLibrary() {
 
   // Handle seed sample policies (prefers master policies, falls back to JS)
   const handleSeedPolicies = async () => {
-    if (!user) return
+    if (!user || !organizationId) return
 
     setSeeding(true)
     setError('')
 
     try {
       // Try to seed from master policies first, falls back to JS if none exist
-      const result = await seedFromMasterPolicies(user.uid)
+      const result = await seedFromMasterPolicies(user.uid, organizationId)
       if (result.success) {
         await loadPolicies()
         refreshUpdates()
@@ -1939,14 +1939,14 @@ export default function PolicyLibrary() {
 
   // Handle seed missing policies (prefers master policies, falls back to JS)
   const handleSeedMissingPolicies = async () => {
-    if (!user) return
+    if (!user || !organizationId) return
 
     setSeeding(true)
     setError('')
 
     try {
       // Try to seed from master policies first, falls back to JS if none exist
-      const result = await seedMissingFromMaster(user.uid)
+      const result = await seedMissingFromMaster(user.uid, organizationId)
       if (result.success) {
         await loadPolicies()
         refreshUpdates()
