@@ -251,6 +251,130 @@ export async function setupDevAccess(auth) {
   }
 }
 
+/**
+ * Migrate old role names to new RBAC roles
+ * Maps: owner -> admin, manager -> management
+ * @param {string} organizationId - Optional: only migrate for specific org
+ * @returns {Promise<{success: boolean, migrated: number, errors: string[]}>}
+ */
+export async function migrateRolesToNewSystem(organizationId = null) {
+  const roleMapping = {
+    'owner': 'admin',
+    'manager': 'management'
+  }
+
+  try {
+    const membershipsRef = collection(db, 'organizationMembers')
+    let q = membershipsRef
+
+    if (organizationId) {
+      q = query(membershipsRef, where('organizationId', '==', organizationId))
+    }
+
+    const snapshot = await getDocs(q)
+
+    let migrated = 0
+    const errors = []
+
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data()
+      const oldRole = data.role
+
+      // Check if role needs migration
+      if (roleMapping[oldRole]) {
+        const newRole = roleMapping[oldRole]
+        try {
+          await updateDoc(doc(db, 'organizationMembers', docSnap.id), {
+            role: newRole,
+            previousRole: oldRole, // Keep track of old role for audit
+            roleMigratedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          })
+          migrated++
+          logger.info(`Migrated user ${data.userId} from ${oldRole} to ${newRole}`)
+        } catch (err) {
+          errors.push(`Failed to migrate ${docSnap.id}: ${err.message}`)
+        }
+      }
+    }
+
+    logger.info(`Role migration complete: ${migrated} users migrated`)
+    return { success: true, migrated, errors }
+  } catch (error) {
+    logger.error('Error during role migration:', error)
+    return { success: false, migrated: 0, errors: [error.message] }
+  }
+}
+
+/**
+ * Get a summary of all roles in the organization
+ * Useful for auditing before/after migration
+ * @param {string} organizationId - The organization ID
+ * @returns {Promise<Object>} Role counts and user list
+ */
+export async function getRoleSummary(organizationId) {
+  try {
+    const membershipsRef = collection(db, 'organizationMembers')
+    const q = query(membershipsRef, where('organizationId', '==', organizationId))
+    const snapshot = await getDocs(q)
+
+    const summary = {
+      total: 0,
+      byRole: {},
+      users: []
+    }
+
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data()
+      summary.total++
+      summary.byRole[data.role] = (summary.byRole[data.role] || 0) + 1
+      summary.users.push({
+        id: docSnap.id,
+        userId: data.userId,
+        role: data.role,
+        status: data.status,
+        previousRole: data.previousRole || null
+      })
+    })
+
+    return summary
+  } catch (error) {
+    logger.error('Error getting role summary:', error)
+    return null
+  }
+}
+
+/**
+ * Check if migration is needed for an organization
+ * @param {string} organizationId - The organization ID
+ * @returns {Promise<{needed: boolean, oldRoles: string[]}>}
+ */
+export async function checkMigrationNeeded(organizationId) {
+  const oldRoles = ['owner', 'manager']
+
+  try {
+    const membershipsRef = collection(db, 'organizationMembers')
+    const q = query(membershipsRef, where('organizationId', '==', organizationId))
+    const snapshot = await getDocs(q)
+
+    const foundOldRoles = []
+    snapshot.forEach(docSnap => {
+      const role = docSnap.data().role
+      if (oldRoles.includes(role) && !foundOldRoles.includes(role)) {
+        foundOldRoles.push(role)
+      }
+    })
+
+    return {
+      needed: foundOldRoles.length > 0,
+      oldRoles: foundOldRoles
+    }
+  } catch (error) {
+    logger.error('Error checking migration status:', error)
+    return { needed: false, oldRoles: [] }
+  }
+}
+
 // SECURITY: Admin functions should only be called through authenticated admin UI
 // Do NOT expose to window object in production
 // Use the MasterPolicyAdmin page or Settings page for admin operations
@@ -270,7 +394,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
       enableDevMode,
       disableDevMode,
       enableDevModeForCurrentUser,
-      setupDevAccess
+      setupDevAccess,
+      // Migration utilities
+      migrateRolesToNewSystem,
+      getRoleSummary,
+      checkMigrationNeeded
     }
 
     console.log('%c🔧 Admin Utils Ready', 'font-size: 14px; font-weight: bold; color: #3B82F6;')
@@ -278,6 +406,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     console.log('  adminUtils.setupDevAccess(auth)    - Full access (admin + platform admin + devMode)')
     console.log('  adminUtils.autoElevateToAdmin(auth) - Make yourself org admin')
     console.log('  adminUtils.enableDevModeForCurrentUser(auth) - Enable devMode bypass')
+    console.log('')
+    console.log('%cMigration commands:', 'font-weight: bold;')
+    console.log('  adminUtils.checkMigrationNeeded(orgId)     - Check if role migration needed')
+    console.log('  adminUtils.getRoleSummary(orgId)           - View all roles in org')
+    console.log('  adminUtils.migrateRolesToNewSystem(orgId)  - Migrate owner->admin, manager->management')
     console.log('')
     console.log('After running any command, refresh the page to see changes.')
   })

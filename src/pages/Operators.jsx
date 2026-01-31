@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { getOperators, deleteOperator } from '../lib/firestore'
 import { useOrganization } from '../hooks/useOrganization'
+import { usePermissions } from '../hooks/usePermissions'
 import OperatorModal from '../components/OperatorModal'
 import { format, differenceInDays } from 'date-fns'
 import { logger } from '../lib/logger'
@@ -33,6 +34,7 @@ const roleColors = {
 
 export default function Operators() {
   const { organizationId } = useOrganization()
+  const { canEdit, canDelete } = usePermissions()
   const [operators, setOperators] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -131,13 +133,15 @@ export default function Operators() {
           <h1 className="text-2xl font-bold text-gray-900">Operators</h1>
           <p className="text-gray-600 mt-1">Team members and certifications</p>
         </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="btn-primary inline-flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Operator
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Operator
+          </button>
+        )}
       </div>
 
       {/* Filters and search */}
@@ -180,15 +184,19 @@ export default function Operators() {
             <>
               <h3 className="text-lg font-medium text-gray-900 mb-1">No operators yet</h3>
               <p className="text-gray-500 mb-4">
-                Add team members to assign them to projects and track certifications.
+                {canEdit
+                  ? 'Add team members to assign them to projects and track certifications.'
+                  : 'No operators have been added yet. Contact an admin to add operators.'}
               </p>
-              <button 
-                onClick={() => setShowModal(true)}
-                className="btn-primary inline-flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Operator
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Operator
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -280,40 +288,46 @@ export default function Operators() {
                     </button>
                   )}
                   
-                  {/* More menu */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setMenuOpen(menuOpen === operator.id ? null : operator.id)}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    
-                    {menuOpen === operator.id && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-10"
-                          onClick={() => setMenuOpen(null)}
-                        />
-                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                          <button
-                            onClick={() => handleEdit(operator)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <Edit className="w-4 h-4" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(operator.id, `${operator.firstName} ${operator.lastName}`)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {/* More menu - only show if user has permissions */}
+                  {(canEdit || canDelete) && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setMenuOpen(menuOpen === operator.id ? null : operator.id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {menuOpen === operator.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setMenuOpen(null)}
+                          />
+                          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            {canEdit && (
+                              <button
+                                onClick={() => handleEdit(operator)}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDelete(operator.id, `${operator.firstName} ${operator.lastName}`)}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               

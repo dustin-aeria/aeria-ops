@@ -42,6 +42,7 @@ import {
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { useOrganization } from '../hooks/useOrganization'
+import { usePermissions } from '../hooks/usePermissions'
 import Modal, { ModalFooter } from '../components/Modal'
 
 // Service categories
@@ -756,6 +757,7 @@ function ServiceModal({ isOpen, onClose, service, onSave, userId, organizationId
 export default function Services() {
   const { user } = useAuth()
   const { organizationId } = useOrganization()
+  const { canEdit, canDelete } = usePermissions()
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -829,13 +831,15 @@ export default function Services() {
           </h1>
           <p className="text-gray-500 mt-1">Define your service offerings and pricing</p>
         </div>
-        <button
-          onClick={() => { setEditingService(null); setShowModal(true) }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Service
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => { setEditingService(null); setShowModal(true) }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Service
+          </button>
+        )}
       </div>
 
       {/* Metrics */}
@@ -902,7 +906,7 @@ export default function Services() {
           <h3 className="text-lg font-medium text-gray-900">No services found</h3>
           <p className="text-gray-500 mt-1">
             {services.length === 0
-              ? 'Add your first service to get started.'
+              ? (canEdit ? 'Add your first service to get started.' : 'No services have been added yet.')
               : 'Try adjusting your search or filters.'}
           </p>
         </div>
@@ -1046,23 +1050,29 @@ export default function Services() {
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-3">
-                  <button
-                    onClick={() => { setEditingService(service); setShowModal(true) }}
-                    className="p-1.5 text-gray-400 hover:text-aeria-navy rounded"
-                    title="Edit"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(service.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Actions - only show if user has permissions */}
+                {(canEdit || canDelete) && (
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-3">
+                    {canEdit && (
+                      <button
+                        onClick={() => { setEditingService(service); setShowModal(true) }}
+                        className="p-1.5 text-gray-400 hover:text-aeria-navy rounded"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(service.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
