@@ -8,7 +8,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useOrganization } from '../hooks/useOrganization'
-import { User, Building, Shield, Bell, Palette, Check, Loader2, Database, AlertCircle, CheckCircle2, Globe, Phone, FolderOpen, Users } from 'lucide-react'
+import { usePermissions } from '../hooks/usePermissions'
+import { User, Building, Shield, Bell, Palette, Check, Loader2, Database, AlertCircle, CheckCircle2, Globe, Phone, FolderOpen, Users, Lock } from 'lucide-react'
 import { updateOperator } from '../lib/firestore'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -21,6 +22,7 @@ import EmergencyContactsManager from '../components/settings/EmergencyContactsMa
 import CategoryManager from '../components/policies/CategoryManager'
 import OrganizationSettings from './settings/OrganizationSettings'
 import TeamMembers from './settings/TeamMembers'
+import { RequireAdmin, AccessDeniedMessage } from '../components/PermissionGuard'
 import { seedPolicies, isPoliciesSeeded } from '../lib/seedPolicies'
 import { logger } from '../lib/logger'
 import { autoElevateToAdmin } from '../lib/adminUtils'
@@ -28,6 +30,7 @@ import { autoElevateToAdmin } from '../lib/adminUtils'
 export default function Settings() {
   const { userProfile, user } = useAuth()
   const { organizationId } = useOrganization()
+  const { canManageTeam, canManageSettings, isAdmin } = usePermissions()
   const [activeTab, setActiveTab] = useState('profile')
 
   // Profile state
@@ -265,20 +268,27 @@ export default function Settings() {
     }
   }
 
-  const tabs = [
+  const allTabs = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Your personal information' },
-    { id: 'organization', label: 'Organization', icon: Building, description: 'Organization settings' },
-    { id: 'team', label: 'Team', icon: Users, description: 'Team members & roles' },
-    { id: 'company', label: 'Company', icon: Building, description: 'Company details' },
-    { id: 'regulatory', label: 'Regulatory', icon: Globe, description: 'Aviation authority & regulations' },
-    { id: 'emergency', label: 'Emergency', icon: Phone, description: 'Emergency contacts' },
-    { id: 'policies', label: 'Policy Categories', icon: FolderOpen, description: 'Manage policy categories' },
-    { id: 'insurance', label: 'Insurance', icon: Shield, description: 'Insurance policies & documents' },
-    { id: 'branding', label: 'Branding', icon: Palette, description: 'PDF export branding' },
+    { id: 'organization', label: 'Organization', icon: Building, description: 'Organization settings', requiresAdmin: true },
+    { id: 'team', label: 'Team', icon: Users, description: 'Team members & roles', requiresAdmin: true },
+    { id: 'company', label: 'Company', icon: Building, description: 'Company details', requiresSettings: true },
+    { id: 'regulatory', label: 'Regulatory', icon: Globe, description: 'Aviation authority & regulations', requiresSettings: true },
+    { id: 'emergency', label: 'Emergency', icon: Phone, description: 'Emergency contacts', requiresSettings: true },
+    { id: 'policies', label: 'Policy Categories', icon: FolderOpen, description: 'Manage policy categories', requiresAdmin: true },
+    { id: 'insurance', label: 'Insurance', icon: Shield, description: 'Insurance policies & documents', requiresSettings: true },
+    { id: 'branding', label: 'Branding', icon: Palette, description: 'PDF export branding', requiresSettings: true },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Alert preferences' },
     { id: 'security', label: 'Security', icon: Shield, description: 'Password & authentication' },
-    { id: 'data', label: 'Data', icon: Database, description: 'Data management' }
+    { id: 'data', label: 'Data', icon: Database, description: 'Data management', requiresAdmin: true }
   ]
+
+  // Filter tabs based on permissions
+  const tabs = allTabs.filter(tab => {
+    if (tab.requiresAdmin && !isAdmin) return false
+    if (tab.requiresSettings && !canManageSettings) return false
+    return true
+  })
 
   const SaveButton = ({ saving, saved, onClick, label = 'Save Changes' }) => (
     <button
@@ -411,12 +421,16 @@ export default function Settings() {
 
         {/* Organization Tab */}
         {activeTab === 'organization' && (
-          <OrganizationSettings />
+          <RequireAdmin fallback={<AccessDeniedMessage message="Only admins can manage organization settings." />}>
+            <OrganizationSettings />
+          </RequireAdmin>
         )}
 
         {/* Team Tab */}
         {activeTab === 'team' && (
-          <TeamMembers />
+          <RequireAdmin fallback={<AccessDeniedMessage message="Only admins can manage team members." />}>
+            <TeamMembers />
+          </RequireAdmin>
         )}
 
         {/* Company Tab */}
