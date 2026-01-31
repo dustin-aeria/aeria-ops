@@ -868,10 +868,11 @@ export async function getPoliciesEnhanced(filters = {}) {
 
 /**
  * Get default template policies
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Array>}
  */
-export async function getDefaultPolicies() {
-  return getPoliciesEnhanced({ type: 'default', isTemplate: true })
+export async function getDefaultPolicies(organizationId) {
+  return getPoliciesEnhanced({ organizationId, type: 'default', isTemplate: true })
 }
 
 /**

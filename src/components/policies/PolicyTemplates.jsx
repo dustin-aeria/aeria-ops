@@ -37,6 +37,7 @@ import {
 } from '../../lib/firestorePolicies'
 import { usePolicyPermissions } from '../../hooks/usePolicyPermissions'
 import { useAuth } from '../../contexts/AuthContext'
+import { useOrganizationContext } from '../../contexts/OrganizationContext'
 import { logger } from '../../lib/logger'
 
 /**
@@ -316,6 +317,7 @@ TemplatePreviewModal.propTypes = {
  */
 export default function PolicyTemplates({ onTemplateAdopted }) {
   const { user } = useAuth()
+  const { organizationId } = useOrganizationContext()
   const permissions = usePolicyPermissions()
 
   const [templates, setTemplates] = useState([])
@@ -330,17 +332,21 @@ export default function PolicyTemplates({ onTemplateAdopted }) {
   const [adoptingId, setAdoptingId] = useState(null)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (organizationId) {
+      loadData()
+    }
+  }, [organizationId])
 
   const loadData = async () => {
+    if (!organizationId) return
+
     try {
       setLoading(true)
       setError('')
 
       const [templatesData, policiesData, categoriesData] = await Promise.all([
-        getDefaultPolicies(),
-        getPoliciesEnhanced({ type: 'custom' }),
+        getDefaultPolicies(organizationId),
+        getPoliciesEnhanced({ organizationId, type: 'custom' }),
         getCategories()
       ])
 

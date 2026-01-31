@@ -831,10 +831,11 @@ export async function getProceduresEnhanced(organizationId, filters = {}) {
 
 /**
  * Get default template procedures
+ * @param {string} organizationId - Organization ID
  * @returns {Promise<Array>}
  */
-export async function getDefaultProcedures() {
-  return getProceduresEnhanced({ type: 'default', isTemplate: true })
+export async function getDefaultProcedures(organizationId) {
+  return getProceduresEnhanced(organizationId, { type: 'default', isTemplate: true })
 }
 
 /**
